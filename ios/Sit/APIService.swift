@@ -10,8 +10,7 @@ enum APIError: Error {
 class APIService {
     static let shared = APIService()
 
-    // TODO: Change to sit.jasonbenn.com once nginx/SSL is set up
-    private let baseURL = "http://localhost:8005"
+    private let baseURL = "https://sit.jasonbenn.com"
 
     // MARK: - Prompt Responses
 
