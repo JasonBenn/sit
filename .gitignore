@@ -10,3 +10,10 @@ token.json
 
 # Claude
 .claude/
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+
+# Build artifacts
+web/dist/
