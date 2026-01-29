@@ -13,10 +13,13 @@
 		1A000004 /* ConvexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000004 /* ConvexService.swift */; };
 		1A000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000005 /* Models.swift */; };
 		275BD94121F8C3D7D0654A54 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */; };
+		AAAA3001BBBB3001CCCC3001 /* PromptFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */; };
+		AAAA3002BBBB3002CCCC3002 /* Step1InTheViewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7002EEEE7002FFFF7002 /* Step1InTheViewView.swift */; };
+		AAAA3003BBBB3003CCCC3003 /* Step2ReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7003EEEE7003FFFF7003 /* Step2ReflectionView.swift */; };
+		AAAA3004BBBB3004CCCC3004 /* Step3GateOpeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7004EEEE7004FFFF7004 /* Step3GateOpeningView.swift */; };
+		AAAA3005BBBB3005CCCC3005 /* Step4VoiceNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7005EEEE7005FFFF7005 /* Step4VoiceNoteView.swift */; };
 		800C38C3EF4B40F8AD1B58DF /* WatchConnectivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC797EA2CCB1E83576C9B7A1 /* WatchConnectivityService.swift */; };
 		8A54B5EAB78D010CC76ECE25 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4937349F644BCE837383A715 /* NotificationService.swift */; };
-		AAAA1111BBBB2222CCCC3333 /* TimerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD4444EEEE5555FFFF6666 /* TimerViewModel.swift */; };
-		AAAA2222BBBB3333CCCC4444 /* TimerRunningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD5555EEEE6666FFFF7777 /* TimerRunningView.swift */; };
 		D71E6B43AC2E5F57FE07C438 /* SitWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10703FA3456E7C129B18550C /* SitWatchApp.swift */; };
 		D845B8AE2F815D6085030451 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B02C031A85EABEF97DB40A3 /* Foundation.framework */; };
 		E5F963EACB5C361D791887BD /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */; };
@@ -72,14 +75,17 @@
 		5B02C031A85EABEF97DB40A3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		CC797EA2CCB1E83576C9B7A1 /* WatchConnectivityService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchConnectivityService.swift; sourceTree = "<group>"; };
 		CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		DDDD4444EEEE5555FFFF6666 /* TimerViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerViewModel.swift; sourceTree = "<group>"; };
-		DDDD5555EEEE6666FFFF7777 /* TimerRunningView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerRunningView.swift; sourceTree = "<group>"; };
 		F0E11FC82F12CB880024B6F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F0E11FC92F12CB9C0024B6F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F0E11FD22F1323E50024B6F1 /* SitWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SitWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0E11FD32F1323E50024B6F1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F0E11FD52F1323E50024B6F1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
+		DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptFlowView.swift; sourceTree = "<group>"; };
+		DDDD7002EEEE7002FFFF7002 /* Step1InTheViewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step1InTheViewView.swift; sourceTree = "<group>"; };
+		DDDD7003EEEE7003FFFF7003 /* Step2ReflectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step2ReflectionView.swift; sourceTree = "<group>"; };
+		DDDD7004EEEE7004FFFF7004 /* Step3GateOpeningView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step3GateOpeningView.swift; sourceTree = "<group>"; };
+		DDDD7005EEEE7005FFFF7005 /* Step4VoiceNoteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step4VoiceNoteView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -183,11 +189,22 @@
 				CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */,
 				08914FC24EE5F611D351C7B2 /* WatchViewModel.swift */,
 				462DA20C9F59D021D7075243 /* Models.swift */,
-				DDDD4444EEEE5555FFFF6666 /* TimerViewModel.swift */,
-				DDDD5555EEEE6666FFFF7777 /* TimerRunningView.swift */,
 				39441231A0CCAF3457160D74 /* Info.plist */,
+				GGGG8001HHHH8001IIII8001 /* PromptFlow */,
 			);
 			path = SitWatch;
+			sourceTree = "<group>";
+		};
+		GGGG8001HHHH8001IIII8001 /* PromptFlow */ = {
+			isa = PBXGroup;
+			children = (
+				DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */,
+				DDDD7002EEEE7002FFFF7002 /* Step1InTheViewView.swift */,
+				DDDD7003EEEE7003FFFF7003 /* Step2ReflectionView.swift */,
+				DDDD7004EEEE7004FFFF7004 /* Step3GateOpeningView.swift */,
+				DDDD7005EEEE7005FFFF7005 /* Step4VoiceNoteView.swift */,
+			);
+			path = PromptFlow;
 			sourceTree = "<group>";
 		};
 		CC1C08C9C9FDFF701CDB236E /* iOS */ = {
@@ -332,8 +349,11 @@
 				275BD94121F8C3D7D0654A54 /* ContentView.swift in Sources */,
 				FB161477995B0F1398D7FD32 /* WatchViewModel.swift in Sources */,
 				E6F82F972C02F123D44EBEDC /* Models.swift in Sources */,
-				AAAA1111BBBB2222CCCC3333 /* TimerViewModel.swift in Sources */,
-				AAAA2222BBBB3333CCCC4444 /* TimerRunningView.swift in Sources */,
+				AAAA3001BBBB3001CCCC3001 /* PromptFlowView.swift in Sources */,
+				AAAA3002BBBB3002CCCC3002 /* Step1InTheViewView.swift in Sources */,
+				AAAA3003BBBB3003CCCC3003 /* Step2ReflectionView.swift in Sources */,
+				AAAA3004BBBB3004CCCC3004 /* Step3GateOpeningView.swift in Sources */,
+				AAAA3005BBBB3005CCCC3005 /* Step4VoiceNoteView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
