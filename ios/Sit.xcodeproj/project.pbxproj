@@ -10,7 +10,7 @@
 		1A000001 /* SitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000001 /* SitApp.swift */; };
 		1A000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000002 /* ContentView.swift */; };
 		1A000003 /* SyncViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000003 /* SyncViewModel.swift */; };
-		1A000004 /* ConvexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000004 /* ConvexService.swift */; };
+		1A000004 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000004 /* APIService.swift */; };
 		1A000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000005 /* Models.swift */; };
 		275BD94121F8C3D7D0654A54 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */; };
 		AAAA3001BBBB3001CCCC3001 /* PromptFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */; };
@@ -66,7 +66,7 @@
 		2A000001 /* SitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitApp.swift; sourceTree = "<group>"; };
 		2A000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		2A000003 /* SyncViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncViewModel.swift; sourceTree = "<group>"; };
-		2A000004 /* ConvexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvexService.swift; sourceTree = "<group>"; };
+		2A000004 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		2A000005 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		39441231A0CCAF3457160D74 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3A000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -150,7 +150,7 @@
 				2A000001 /* SitApp.swift */,
 				2A000002 /* ContentView.swift */,
 				2A000003 /* SyncViewModel.swift */,
-				2A000004 /* ConvexService.swift */,
+				2A000004 /* APIService.swift */,
 				2A000005 /* Models.swift */,
 				3A000001 /* Info.plist */,
 				CC797EA2CCB1E83576C9B7A1 /* WatchConnectivityService.swift */,
@@ -364,7 +364,7 @@
 				1A000001 /* SitApp.swift in Sources */,
 				1A000002 /* ContentView.swift in Sources */,
 				1A000003 /* SyncViewModel.swift in Sources */,
-				1A000004 /* ConvexService.swift in Sources */,
+				1A000004 /* APIService.swift in Sources */,
 				1A000005 /* Models.swift in Sources */,
 				800C38C3EF4B40F8AD1B58DF /* WatchConnectivityService.swift in Sources */,
 				8A54B5EAB78D010CC76ECE25 /* NotificationService.swift in Sources */,

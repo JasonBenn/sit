@@ -3,123 +3,44 @@ import Combine
 
 @MainActor
 class SyncViewModel: ObservableObject {
-    @Published var beliefs: [Belief] = []
-    @Published var timerPresets: [TimerPreset] = []
-    @Published var promptSettings: PromptSettings?
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var lastSyncDate: Date?
 
-    private let convexService = ConvexService()
+    private let apiService = APIService.shared
     private let watchConnectivity = WatchConnectivityService.shared
     private let notificationService = NotificationService.shared
-    private var syncTimer: Timer?
 
     init() {
-        // Set up Watch message handler
         setupWatchMessageHandler()
 
-        // Start periodic sync every 30 seconds
-        startPeriodicSync()
-    }
-
-    deinit {
-        syncTimer?.invalidate()
-    }
-
-    // MARK: - Sync Methods
-
-    func syncAll() async {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            // Fetch all data from Convex in parallel
-            async let beliefsTask = convexService.listBeliefs()
-            async let presetsTask = convexService.listTimerPresets()
-            async let settingsTask = convexService.getPromptSettings()
-
-            let (fetchedBeliefs, fetchedPresets, fetchedSettings) = try await (beliefsTask, presetsTask, settingsTask)
-
-            beliefs = fetchedBeliefs
-            timerPresets = fetchedPresets
-            promptSettings = fetchedSettings
-            lastSyncDate = Date()
-
-            // Send data to Watch after successful sync
-            watchConnectivity.sendBeliefs(beliefs)
-            watchConnectivity.sendTimerPresets(timerPresets)
-            if let settings = promptSettings {
-                watchConnectivity.sendPromptSettings(settings)
-            }
-
-            // Schedule notifications based on updated settings
-            if let settings = fetchedSettings {
-                await scheduleNotifications(settings: settings)
-            }
-
-            print("✅ Sync complete: \(beliefs.count) beliefs, \(timerPresets.count) presets")
-        } catch {
-            errorMessage = "Sync failed: \(error.localizedDescription)"
-            print("❌ Sync error: \(error)")
-        }
-
-        isLoading = false
-    }
-
-    func logMeditationSession(durationMinutes: Double) async {
-        let now = Date().timeIntervalSince1970 * 1000 // Convex uses milliseconds
-        let startedAt = now - (durationMinutes * 60 * 1000)
-
-        do {
-            let sessionId = try await convexService.logMeditationSession(
-                durationMinutes: durationMinutes,
-                startedAt: startedAt,
-                completedAt: now,
-                hasInnerTimers: false
-            )
-            print("✅ Logged meditation session: \(sessionId)")
-        } catch {
-            errorMessage = "Failed to log session: \(error.localizedDescription)"
-            print("❌ Session logging error: \(error)")
+        // Schedule initial notifications (3 per day, 8am-10pm)
+        Task {
+            await scheduleNotifications()
         }
     }
 
-    func logPromptResponse(inTheView: Bool) async {
-        let now = Date().timeIntervalSince1970 * 1000 // Convex uses milliseconds
+    // MARK: - Prompt Response Handling
+
+    func logPromptResponse(
+        initialAnswer: String,
+        gateExerciseResult: String?,
+        finalState: String,
+        voiceNoteDuration: Double?
+    ) async {
+        let now = Date().timeIntervalSince1970 * 1000 // milliseconds
 
         do {
-            let responseId = try await convexService.logPromptResponse(
-                inTheView: inTheView,
-                respondedAt: now
+            let response = try await apiService.logPromptResponse(
+                respondedAt: now,
+                initialAnswer: initialAnswer,
+                gateExerciseResult: gateExerciseResult,
+                finalState: finalState,
+                voiceNoteDuration: voiceNoteDuration
             )
-            print("✅ Logged prompt response: \(responseId)")
+            print("✅ Logged prompt response: \(response.id ?? "unknown")")
         } catch {
             errorMessage = "Failed to log response: \(error.localizedDescription)"
             print("❌ Response logging error: \(error)")
-        }
-    }
-
-    func createBelief(text: String) async {
-        do {
-            let beliefId = try await convexService.createBelief(text: text)
-            print("✅ Created belief: \(beliefId)")
-            // Refresh beliefs after creating
-            await syncAll()
-        } catch {
-            errorMessage = "Failed to create belief: \(error.localizedDescription)"
-            print("❌ Belief creation error: \(error)")
-        }
-    }
-
-    func createTimerPreset(durationMinutes: Double, label: String?) async {
-        do {
-            let presetId = try await convexService.createTimerPreset(durationMinutes: durationMinutes, label: label)
-            print("✅ Created timer preset: \(presetId)")
-            await syncAll()
-        } catch {
-            errorMessage = "Failed to create preset: \(error.localizedDescription)"
-            print("❌ Preset creation error: \(error)")
         }
     }
 
@@ -130,54 +51,37 @@ class SyncViewModel: ObservableObject {
             guard let self = self else { return }
 
             Task { @MainActor in
-                switch messageType {
-                case "meditationSession":
-                    if let durationMinutes = data["durationMinutes"] as? Double {
-                        await self.logMeditationSession(durationMinutes: durationMinutes)
-                    }
+                if messageType == "promptResponseV2" {
+                    let initialAnswer = data["initialAnswer"] as? String ?? "in_view"
+                    let gateExerciseResult = data["gateExerciseResult"] as? String
+                    let finalState = data["finalState"] as? String ?? "reflection_complete"
+                    let voiceNoteDuration = data["voiceNoteDuration"] as? Double
 
-                case "promptResponse":
-                    if let inTheView = data["inTheView"] as? Bool {
-                        await self.logPromptResponse(inTheView: inTheView)
-                    }
-
-                case "newBelief":
-                    if let text = data["text"] as? String {
-                        await self.createBelief(text: text)
-                    }
-
-                default:
-                    print("⚠️ Unknown message type: \(messageType)")
+                    await self.logPromptResponse(
+                        initialAnswer: initialAnswer,
+                        gateExerciseResult: gateExerciseResult,
+                        finalState: finalState,
+                        voiceNoteDuration: voiceNoteDuration
+                    )
                 }
             }
         }
     }
 
-    private func startPeriodicSync() {
-        // Initial sync
-        Task {
-            await syncAll()
-        }
-
-        // Periodic sync every 30 seconds
-        syncTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                await self?.syncAll()
-            }
-        }
-    }
-
-    private func scheduleNotifications(settings: PromptSettings) async {
+    private func scheduleNotifications() async {
         do {
-            // Check if we have permission
             let status = await notificationService.checkAuthorizationStatus()
             guard status == .authorized else {
-                print("⚠️ Notifications not authorized - skipping scheduling")
+                print("⚠️ Notifications not authorized")
                 return
             }
 
-            // Schedule notifications
-            try await notificationService.schedulePromptNotifications(settings: settings)
+            // Schedule 3 prompts per day between 8am and 10pm
+            try await notificationService.schedulePromptNotifications(
+                count: 3,
+                startHour: 8,
+                endHour: 22
+            )
         } catch {
             print("❌ Failed to schedule notifications: \(error)")
         }

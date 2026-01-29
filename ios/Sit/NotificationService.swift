@@ -23,13 +23,9 @@ class NotificationService {
 
     // MARK: - Notification Scheduling
 
-    func schedulePromptNotifications(settings: PromptSettings) async throws {
+    func schedulePromptNotifications(count: Int, startHour: Int, endHour: Int) async throws {
         // Cancel existing notifications
         await cancelAllPromptNotifications()
-
-        let count = Int(settings.promptsPerDay)
-        let startHour = Int(settings.wakingHourStart)
-        let endHour = Int(settings.wakingHourEnd)
 
         print("📅 Scheduling \(count) notifications between \(startHour):00 and \(endHour):00")
 
@@ -38,7 +34,7 @@ class NotificationService {
             count: count,
             startHour: startHour,
             endHour: endHour,
-            daysAhead: 2 // Schedule for today and tomorrow
+            daysAhead: 2
         )
 
         // Schedule each notification
@@ -49,7 +45,6 @@ class NotificationService {
             content.sound = .default
             content.categoryIdentifier = "PROMPT_CATEGORY"
 
-            // Use calendar trigger for specific date/time
             let components = Calendar.current.dateComponents(
                 [.year, .month, .day, .hour, .minute],
                 from: date
@@ -70,43 +65,25 @@ class NotificationService {
     }
 
     func cancelAllPromptNotifications() async {
-        // Get all pending notifications
         let pendingRequests = await notificationCenter.pendingNotificationRequests()
-
-        // Filter for prompt notifications
         let promptIdentifiers = pendingRequests
             .filter { $0.identifier.hasPrefix(notificationIdentifierPrefix) }
             .map { $0.identifier }
-
-        // Cancel them
         notificationCenter.removePendingNotificationRequests(withIdentifiers: promptIdentifiers)
-
         print("🗑️ Cancelled \(promptIdentifiers.count) pending notifications")
-    }
-
-    func listPendingNotifications() async -> [UNNotificationRequest] {
-        let requests = await notificationCenter.pendingNotificationRequests()
-        return requests.filter { $0.identifier.hasPrefix(notificationIdentifierPrefix) }
     }
 
     // MARK: - Private Helpers
 
-    private func generateRandomTimes(
-        count: Int,
-        startHour: Int,
-        endHour: Int,
-        daysAhead: Int
-    ) -> [Date] {
+    private func generateRandomTimes(count: Int, startHour: Int, endHour: Int, daysAhead: Int) -> [Date] {
         var times: [Date] = []
         let calendar = Calendar.current
 
         for dayOffset in 0..<daysAhead {
-            // Get the target day
             guard let targetDay = calendar.date(byAdding: .day, value: dayOffset, to: Date()) else {
                 continue
             }
 
-            // Create start and end times for this day
             var startComponents = calendar.dateComponents([.year, .month, .day], from: targetDay)
             startComponents.hour = startHour
             startComponents.minute = 0
@@ -120,43 +97,28 @@ class NotificationService {
                 continue
             }
 
-            // Skip if the time window has already passed for today
             if dayOffset == 0 && Date() > endTime {
-                print("⚠️ Skipping today - waking hours already passed")
                 continue
             }
 
-            // Calculate time window in seconds
             let windowStart = dayOffset == 0 ? max(Date().timeIntervalSince1970, startTime.timeIntervalSince1970) : startTime.timeIntervalSince1970
             let windowEnd = endTime.timeIntervalSince1970
             let windowDuration = windowEnd - windowStart
 
-            guard windowDuration > 0 else {
-                print("⚠️ No valid time window for day offset \(dayOffset)")
-                continue
-            }
+            guard windowDuration > 0 else { continue }
 
-            // Divide window into equal segments for even distribution
             let segmentDuration = windowDuration / Double(count)
 
-            // Generate one random time in each segment
             for i in 0..<count {
                 let segmentStart = windowStart + (segmentDuration * Double(i))
-                let segmentEnd = segmentStart + segmentDuration
-
-                // Add some randomness within each segment (±30% of segment duration)
                 let randomOffset = Double.random(in: 0...(segmentDuration * 0.6)) - (segmentDuration * 0.3)
                 let randomTime = segmentStart + (segmentDuration / 2) + randomOffset
-
-                // Clamp to valid window
                 let clampedTime = min(max(randomTime, windowStart), windowEnd)
                 let date = Date(timeIntervalSince1970: clampedTime)
-
                 times.append(date)
             }
         }
 
-        // Sort chronologically
         return times.sorted()
     }
 }
