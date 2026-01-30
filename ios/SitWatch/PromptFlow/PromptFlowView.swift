@@ -17,15 +17,17 @@ struct PromptFlowResponse {
     var gateExerciseResult: String? = nil  // "worked" | "didnt_work"
     var finalState: String = ""  // "reflection_complete" | "voice_note_recorded"
     var voiceNoteDuration: Double? = nil
+    var voiceNoteURL: URL? = nil
 }
 
 // MARK: - Main Flow Container
 
 struct PromptFlowView: View {
-    @EnvironmentObject var viewModel: WatchViewModel
+    @StateObject private var queue = ResponseQueue.shared
     @State private var currentStep: PromptFlowStep = .step1_inTheView
     @State private var response = PromptFlowResponse()
     @State private var showCompletion = false
+    @State private var wasQueued = false
 
     var body: some View {
         NavigationView {
@@ -71,46 +73,60 @@ struct PromptFlowView: View {
                     .transition(.opacity)
 
                 case .step4_voiceNote:
-                    Step4VoiceNoteView(onComplete: { duration in
+                    Step4VoiceNoteView(onComplete: { duration, fileURL in
                         response.voiceNoteDuration = duration
+                        response.voiceNoteURL = fileURL
                         response.finalState = "voice_note_recorded"
                         submitResponse()
                     }, onSkip: {
-                        response.finalState = "voice_note_recorded"
+                        response.finalState = "voice_note_skipped"
                         submitResponse()
                     })
                     .transition(.opacity)
                 }
             }
             .navigationTitle("Prompt")
-            .alert("Complete", isPresented: $showCompletion) {
+            .alert(wasQueued ? "Saved Offline" : "Complete", isPresented: $showCompletion) {
                 Button("OK") {
                     resetFlow()
                 }
             } message: {
-                Text("Response logged")
+                Text(wasQueued ? "Will sync when online" : "Response logged")
+            }
+        }
+        .onAppear {
+            // Sync any pending responses when app opens
+            Task {
+                await queue.syncPending()
             }
         }
     }
 
     private func submitResponse() {
-        viewModel.logPromptResponseV2(
-            initialAnswer: response.initialAnswer,
-            gateExerciseResult: response.gateExerciseResult,
-            finalState: response.finalState,
-            voiceNoteDuration: response.voiceNoteDuration
-        )
-        WKInterfaceDevice.current().play(.success)
-        showCompletion = true
+        Task {
+            let sentImmediately = await queue.submit(
+                initialAnswer: response.initialAnswer,
+                gateExerciseResult: response.gateExerciseResult,
+                finalState: response.finalState,
+                voiceNoteDuration: response.voiceNoteDuration,
+                voiceNoteURL: response.voiceNoteURL
+            )
+
+            await MainActor.run {
+                wasQueued = !sentImmediately
+                WKInterfaceDevice.current().play(sentImmediately ? .success : .click)
+                showCompletion = true
+            }
+        }
     }
 
     private func resetFlow() {
         response = PromptFlowResponse()
         currentStep = .step1_inTheView
+        wasQueued = false
     }
 }
 
 #Preview {
     PromptFlowView()
-        .environmentObject(WatchViewModel())
 }

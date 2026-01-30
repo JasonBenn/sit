@@ -3,7 +3,7 @@ import AVFoundation
 import WatchKit
 
 struct Step4VoiceNoteView: View {
-    var onComplete: (Double?) -> Void
+    var onComplete: (Double?, URL?) -> Void
     var onSkip: () -> Void
 
     @State private var isRecording = false
@@ -136,20 +136,8 @@ struct Step4VoiceNoteView: View {
 
         WKInterfaceDevice.current().play(.stop)
 
-        // Transfer the file to iPhone for upload
-        if let url = recordingURL {
-            transferVoiceNote(url: url)
-        }
-
-        onComplete(recordingDuration)
-    }
-
-    private func transferVoiceNote(url: URL) {
-        // File transfer handled via WCSession.transferFile in WatchViewModel
-        // For now, just log it - the actual transfer will be implemented
-        // when we integrate with the iPhone app
-        print("Voice note recorded at: \(url)")
-        print("Duration: \(recordingDuration) seconds")
+        // Pass both duration and file URL for upload
+        onComplete(recordingDuration, recordingURL)
     }
 
     private func cleanupRecording() {
@@ -160,5 +148,5 @@ struct Step4VoiceNoteView: View {
 }
 
 #Preview {
-    Step4VoiceNoteView(onComplete: { _ in }, onSkip: {})
+    Step4VoiceNoteView(onComplete: { _, _ in }, onSkip: {})
 }

@@ -4,7 +4,7 @@ enum APIError: Error {
     case invalidURL
     case networkError(Error)
     case decodingError(Error)
-    case serverError(String)
+    case serverError(Int, String)
 }
 
 class APIService {
@@ -12,21 +12,22 @@ class APIService {
 
     private let baseURL = "https://sit.jasonbenn.com"
 
-    // MARK: - Prompt Responses
-
     func logPromptResponse(
         respondedAt: Double,
         initialAnswer: String,
         gateExerciseResult: String?,
         finalState: String,
-        voiceNoteDuration: Double?
-    ) async throws -> PromptResponseV2 {
+        voiceNoteDuration: Double?,
+        voiceNoteURL: URL? = nil
+    ) async throws {
         guard let url = URL(string: "\(baseURL)/api/prompt-responses") else {
             throw APIError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        // Increase timeout for file uploads
+        request.timeoutInterval = voiceNoteURL != nil ? 60 : 10
 
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -51,24 +52,28 @@ class APIService {
             addField("voice_note_duration_seconds", String(duration))
         }
 
+        // Add voice note file if present
+        if let fileURL = voiceNoteURL, let fileData = try? Data(contentsOf: fileURL) {
+            data.append("--\(boundary)\r\n".data(using: .utf8)!)
+            data.append("Content-Disposition: form-data; name=\"voice_note\"; filename=\"\(fileURL.lastPathComponent)\"\r\n".data(using: .utf8)!)
+            data.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
+            data.append(fileData)
+            data.append("\r\n".data(using: .utf8)!)
+        }
+
         data.append("--\(boundary)--\r\n".data(using: .utf8)!)
         request.httpBody = data
 
-        do {
-            let (responseData, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                throw APIError.serverError("Invalid response")
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(PromptResponseV2.self, from: responseData)
-        } catch let error as DecodingError {
-            throw APIError.decodingError(error)
-        } catch {
-            throw APIError.networkError(error)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.serverError(0, "Invalid response")
         }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.serverError(httpResponse.statusCode, "Server error")
+        }
+
+        print("✅ Response logged to API")
     }
 }
