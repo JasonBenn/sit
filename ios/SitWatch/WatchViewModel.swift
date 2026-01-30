@@ -54,6 +54,37 @@ class WatchViewModel: NSObject, ObservableObject {
 
         print("⌚ Sent prompt response V2 to iPhone: \(responseData)")
     }
+
+    // MARK: - Send Meditation Session to iOS
+
+    func logMeditationSession(
+        durationMinutes: Int,
+        startedAt: Double,
+        completedAt: Double,
+        hasInnerTimers: Bool
+    ) {
+        guard let session = session, session.isReachable else {
+            print("⚠️ iPhone not reachable")
+            return
+        }
+
+        let sessionData: [String: Any] = [
+            "durationMinutes": durationMinutes,
+            "startedAt": startedAt,
+            "completedAt": completedAt,
+            "hasInnerTimers": hasInnerTimers
+        ]
+
+        let message: [String: Any] = [
+            "meditationSession": sessionData
+        ]
+
+        session.sendMessage(message, replyHandler: nil) { error in
+            print("❌ Error sending meditation session: \(error.localizedDescription)")
+        }
+
+        print("⌚ Sent meditation session to iPhone: \(sessionData)")
+    }
 }
 
 // MARK: - WCSessionDelegate

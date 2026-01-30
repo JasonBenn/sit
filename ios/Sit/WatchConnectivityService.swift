@@ -64,6 +64,11 @@ extension WatchConnectivityService: WCSessionDelegate {
             if let responseData = message["promptResponseV2"] as? [String: Any] {
                 onMessageReceived?("promptResponseV2", responseData)
             }
+
+            // Handle meditation session from Watch
+            if let sessionData = message["meditationSession"] as? [String: Any] {
+                onMessageReceived?("meditationSession", sessionData)
+            }
         }
     }
 }

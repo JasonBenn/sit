@@ -13,3 +13,13 @@ struct PromptResponseV2: Codable, Identifiable {
     let transcriptionStatus: String?
     let createdAt: Double?
 }
+
+// MARK: - Meditation Session Model
+struct MeditationSession: Codable, Identifiable {
+    let id: String?
+    let durationMinutes: Int
+    let startedAt: Double      // ms timestamp
+    let completedAt: Double    // ms timestamp
+    let hasInnerTimers: Bool
+    let createdAt: Double?
+}

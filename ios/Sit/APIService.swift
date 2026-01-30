@@ -80,7 +80,53 @@ class APIService {
         }
     }
 
+    // MARK: - Meditation Sessions
+
+    func logMeditationSession(
+        durationMinutes: Int,
+        startedAt: Double,
+        completedAt: Double,
+        hasInnerTimers: Bool
+    ) async throws -> MeditationSession {
+        let body: [String: Any] = [
+            "duration_minutes": durationMinutes,
+            "started_at": startedAt,
+            "completed_at": completedAt,
+            "has_inner_timers": hasInnerTimers
+        ]
+        return try await post("/api/meditation-sessions", body: body)
+    }
+
     // MARK: - Generic HTTP Methods
+
+    private func post<T: Codable>(_ path: String, body: [String: Any]) async throws -> T {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw APIError.serverError("Invalid response")
+            }
+
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(T.self, from: data)
+        } catch let error as DecodingError {
+            throw APIError.decodingError(error)
+        } catch {
+            throw APIError.networkError(error)
+        }
+    }
 
     private func get<T: Codable>(_ path: String) async throws -> T {
         guard let url = URL(string: "\(baseURL)\(path)") else {

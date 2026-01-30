@@ -44,6 +44,28 @@ class SyncViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Meditation Session Handling
+
+    func logMeditationSession(
+        durationMinutes: Int,
+        startedAt: Double,
+        completedAt: Double,
+        hasInnerTimers: Bool
+    ) async {
+        do {
+            let session = try await apiService.logMeditationSession(
+                durationMinutes: durationMinutes,
+                startedAt: startedAt,
+                completedAt: completedAt,
+                hasInnerTimers: hasInnerTimers
+            )
+            print("✅ Logged meditation session: \(session.id ?? "unknown")")
+        } catch {
+            errorMessage = "Failed to log session: \(error.localizedDescription)"
+            print("❌ Session logging error: \(error)")
+        }
+    }
+
     // MARK: - Private Methods
 
     private func setupWatchMessageHandler() {
@@ -62,6 +84,18 @@ class SyncViewModel: ObservableObject {
                         gateExerciseResult: gateExerciseResult,
                         finalState: finalState,
                         voiceNoteDuration: voiceNoteDuration
+                    )
+                } else if messageType == "meditationSession" {
+                    let durationMinutes = data["durationMinutes"] as? Int ?? 0
+                    let startedAt = data["startedAt"] as? Double ?? 0
+                    let completedAt = data["completedAt"] as? Double ?? 0
+                    let hasInnerTimers = data["hasInnerTimers"] as? Bool ?? false
+
+                    await self.logMeditationSession(
+                        durationMinutes: durationMinutes,
+                        startedAt: startedAt,
+                        completedAt: completedAt,
+                        hasInnerTimers: hasInnerTimers
                     )
                 }
             }
