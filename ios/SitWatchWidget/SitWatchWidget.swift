@@ -41,11 +41,9 @@ struct SitWidgetView: View {
             Label("Sit", systemImage: "figure.mind.and.body")
         case .accessoryCorner:
             Image(systemName: "figure.mind.and.body")
-                .font(.title)
+                .font(.system(size: 24))
+                .fontWeight(.medium)
                 .widgetAccentable()
-                .widgetLabel {
-                    Text("Sit")
-                }
         default:
             Image(systemName: "figure.mind.and.body")
                 .font(.title)
