@@ -17,3 +17,9 @@ xcuserdata/
 
 # Build artifacts
 web/dist/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.db

@@ -1,0 +1,19 @@
+# Save this to /etc/systemd/system/sit.service
+# Then: sudo systemctl daemon-reload
+# Then: sudo systemctl enable sit
+# Then: sudo systemctl start sit
+
+[Unit]
+Description=Sit meditation API
+After=network.target postgresql.service
+
+[Service]
+User=jason
+WorkingDirectory=/opt/sit
+Environment=PATH=/opt/sit/.venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/opt/sit/.venv/bin/uvicorn app.server:app --host 0.0.0.0 --port 8005
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
