@@ -16,7 +16,7 @@ if sentry_dsn:
     )
 
 from app.db import init_db
-from app.routers import beliefs, timer_presets, prompt_settings, meditation_sessions, prompt_responses
+from app.routers import prompt_responses
 
 app = FastAPI(title="Sit API", description="Meditation tracking backend")
 
@@ -29,11 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(beliefs.router)
-app.include_router(timer_presets.router)
-app.include_router(prompt_settings.router)
-app.include_router(meditation_sessions.router)
 app.include_router(prompt_responses.router)
 
 

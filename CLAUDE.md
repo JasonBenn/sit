@@ -24,11 +24,9 @@ This will:
 
 ## API Endpoints
 
-- `/api/prompt-responses` - Log and list prompt responses (with voice note upload/transcription)
-- `/api/beliefs` - CRUD for limiting beliefs
-- `/api/timer-presets` - Meditation timer presets
-- `/api/prompt-settings` - Prompt frequency settings
-- `/api/meditation-sessions` - Log meditation sessions
+- `GET /api/prompt-responses` - List prompt responses
+- `POST /api/prompt-responses` - Log a prompt response (with voice note upload/transcription)
+- `DELETE /api/prompt-responses/{id}` - Delete a prompt response
 
 ## Error Handling
 

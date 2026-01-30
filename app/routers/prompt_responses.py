@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 import os
 import tempfile
 import boto3
 import openai
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPException
 from sqlmodel import Session, select
 from app.db import get_session
 from app.models import PromptResponse
@@ -104,3 +105,24 @@ async def log_prompt_response(
     session.refresh(response)
 
     return response
+
+
+@router.delete("/{response_id}")
+def delete_prompt_response(
+    response_id: UUID,
+    session: Session = Depends(get_session)
+) -> dict:
+    response = session.get(PromptResponse, response_id)
+    if not response:
+        raise HTTPException(status_code=404, detail="Prompt response not found")
+
+    # Delete S3 object if exists
+    if response.voice_note_s3_url:
+        s3_client = get_s3_client()
+        # Parse s3://bucket/key format
+        s3_key = response.voice_note_s3_url.replace(f"s3://{S3_BUCKET}/", "")
+        s3_client.delete_object(Bucket=S3_BUCKET, Key=s3_key)
+
+    session.delete(response)
+    session.commit()
+    return {"deleted": True}
