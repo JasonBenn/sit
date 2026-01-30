@@ -24,8 +24,11 @@ This will:
 
 ## API Endpoints
 
-- `POST /api/prompt-responses` - Log a prompt response
-- `GET /api/prompt-responses` - List prompt responses
+- `/api/prompt-responses` - Log and list prompt responses (with voice note upload/transcription)
+- `/api/beliefs` - CRUD for limiting beliefs
+- `/api/timer-presets` - Meditation timer presets
+- `/api/prompt-settings` - Prompt frequency settings
+- `/api/meditation-sessions` - Log meditation sessions
 
 ## Error Handling
 
