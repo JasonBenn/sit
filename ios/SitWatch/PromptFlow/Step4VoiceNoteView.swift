@@ -7,6 +7,7 @@ struct Step4VoiceNoteView: View {
     var onSkip: () -> Void
 
     @State private var isRecording = false
+    @State private var isStartingRecording = false
     @State private var recordingDuration: Double = 0
     @State private var audioRecorder: AVAudioRecorder?
     @State private var recordingURL: URL?
@@ -56,6 +57,10 @@ struct Step4VoiceNoteView: View {
                             .cornerRadius(12)
                         }
                         .buttonStyle(.plain)
+                    } else if isStartingRecording {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     } else {
                         Button(action: startRecording) {
                             HStack {
@@ -97,34 +102,45 @@ struct Step4VoiceNoteView: View {
     }
 
     private func startRecording() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.playAndRecord, mode: .default)
-            try session.setActive(true)
+        isStartingRecording = true
+        Task {
+            let session = AVAudioSession.sharedInstance()
+            do {
+                try session.setCategory(.playAndRecord, mode: .default)
+                try session.setActive(true)
 
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("voice_note_\(Date().timeIntervalSince1970).m4a")
-            recordingURL = url
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("voice_note_\(Date().timeIntervalSince1970).m4a")
 
-            let settings: [String: Any] = [
-                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 44100,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ]
+                let settings: [String: Any] = [
+                    AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                    AVSampleRateKey: 44100,
+                    AVNumberOfChannelsKey: 1,
+                    AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                ]
 
-            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
-            audioRecorder?.record()
-            isRecording = true
-            recordingDuration = 0
+                let recorder = try AVAudioRecorder(url: url, settings: settings)
+                recorder.record()
 
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                recordingDuration += 1
+                await MainActor.run {
+                    audioRecorder = recorder
+                    recordingURL = url
+                    isRecording = true
+                    isStartingRecording = false
+                    recordingDuration = 0
+
+                    timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+                        recordingDuration += 1
+                    }
+                }
+
+                WKInterfaceDevice.current().play(.start)
+            } catch {
+                await MainActor.run {
+                    isStartingRecording = false
+                }
+                print("Failed to start recording: \(error)")
             }
-
-            WKInterfaceDevice.current().play(.start)
-        } catch {
-            print("Failed to start recording: \(error)")
         }
     }
 

@@ -26,8 +26,8 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        // Increase timeout for file uploads
-        request.timeoutInterval = voiceNoteURL != nil ? 60 : 10
+        // Shorter timeouts for snappier offline detection
+        request.timeoutInterval = voiceNoteURL != nil ? 30 : 5
 
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")

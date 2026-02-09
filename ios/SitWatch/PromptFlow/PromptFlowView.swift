@@ -28,6 +28,7 @@ struct PromptFlowView: View {
     @State private var response = PromptFlowResponse()
     @State private var showCompletion = false
     @State private var wasQueued = false
+    @State private var isSubmitting = false
 
     var body: some View {
         NavigationView {
@@ -86,6 +87,20 @@ struct PromptFlowView: View {
                 }
             }
             .navigationTitle("Prompt")
+            .overlay {
+                if isSubmitting {
+                    ZStack {
+                        Color.black.opacity(0.6)
+                            .ignoresSafeArea()
+                        VStack(spacing: 8) {
+                            ProgressView()
+                            Text("Submitting...")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+            }
             .alert(wasQueued ? "Saved Offline" : "Complete", isPresented: $showCompletion) {
                 Button("OK") {
                     resetFlow()
@@ -103,6 +118,7 @@ struct PromptFlowView: View {
     }
 
     private func submitResponse() {
+        isSubmitting = true
         Task {
             let sentImmediately = await queue.submit(
                 initialAnswer: response.initialAnswer,
@@ -113,6 +129,7 @@ struct PromptFlowView: View {
             )
 
             await MainActor.run {
+                isSubmitting = false
                 wasQueued = !sentImmediately
                 WKInterfaceDevice.current().play(sentImmediately ? .success : .click)
                 showCompletion = true
