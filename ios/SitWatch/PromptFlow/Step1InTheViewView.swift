@@ -9,8 +9,7 @@ struct Step1InTheViewView: View {
             Spacer()
 
             Text("Are you in the View?")
-                .font(.title3)
-                .fontWeight(.bold)
+                .font(.headline)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
