@@ -21,6 +21,7 @@ struct PromptFlowResponse {
 // MARK: - Main Flow Container
 
 struct PromptFlowView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var currentStep: PromptFlowStep = .step1_inTheView
     @State private var response = PromptFlowResponse()
     @State private var showCompletion = false
@@ -88,6 +89,11 @@ struct PromptFlowView: View {
             Text("Response logged")
         }
         .disabled(isSubmitting)
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                resetFlow()
+            }
+        }
     }
 
     private func submitResponse() {
@@ -121,6 +127,7 @@ struct PromptFlowView: View {
     private func resetFlow() {
         response = PromptFlowResponse()
         currentStep = .step1_inTheView
+        isSubmitting = false
     }
 }
 

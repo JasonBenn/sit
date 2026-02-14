@@ -23,6 +23,7 @@ struct PromptFlowResponse {
 // MARK: - Main Flow Container
 
 struct PromptFlowView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var queue = ResponseQueue.shared
     @State private var currentStep: PromptFlowStep = .step1_inTheView
     @State private var response = PromptFlowResponse()
@@ -115,6 +116,11 @@ struct PromptFlowView: View {
                 await queue.syncPending()
             }
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                resetFlow()
+            }
+        }
     }
 
     private func submitResponse() {
@@ -140,6 +146,7 @@ struct PromptFlowView: View {
     private func resetFlow() {
         response = PromptFlowResponse()
         currentStep = .step1_inTheView
+        isSubmitting = false
         wasQueued = false
     }
 }
