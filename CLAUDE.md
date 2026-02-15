@@ -2,18 +2,22 @@
 
 Meditation prompt flow app for iOS and watchOS.
 
-## Deployment
-
-When pushing changes, run the deploy script to update the backend:
-
-```bash
-ssh jason "cd /opt/sit && git pull && source .venv/bin/activate && python -m alembic upgrade head && sudo systemctl restart sit"
+```yaml
+# Claude Code Config
+deployCommand: |
+  ssh jason "cd /opt/sit && git pull && source .venv/bin/activate && python -m alembic upgrade head && sudo systemctl restart sit"
+  if xcrun simctl list devices | grep -q Booted; then
+    cd ios && xcodebuild -project Sit.xcodeproj -scheme Sit -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | tail -5 && xcrun simctl launch --terminate-existing booted com.jasonbenn.sit
+  fi
 ```
 
-This will:
+## Deployment
+
+The deploy command (run by `/ship`) does:
 1. Pull latest changes on the server
 2. Run any pending database migrations
 3. Restart the sit service
+4. If an iOS simulator is booted, rebuild and relaunch the app
 
 ## Architecture
 

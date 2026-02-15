@@ -19,11 +19,13 @@ enum Theme {
 
     // Font helpers
     static func display(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .custom("CormorantGaramond-Regular", size: size)
+        let name = weight == .light ? "CormorantGaramond-Light" : "CormorantGaramond-Regular"
+        return .custom(name, size: size)
     }
 
     static func body(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .custom("Outfit-Regular", size: size)
+        let name = weight == .medium ? "Outfit-Medium" : "Outfit-Regular"
+        return .custom(name, size: size)
     }
 }
 

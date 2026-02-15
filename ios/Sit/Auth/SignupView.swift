@@ -12,36 +12,54 @@ struct SignupView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
 
-            VStack(spacing: 32) {
+            VStack(spacing: 0) {
                 Spacer()
 
-                Text("Create Account")
-                    .font(Theme.display(36))
+                Text("Sit")
+                    .font(Theme.display(56, weight: .light))
+                    .tracking(2)
                     .foregroundColor(Theme.text)
+                    .padding(.bottom, 48)
 
                 VStack(spacing: 16) {
-                    TextField("Username", text: $username)
-                        .textContentType(.username)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .padding()
-                        .background(Theme.card)
-                        .foregroundColor(Theme.text)
-                        .cornerRadius(12)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Username")
+                            .font(Theme.body(14))
+                            .foregroundColor(Theme.textMuted)
+                            .padding(.leading, 4)
+                        TextField("", text: $username)
+                            .textContentType(.username)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Theme.card)
+                            .foregroundColor(Theme.text)
+                            .cornerRadius(12)
+                    }
 
-                    SecureField("Password", text: $password)
-                        .textContentType(.newPassword)
-                        .padding()
-                        .background(Theme.card)
-                        .foregroundColor(Theme.text)
-                        .cornerRadius(12)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Password")
+                            .font(Theme.body(14))
+                            .foregroundColor(Theme.textMuted)
+                            .padding(.leading, 4)
+                        SecureField("", text: $password)
+                            .textContentType(.newPassword)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Theme.card)
+                            .foregroundColor(Theme.text)
+                            .cornerRadius(12)
+                    }
                 }
                 .padding(.horizontal, 32)
+                .padding(.bottom, 32)
 
                 if let errorMessage {
                     Text(errorMessage)
                         .font(Theme.body(14))
                         .foregroundColor(.red)
+                        .padding(.bottom, 16)
                 }
 
                 Button {
@@ -53,19 +71,18 @@ struct SignupView: View {
                                 .tint(Theme.text)
                         } else {
                             Text("Sign Up")
-                                .font(Theme.body(16, weight: .medium))
+                                .font(Theme.body(18, weight: .medium))
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
+                    .padding(.vertical, 16)
                     .background(Theme.sage)
                     .foregroundColor(Theme.text)
                     .cornerRadius(12)
                 }
                 .disabled(isLoading || username.isEmpty || password.isEmpty)
                 .padding(.horizontal, 32)
-
-                Spacer()
+                .padding(.bottom, 16)
 
                 Button {
                     showSignup = false
@@ -77,10 +94,7 @@ struct SignupView: View {
                 }
                 .font(Theme.body(14))
 
-                Text("Questions? jason@jasonbenn.com")
-                    .font(Theme.body(12))
-                    .foregroundColor(Theme.textDim)
-                    .padding(.bottom, 16)
+                Spacer()
             }
         }
     }

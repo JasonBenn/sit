@@ -137,28 +137,19 @@ struct HomeView: View {
             } else {
                 ZStack {
                     Theme.bg.ignoresSafeArea()
-
-                    VStack(spacing: 24) {
-                        Text("No flow selected")
-                            .font(Theme.display(24))
-                            .foregroundColor(Theme.text)
-
-                        Text("Choose a flow in Settings to start checking in.")
-                            .font(Theme.body(16))
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .tint(Theme.textMuted)
+                        Text("Loading flow...")
+                            .font(Theme.body(14))
                             .foregroundColor(Theme.textMuted)
-                            .multilineTextAlignment(.center)
-
-                        Button { showFlow = false } label: {
-                            Text("Close")
-                                .font(Theme.body(16, weight: .medium))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 32)
-                                .padding(.vertical, 12)
-                                .background(Theme.sage)
-                                .cornerRadius(12)
-                        }
                     }
-                    .padding(32)
+                }
+                .task {
+                    await authManager.refreshUser()
+                    if currentFlow == nil {
+                        showFlow = false
+                    }
                 }
             }
         }

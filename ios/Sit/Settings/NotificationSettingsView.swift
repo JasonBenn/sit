@@ -69,9 +69,9 @@ struct NotificationSettingsView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             if let user = authManager.user {
-                count = user.notificationCount
-                startHour = user.notificationStartHour
-                endHour = user.notificationEndHour
+                count = user.notificationCount ?? 3
+                startHour = user.notificationStartHour ?? 8
+                endHour = user.notificationEndHour ?? 20
             }
         }
         .onChange(of: count) { save() }

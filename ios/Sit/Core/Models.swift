@@ -74,9 +74,9 @@ struct UserProfile: Codable {
     let id: String
     let username: String
     var currentFlowId: String?
-    var notificationCount: Int
-    var notificationStartHour: Int
-    var notificationEndHour: Int
+    var notificationCount: Int?
+    var notificationStartHour: Int?
+    var notificationEndHour: Int?
     var conversationStarters: [String]?
     var hasSeenOnboarding: Bool
     var currentFlow: FlowDefinition?

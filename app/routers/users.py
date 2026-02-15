@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.db import get_session
 from app.auth import get_current_user
 from app.models import User, Flow
+from app.default_flow import DEFAULT_FLOW_NAME, DEFAULT_FLOW_DESCRIPTION, DEFAULT_FLOW_STEPS
 
 router = APIRouter(prefix="/api/me", tags=["users"])
 
@@ -68,6 +69,29 @@ def get_profile(
                 source_flow_name=flow.source_flow_name,
                 visibility=flow.visibility,
             )
+
+    if not current_flow:
+        flow = Flow(
+            user_id=user.id,
+            name=DEFAULT_FLOW_NAME,
+            description=DEFAULT_FLOW_DESCRIPTION,
+            steps_json=DEFAULT_FLOW_STEPS,
+        )
+        session.add(flow)
+        session.flush()
+        user.current_flow_id = flow.id
+        session.add(user)
+        session.commit()
+        session.refresh(flow)
+        current_flow = FlowResponse(
+            id=flow.id,
+            name=flow.name,
+            description=flow.description,
+            steps_json=flow.steps_json,
+            source_username=flow.source_username,
+            source_flow_name=flow.source_flow_name,
+            visibility=flow.visibility,
+        )
 
     return UserProfileResponse(
         id=user.id,

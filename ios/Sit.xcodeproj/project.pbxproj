@@ -52,6 +52,11 @@
 		C0020009 /* TimerPresetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020009 /* TimerPresetsView.swift */; };
 		C002000A /* LiveTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002000A /* LiveTimerView.swift */; };
 		C002000B /* TimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002000B /* TimerManager.swift */; };
+/* === Font resources (Sit) === */
+		FONT0002000000000001 /* CormorantGaramond-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT0001000000000001 /* CormorantGaramond-Light.ttf */; };
+		FONT0002000000000002 /* CormorantGaramond-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT0001000000000002 /* CormorantGaramond-Regular.ttf */; };
+		FONT0002000000000003 /* Outfit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT0001000000000003 /* Outfit-Regular.ttf */; };
+		FONT0002000000000004 /* Outfit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT0001000000000004 /* Outfit-Medium.ttf */; };
 /* === Frameworks and resources === */
 		D845B8AE2F815D6085030451 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B02C031A85EABEF97DB40A3 /* Foundation.framework */; };
 		F0E11FCA2F12CB9C0024B6F1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0E11FC92F12CB9C0024B6F1 /* Assets.xcassets */; };
@@ -138,6 +143,11 @@
 		B0020009 /* TimerPresetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPresetsView.swift; sourceTree = "<group>"; };
 		B002000A /* LiveTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTimerView.swift; sourceTree = "<group>"; };
 		B002000B /* TimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerManager.swift; sourceTree = "<group>"; };
+/* === Font files === */
+		FONT0001000000000001 /* CormorantGaramond-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.ttf"; sourceTree = "<group>"; };
+		FONT0001000000000002 /* CormorantGaramond-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.ttf"; sourceTree = "<group>"; };
+		FONT0001000000000003 /* Outfit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Regular.ttf"; sourceTree = "<group>"; };
+		FONT0001000000000004 /* Outfit-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Medium.ttf"; sourceTree = "<group>"; };
 /* === Frameworks === */
 		0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		5B02C031A85EABEF97DB40A3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -213,8 +223,20 @@
 				D0010003 /* Home */,
 				D0010004 /* Settings */,
 				D0010005 /* FlowRunner */,
+				FONT0003000000000001 /* Fonts */,
 			);
 			path = Sit;
+			sourceTree = "<group>";
+		};
+		FONT0003000000000001 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				FONT0001000000000001 /* CormorantGaramond-Light.ttf */,
+				FONT0001000000000002 /* CormorantGaramond-Regular.ttf */,
+				FONT0001000000000003 /* Outfit-Regular.ttf */,
+				FONT0001000000000004 /* Outfit-Medium.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		D0010001 /* Core */ = {
@@ -393,6 +415,7 @@
 			buildPhases = (
 				AA000001 /* Sources */,
 				4A000001 /* Frameworks */,
+				FONT0004000000000001 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -469,6 +492,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				F0E11FCA2F12CB9C0024B6F1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FONT0004000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FONT0002000000000001 /* CormorantGaramond-Light.ttf in Resources */,
+				FONT0002000000000002 /* CormorantGaramond-Regular.ttf in Resources */,
+				FONT0002000000000003 /* Outfit-Regular.ttf in Resources */,
+				FONT0002000000000004 /* Outfit-Medium.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
