@@ -1,8 +1,9 @@
 import SwiftUI
 import AVFoundation
 
-struct Step4VoiceNoteView: View {
-    var onComplete: (Double?) -> Void
+struct VoiceRecorderView: View {
+    let prompt: String
+    var onSave: (Double, Data?) -> Void
     var onSkip: () -> Void
 
     @State private var isRecording = false
@@ -17,27 +18,18 @@ struct Step4VoiceNoteView: View {
 
             Image(systemName: isRecording ? "mic.fill" : "mic")
                 .font(.system(size: 64))
-                .foregroundColor(isRecording ? .red : .orange)
+                .foregroundColor(isRecording ? .red : Theme.sage)
 
-            VStack(spacing: 12) {
-                Text("What's going on?")
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .multilineTextAlignment(.center)
-
-                Text("Can you find the limiting beliefs, or would you like to do parts work?")
-                    .font(.body)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 32)
+            Text(prompt)
+                .font(Theme.display(24))
+                .foregroundColor(Theme.text)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
 
             if isRecording {
                 Text(formatDuration(recordingDuration))
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .font(.system(size: 48, weight: .bold, design: .monospaced))
                     .foregroundColor(.red)
-                    .monospacedDigit()
             }
 
             Spacer()
@@ -45,12 +37,10 @@ struct Step4VoiceNoteView: View {
             VStack(spacing: 16) {
                 if isRecording {
                     Button(action: stopRecording) {
-                        HStack {
+                        HStack(spacing: 8) {
                             Image(systemName: "stop.fill")
-                                .font(.headline)
                             Text("Stop & Save")
-                                .font(.headline)
-                                .fontWeight(.semibold)
+                                .font(Theme.body(16))
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -61,25 +51,23 @@ struct Step4VoiceNoteView: View {
                     .buttonStyle(.plain)
                 } else {
                     Button(action: startRecording) {
-                        HStack {
+                        HStack(spacing: 8) {
                             Image(systemName: "mic.fill")
-                                .font(.headline)
                             Text("Record")
-                                .font(.headline)
-                                .fontWeight(.semibold)
+                                .font(Theme.body(16))
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
-                        .background(Color.orange)
+                        .background(Theme.sage)
                         .cornerRadius(16)
                     }
                     .buttonStyle(.plain)
 
                     Button(action: onSkip) {
                         Text("Skip")
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                            .font(Theme.body(14))
+                            .foregroundColor(Theme.textMuted)
                     }
                     .buttonStyle(.plain)
                 }
@@ -89,7 +77,8 @@ struct Step4VoiceNoteView: View {
             Spacer()
         }
         .onDisappear {
-            cleanupRecording()
+            audioRecorder?.stop()
+            timer?.invalidate()
         }
     }
 
@@ -139,21 +128,11 @@ struct Step4VoiceNoteView: View {
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
+        var audioData: Data?
         if let url = recordingURL {
-            print("Voice note recorded at: \(url)")
-            print("Duration: \(recordingDuration) seconds")
+            audioData = try? Data(contentsOf: url)
         }
 
-        onComplete(recordingDuration)
+        onSave(recordingDuration, audioData)
     }
-
-    private func cleanupRecording() {
-        audioRecorder?.stop()
-        timer?.invalidate()
-        timer = nil
-    }
-}
-
-#Preview {
-    Step4VoiceNoteView(onComplete: { _ in }, onSkip: {})
 }

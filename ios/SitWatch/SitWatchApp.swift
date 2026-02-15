@@ -7,6 +7,7 @@ struct SitWatchApp: App {
         WindowGroup {
             ContentView()
                 .task {
+                    WatchConnectivityManager.shared.activate()
                     WidgetCenter.shared.reloadAllTimelines()
                     await setupNotifications()
                 }

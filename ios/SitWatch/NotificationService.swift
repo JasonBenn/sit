@@ -13,7 +13,15 @@ class NotificationService {
         try await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
     }
 
-    func schedulePromptNotifications(perDay: Int = 3, startHour: Int = 7, endHour: Int = 22) async throws {
+    func schedulePromptNotifications() async throws {
+        let settings = await WatchConnectivityManager.shared.notificationSettings
+        let perDay = settings?.count ?? 3
+        let startHour = settings?.startHour ?? 9
+        let endHour = settings?.endHour ?? 22
+        try await schedulePromptNotifications(perDay: perDay, startHour: startHour, endHour: endHour)
+    }
+
+    func schedulePromptNotifications(perDay: Int, startHour: Int, endHour: Int) async throws {
         await cancelAllPromptNotifications()
 
         // Apple caps local notifications at 64 per app. Fill them all.

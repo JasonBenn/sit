@@ -1,0 +1,88 @@
+import SwiftUI
+import WatchKit
+
+struct TimerPresetsView: View {
+    @State private var customMinutes: Int = 15
+    @State private var showCustomPicker = false
+
+    private let presets: [(label: String, minutes: Int)] = [
+        ("1m", 1), ("2m", 2), ("5m", 5), ("10m", 10),
+        ("15m", 15), ("20m", 20), ("30m", 30), ("60m", 60)
+    ]
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
+    ]
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(presets, id: \.minutes) { preset in
+                    NavigationLink(destination: LiveTimerView(minutes: preset.minutes)) {
+                        Text(preset.label)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(WatchTheme.amberText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(WatchTheme.amber.opacity(0.25))
+                            .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button {
+                    WKInterfaceDevice.current().play(.click)
+                    showCustomPicker = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(WatchTheme.amberText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(WatchTheme.amber.opacity(0.15))
+                        .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 4)
+        }
+        .navigationTitle("Timers")
+        .sheet(isPresented: $showCustomPicker) {
+            NavigationStack {
+                VStack(spacing: 8) {
+                    Picker("Minutes", selection: $customMinutes) {
+                        ForEach(1...120, id: \.self) { m in
+                            Text("\(m) min").tag(m)
+                        }
+                    }
+                    .labelsHidden()
+
+                    NavigationLink(destination: LiveTimerView(minutes: customMinutes)) {
+                        Text("Start")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(WatchTheme.amber)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        showCustomPicker = false
+                    })
+                }
+                .navigationTitle("Custom")
+            }
+        }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        TimerPresetsView()
+    }
+}

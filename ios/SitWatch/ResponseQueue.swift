@@ -3,25 +3,22 @@ import Foundation
 struct QueuedResponse: Codable, Identifiable {
     let id: UUID
     let respondedAt: Double
-    let initialAnswer: String
-    let gateExerciseResult: String?
-    let finalState: String
+    let flowId: String
+    let steps: [[Int]]
     let voiceNoteDuration: Double?
     let voiceNoteFilePath: String?  // Filename in Documents/VoiceNotes/
 
     init(
         respondedAt: Double,
-        initialAnswer: String,
-        gateExerciseResult: String?,
-        finalState: String,
+        flowId: String,
+        steps: [[Int]],
         voiceNoteDuration: Double?,
         voiceNoteFilePath: String? = nil
     ) {
         self.id = UUID()
         self.respondedAt = respondedAt
-        self.initialAnswer = initialAnswer
-        self.gateExerciseResult = gateExerciseResult
-        self.finalState = finalState
+        self.flowId = flowId
+        self.steps = steps
         self.voiceNoteDuration = voiceNoteDuration
         self.voiceNoteFilePath = voiceNoteFilePath
     }
@@ -44,9 +41,8 @@ class ResponseQueue: ObservableObject {
 
     /// Submit a response - tries API first, queues if offline
     func submit(
-        initialAnswer: String,
-        gateExerciseResult: String?,
-        finalState: String,
+        flowId: String,
+        steps: [[Int]],
         voiceNoteDuration: Double?,
         voiceNoteURL: URL? = nil
     ) async -> Bool {
@@ -63,9 +59,8 @@ class ResponseQueue: ObservableObject {
 
         let response = QueuedResponse(
             respondedAt: Date().timeIntervalSince1970 * 1000,
-            initialAnswer: initialAnswer,
-            gateExerciseResult: gateExerciseResult,
-            finalState: finalState,
+            flowId: flowId,
+            steps: steps,
             voiceNoteDuration: voiceNoteDuration,
             voiceNoteFilePath: voiceNoteFilePath
         )
@@ -129,9 +124,8 @@ class ResponseQueue: ObservableObject {
     private func sendToAPI(_ response: QueuedResponse, voiceNoteURL: URL? = nil) async throws {
         try await APIService.shared.logPromptResponse(
             respondedAt: response.respondedAt,
-            initialAnswer: response.initialAnswer,
-            gateExerciseResult: response.gateExerciseResult,
-            finalState: response.finalState,
+            flowId: response.flowId,
+            steps: response.steps,
             voiceNoteDuration: response.voiceNoteDuration,
             voiceNoteURL: voiceNoteURL
         )

@@ -7,34 +7,58 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+/* === iOS (Sit) target build files === */
 		1A000001 /* SitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000001 /* SitApp.swift */; };
 		1A000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000002 /* ContentView.swift */; };
-		1A000004 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000004 /* APIService.swift */; };
-		1A000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000005 /* Models.swift */; };
-		1A000006 /* PromptFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000006 /* PromptFlowView.swift */; };
-		1A000007 /* Step1InTheViewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000007 /* Step1InTheViewView.swift */; };
-		1A000008 /* Step2ReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000008 /* Step2ReflectionView.swift */; };
-		1A000009 /* Step3GateOpeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000009 /* Step3GateOpeningView.swift */; };
-		1A00000A /* Step4VoiceNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A00000A /* Step4VoiceNoteView.swift */; };
+		C0010001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010001 /* Theme.swift */; };
+		C0010002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010002 /* Models.swift */; };
+		C0010003 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010003 /* APIService.swift */; };
+		C0010004 /* PhoneConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010004 /* PhoneConnectivityManager.swift */; };
+		C0010005 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010005 /* KeychainHelper.swift */; };
+		C0010006 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010006 /* AuthManager.swift */; };
+		C0010007 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010007 /* LoginView.swift */; };
+		C0010008 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010008 /* SignupView.swift */; };
+		C0010009 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010009 /* HomeView.swift */; };
+		C001000A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001000A /* OnboardingView.swift */; };
+		C001000B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001000B /* ChatView.swift */; };
+		C001000C /* ChatBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001000C /* ChatBubbleView.swift */; };
+		C001000D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001000D /* ChatViewModel.swift */; };
+		C001000E /* ConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001000E /* ConfirmationView.swift */; };
+		C001000F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001000F /* SettingsView.swift */; };
+		C0010010 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010010 /* NotificationSettingsView.swift */; };
+		C0010011 /* ConversationStartersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010011 /* ConversationStartersView.swift */; };
+		C0010012 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010012 /* AccountView.swift */; };
+		C0010013 /* ExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010013 /* ExploreView.swift */; };
+		C0010014 /* FlowEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010014 /* FlowEditorView.swift */; };
+		C0010015 /* FlowStepEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010015 /* FlowStepEditorView.swift */; };
+		C0010016 /* DynamicFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010016 /* DynamicFlowView.swift */; };
+		C0010017 /* DynamicStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010017 /* DynamicStepView.swift */; };
+		C0010018 /* FlowPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010018 /* FlowPreviewView.swift */; };
+		C0010019 /* VoiceRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010019 /* VoiceRecorderView.swift */; };
+/* === Watch (SitWatch) target build files === */
+		D71E6B43AC2E5F57FE07C438 /* SitWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10703FA3456E7C129B18550C /* SitWatchApp.swift */; };
 		275BD94121F8C3D7D0654A54 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */; };
-		AAAA3001BBBB3001CCCC3001 /* PromptFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */; };
-		AAAA3002BBBB3002CCCC3002 /* Step1InTheViewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7002EEEE7002FFFF7002 /* Step1InTheViewView.swift */; };
-		AAAA3003BBBB3003CCCC3003 /* Step2ReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7003EEEE7003FFFF7003 /* Step2ReflectionView.swift */; };
-		AAAA3004BBBB3004CCCC3004 /* Step3GateOpeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7004EEEE7004FFFF7004 /* Step3GateOpeningView.swift */; };
-		AAAA3005BBBB3005CCCC3005 /* Step4VoiceNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7005EEEE7005FFFF7005 /* Step4VoiceNoteView.swift */; };
 		AAAA3006BBBB3006CCCC3006 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7006EEEE7006FFFF7006 /* APIService.swift */; };
 		AAAA3007BBBB3007CCCC3007 /* ResponseQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7007EEEE7007FFFF7007 /* ResponseQueue.swift */; };
 		AAAA3008BBBB3008CCCC3008 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD7008EEEE7008FFFF7008 /* NotificationService.swift */; };
-		D71E6B43AC2E5F57FE07C438 /* SitWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10703FA3456E7C129B18550C /* SitWatchApp.swift */; };
+		C0020001 /* WatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020001 /* WatchModels.swift */; };
+		C0020002 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020002 /* WatchTheme.swift */; };
+		C0020003 /* WatchHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020003 /* WatchHomeView.swift */; };
+		C0020004 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020004 /* WatchConnectivityManager.swift */; };
+		C0020005 /* WatchDynamicFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020005 /* WatchDynamicFlowView.swift */; };
+		C0020006 /* WatchDynamicStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020006 /* WatchDynamicStepView.swift */; };
+		C0020007 /* WatchVoiceRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020007 /* WatchVoiceRecorderView.swift */; };
+		C0020008 /* WatchConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020008 /* WatchConfirmationView.swift */; };
+		C0020009 /* TimerPresetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020009 /* TimerPresetsView.swift */; };
+		C002000A /* LiveTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002000A /* LiveTimerView.swift */; };
+		C002000B /* TimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002000B /* TimerManager.swift */; };
+/* === Frameworks and resources === */
 		D845B8AE2F815D6085030451 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B02C031A85EABEF97DB40A3 /* Foundation.framework */; };
-		E5F963EACB5C361D791887BD /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */; };
-		E6F82F972C02F123D44EBEDC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 462DA20C9F59D021D7075243 /* Models.swift */; };
 		F0E11FCA2F12CB9C0024B6F1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0E11FC92F12CB9C0024B6F1 /* Assets.xcassets */; };
 		F0E11FCB2F12CBB50024B6F1 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */; };
 		F0E11FD42F1323E50024B6F1 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0E11FD32F1323E50024B6F1 /* WidgetKit.framework */; };
 		F0E11FD62F1323E50024B6F1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0E11FD52F1323E50024B6F1 /* SwiftUI.framework */; };
 		F0E11FE32F1323E70024B6F1 /* SitWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0E11FD22F1323E50024B6F1 /* SitWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		FB161477995B0F1398D7FD32 /* WatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08914FC24EE5F611D351C7B2 /* WatchViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,40 +86,65 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		08914FC24EE5F611D351C7B2 /* WatchViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchViewModel.swift; sourceTree = "<group>"; };
+/* === iOS app files === */
 		0A000001 /* Sit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
-		10703FA3456E7C129B18550C /* SitWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SitWatchApp.swift; sourceTree = "<group>"; };
-		1DDB889ABC85CFFA9EE89553 /* SitWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SitWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1FAB7B7F6A683737E0D51D18 /* SitWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SitWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A000001 /* SitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitApp.swift; sourceTree = "<group>"; };
 		2A000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		2A000004 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
-		2A000005 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		2A000006 /* PromptFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptFlowView.swift; sourceTree = "<group>"; };
-		2A000007 /* Step1InTheViewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step1InTheViewView.swift; sourceTree = "<group>"; };
-		2A000008 /* Step2ReflectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step2ReflectionView.swift; sourceTree = "<group>"; };
-		2A000009 /* Step3GateOpeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step3GateOpeningView.swift; sourceTree = "<group>"; };
-		2A00000A /* Step4VoiceNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step4VoiceNoteView.swift; sourceTree = "<group>"; };
-		39441231A0CCAF3457160D74 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3A000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		462DA20C9F59D021D7075243 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		5B02C031A85EABEF97DB40A3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F0E11FC82F12CB880024B6F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F0E11FC92F12CB9C0024B6F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F0E11FD22F1323E50024B6F1 /* SitWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SitWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		F0E11FD32F1323E50024B6F1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		F0E11FD52F1323E50024B6F1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
-		DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptFlowView.swift; sourceTree = "<group>"; };
-		DDDD7002EEEE7002FFFF7002 /* Step1InTheViewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step1InTheViewView.swift; sourceTree = "<group>"; };
-		DDDD7003EEEE7003FFFF7003 /* Step2ReflectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step2ReflectionView.swift; sourceTree = "<group>"; };
-		DDDD7004EEEE7004FFFF7004 /* Step3GateOpeningView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step3GateOpeningView.swift; sourceTree = "<group>"; };
-		DDDD7005EEEE7005FFFF7005 /* Step4VoiceNoteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Step4VoiceNoteView.swift; sourceTree = "<group>"; };
+		B0010001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B0010002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		B0010003 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		B0010004 /* PhoneConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneConnectivityManager.swift; sourceTree = "<group>"; };
+		B0010005 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		B0010006 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		B0010007 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		B0010008 /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
+		B0010009 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B001000A /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B001000B /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		B001000C /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
+		B001000D /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		B001000E /* ConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationView.swift; sourceTree = "<group>"; };
+		B001000F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B0010010 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		B0010011 /* ConversationStartersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStartersView.swift; sourceTree = "<group>"; };
+		B0010012 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		B0010013 /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreView.swift; sourceTree = "<group>"; };
+		B0010014 /* FlowEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEditorView.swift; sourceTree = "<group>"; };
+		B0010015 /* FlowStepEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowStepEditorView.swift; sourceTree = "<group>"; };
+		B0010016 /* DynamicFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicFlowView.swift; sourceTree = "<group>"; };
+		B0010017 /* DynamicStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicStepView.swift; sourceTree = "<group>"; };
+		B0010018 /* FlowPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowPreviewView.swift; sourceTree = "<group>"; };
+		B0010019 /* VoiceRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorderView.swift; sourceTree = "<group>"; };
+/* === Watch app files === */
+		1DDB889ABC85CFFA9EE89553 /* SitWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SitWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1FAB7B7F6A683737E0D51D18 /* SitWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SitWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		10703FA3456E7C129B18550C /* SitWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SitWatchApp.swift; sourceTree = "<group>"; };
+		CFECCC6ED6941AE23CCF6F6A /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		DDDD7006EEEE7006FFFF7006 /* APIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		DDDD7007EEEE7007FFFF7007 /* ResponseQueue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ResponseQueue.swift; sourceTree = "<group>"; };
 		DDDD7008EEEE7008FFFF7008 /* NotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		39441231A0CCAF3457160D74 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F0E11FC92F12CB9C0024B6F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B0020001 /* WatchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchModels.swift; sourceTree = "<group>"; };
+		B0020002 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
+		B0020003 /* WatchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHomeView.swift; sourceTree = "<group>"; };
+		B0020004 /* WatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManager.swift; sourceTree = "<group>"; };
+		B0020005 /* WatchDynamicFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDynamicFlowView.swift; sourceTree = "<group>"; };
+		B0020006 /* WatchDynamicStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDynamicStepView.swift; sourceTree = "<group>"; };
+		B0020007 /* WatchVoiceRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVoiceRecorderView.swift; sourceTree = "<group>"; };
+		B0020008 /* WatchConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConfirmationView.swift; sourceTree = "<group>"; };
+		B0020009 /* TimerPresetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPresetsView.swift; sourceTree = "<group>"; };
+		B002000A /* LiveTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTimerView.swift; sourceTree = "<group>"; };
+		B002000B /* TimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerManager.swift; sourceTree = "<group>"; };
+/* === Frameworks === */
+		0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
+		5B02C031A85EABEF97DB40A3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
+		F0E11FD22F1323E50024B6F1 /* SitWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SitWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0E11FD32F1323E50024B6F1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F0E11FD52F1323E50024B6F1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -117,6 +166,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0E11FCB2F12CBB50024B6F1 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,24 +207,74 @@
 				F0E11FC82F12CB880024B6F1 /* Assets.xcassets */,
 				2A000001 /* SitApp.swift */,
 				2A000002 /* ContentView.swift */,
-				2A000004 /* APIService.swift */,
-				2A000005 /* Models.swift */,
 				3A000001 /* Info.plist */,
-				6A000002 /* PromptFlow */,
+				D0010001 /* Core */,
+				D0010002 /* Auth */,
+				D0010003 /* Home */,
+				D0010004 /* Settings */,
+				D0010005 /* FlowRunner */,
 			);
 			path = Sit;
 			sourceTree = "<group>";
 		};
-		6A000002 /* PromptFlow */ = {
+		D0010001 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				2A000006 /* PromptFlowView.swift */,
-				2A000007 /* Step1InTheViewView.swift */,
-				2A000008 /* Step2ReflectionView.swift */,
-				2A000009 /* Step3GateOpeningView.swift */,
-				2A00000A /* Step4VoiceNoteView.swift */,
+				B0010001 /* Theme.swift */,
+				B0010002 /* Models.swift */,
+				B0010003 /* APIService.swift */,
+				B0010004 /* PhoneConnectivityManager.swift */,
 			);
-			path = PromptFlow;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		D0010002 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				B0010005 /* KeychainHelper.swift */,
+				B0010006 /* AuthManager.swift */,
+				B0010007 /* LoginView.swift */,
+				B0010008 /* SignupView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		D0010003 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				B0010009 /* HomeView.swift */,
+				B001000A /* OnboardingView.swift */,
+				B001000B /* ChatView.swift */,
+				B001000C /* ChatBubbleView.swift */,
+				B001000D /* ChatViewModel.swift */,
+				B001000E /* ConfirmationView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		D0010004 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				B001000F /* SettingsView.swift */,
+				B0010010 /* NotificationSettingsView.swift */,
+				B0010011 /* ConversationStartersView.swift */,
+				B0010012 /* AccountView.swift */,
+				B0010013 /* ExploreView.swift */,
+				B0010014 /* FlowEditorView.swift */,
+				B0010015 /* FlowStepEditorView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		D0010005 /* FlowRunner */ = {
+			isa = PBXGroup;
+			children = (
+				B0010016 /* DynamicFlowView.swift */,
+				B0010017 /* DynamicStepView.swift */,
+				B0010018 /* FlowPreviewView.swift */,
+				B0010019 /* VoiceRecorderView.swift */,
+			);
+			path = FlowRunner;
 			sourceTree = "<group>";
 		};
 		7A000001 /* Products */ = {
@@ -208,23 +308,44 @@
 				DDDD7006EEEE7006FFFF7006 /* APIService.swift */,
 				DDDD7007EEEE7007FFFF7007 /* ResponseQueue.swift */,
 				DDDD7008EEEE7008FFFF7008 /* NotificationService.swift */,
-				462DA20C9F59D021D7075243 /* Models.swift */,
+				B0020003 /* WatchHomeView.swift */,
+				B0020004 /* WatchConnectivityManager.swift */,
 				39441231A0CCAF3457160D74 /* Info.plist */,
-				GGGG8001HHHH8001IIII8001 /* PromptFlow */,
+				D0020001 /* Core */,
+				D0020002 /* FlowRunner */,
+				D0020003 /* Timers */,
 			);
 			path = SitWatch;
 			sourceTree = "<group>";
 		};
-		GGGG8001HHHH8001IIII8001 /* PromptFlow */ = {
+		D0020001 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				DDDD7001EEEE7001FFFF7001 /* PromptFlowView.swift */,
-				DDDD7002EEEE7002FFFF7002 /* Step1InTheViewView.swift */,
-				DDDD7003EEEE7003FFFF7003 /* Step2ReflectionView.swift */,
-				DDDD7004EEEE7004FFFF7004 /* Step3GateOpeningView.swift */,
-				DDDD7005EEEE7005FFFF7005 /* Step4VoiceNoteView.swift */,
+				B0020001 /* WatchModels.swift */,
+				B0020002 /* WatchTheme.swift */,
 			);
-			path = PromptFlow;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		D0020002 /* FlowRunner */ = {
+			isa = PBXGroup;
+			children = (
+				B0020005 /* WatchDynamicFlowView.swift */,
+				B0020006 /* WatchDynamicStepView.swift */,
+				B0020007 /* WatchVoiceRecorderView.swift */,
+				B0020008 /* WatchConfirmationView.swift */,
+			);
+			path = FlowRunner;
+			sourceTree = "<group>";
+		};
+		D0020003 /* Timers */ = {
+			isa = PBXGroup;
+			children = (
+				B0020009 /* TimerPresetsView.swift */,
+				B002000A /* LiveTimerView.swift */,
+				B002000B /* TimerManager.swift */,
+			);
+			path = Timers;
 			sourceTree = "<group>";
 		};
 		CC1C08C9C9FDFF701CDB236E /* iOS */ = {
@@ -369,13 +490,18 @@
 				275BD94121F8C3D7D0654A54 /* ContentView.swift in Sources */,
 				AAAA3006BBBB3006CCCC3006 /* APIService.swift in Sources */,
 				AAAA3007BBBB3007CCCC3007 /* ResponseQueue.swift in Sources */,
-				E6F82F972C02F123D44EBEDC /* Models.swift in Sources */,
-				AAAA3001BBBB3001CCCC3001 /* PromptFlowView.swift in Sources */,
-				AAAA3002BBBB3002CCCC3002 /* Step1InTheViewView.swift in Sources */,
-				AAAA3003BBBB3003CCCC3003 /* Step2ReflectionView.swift in Sources */,
-				AAAA3004BBBB3004CCCC3004 /* Step3GateOpeningView.swift in Sources */,
-				AAAA3005BBBB3005CCCC3005 /* Step4VoiceNoteView.swift in Sources */,
 				AAAA3008BBBB3008CCCC3008 /* NotificationService.swift in Sources */,
+				C0020001 /* WatchModels.swift in Sources */,
+				C0020002 /* WatchTheme.swift in Sources */,
+				C0020003 /* WatchHomeView.swift in Sources */,
+				C0020004 /* WatchConnectivityManager.swift in Sources */,
+				C0020005 /* WatchDynamicFlowView.swift in Sources */,
+				C0020006 /* WatchDynamicStepView.swift in Sources */,
+				C0020007 /* WatchVoiceRecorderView.swift in Sources */,
+				C0020008 /* WatchConfirmationView.swift in Sources */,
+				C0020009 /* TimerPresetsView.swift in Sources */,
+				C002000A /* LiveTimerView.swift in Sources */,
+				C002000B /* TimerManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,13 +511,31 @@
 			files = (
 				1A000001 /* SitApp.swift in Sources */,
 				1A000002 /* ContentView.swift in Sources */,
-				1A000004 /* APIService.swift in Sources */,
-				1A000005 /* Models.swift in Sources */,
-				1A000006 /* PromptFlowView.swift in Sources */,
-				1A000007 /* Step1InTheViewView.swift in Sources */,
-				1A000008 /* Step2ReflectionView.swift in Sources */,
-				1A000009 /* Step3GateOpeningView.swift in Sources */,
-				1A00000A /* Step4VoiceNoteView.swift in Sources */,
+				C0010001 /* Theme.swift in Sources */,
+				C0010002 /* Models.swift in Sources */,
+				C0010003 /* APIService.swift in Sources */,
+				C0010004 /* PhoneConnectivityManager.swift in Sources */,
+				C0010005 /* KeychainHelper.swift in Sources */,
+				C0010006 /* AuthManager.swift in Sources */,
+				C0010007 /* LoginView.swift in Sources */,
+				C0010008 /* SignupView.swift in Sources */,
+				C0010009 /* HomeView.swift in Sources */,
+				C001000A /* OnboardingView.swift in Sources */,
+				C001000B /* ChatView.swift in Sources */,
+				C001000C /* ChatBubbleView.swift in Sources */,
+				C001000D /* ChatViewModel.swift in Sources */,
+				C001000E /* ConfirmationView.swift in Sources */,
+				C001000F /* SettingsView.swift in Sources */,
+				C0010010 /* NotificationSettingsView.swift in Sources */,
+				C0010011 /* ConversationStartersView.swift in Sources */,
+				C0010012 /* AccountView.swift in Sources */,
+				C0010013 /* ExploreView.swift in Sources */,
+				C0010014 /* FlowEditorView.swift in Sources */,
+				C0010015 /* FlowStepEditorView.swift in Sources */,
+				C0010016 /* DynamicFlowView.swift in Sources */,
+				C0010017 /* DynamicStepView.swift in Sources */,
+				C0010018 /* FlowPreviewView.swift in Sources */,
+				C0010019 /* VoiceRecorderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

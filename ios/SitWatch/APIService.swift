@@ -12,11 +12,15 @@ class APIService {
 
     private let baseURL = "https://sit.jasonbenn.com"
 
+    @MainActor
+    private var authToken: String? {
+        WatchConnectivityManager.shared.authToken
+    }
+
     func logPromptResponse(
         respondedAt: Double,
-        initialAnswer: String,
-        gateExerciseResult: String?,
-        finalState: String,
+        flowId: String,
+        steps: [[Int]],
         voiceNoteDuration: Double?,
         voiceNoteURL: URL? = nil
     ) async throws {
@@ -24,10 +28,15 @@ class APIService {
             throw APIError.invalidURL
         }
 
+        let token = await authToken
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        // Shorter timeouts for snappier offline detection
         request.timeoutInterval = voiceNoteURL != nil ? 30 : 5
+
+        if let token = token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -41,18 +50,15 @@ class APIService {
         }
 
         addField("responded_at", String(respondedAt))
-        addField("initial_answer", initialAnswer)
-        addField("final_state", finalState)
+        addField("flow_id", flowId)
 
-        if let gate = gateExerciseResult {
-            addField("gate_exercise_result", gate)
-        }
+        let stepsData = try JSONSerialization.data(withJSONObject: steps)
+        addField("steps", String(data: stepsData, encoding: .utf8)!)
 
         if let duration = voiceNoteDuration {
             addField("voice_note_duration_seconds", String(duration))
         }
 
-        // Add voice note file if present
         if let fileURL = voiceNoteURL, let fileData = try? Data(contentsOf: fileURL) {
             data.append("--\(boundary)\r\n".data(using: .utf8)!)
             data.append("Content-Disposition: form-data; name=\"voice_note\"; filename=\"\(fileURL.lastPathComponent)\"\r\n".data(using: .utf8)!)

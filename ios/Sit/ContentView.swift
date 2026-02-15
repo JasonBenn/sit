@@ -1,17 +1,24 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        NavigationView {
-            PromptFlowView()
-                .navigationTitle("Sit")
-                .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
+    @EnvironmentObject var authManager: AuthManager
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+    var body: some View {
+        Group {
+            if authManager.isLoading {
+                ZStack {
+                    Theme.bg.ignoresSafeArea()
+                    Text("Sit")
+                        .font(Theme.display(48))
+                        .foregroundColor(Theme.text)
+                }
+            } else if !authManager.isLoggedIn {
+                LoginView()
+            } else {
+                NavigationStack {
+                    HomeView()
+                }
+            }
+        }
     }
 }
