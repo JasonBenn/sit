@@ -16,20 +16,24 @@ if sentry_dsn:
     )
 
 from app.db import init_db
-from app.routers import prompt_responses
+from app.routers import prompt_responses, auth, users, explore, chat
 
 app = FastAPI(title="Sit API", description="Meditation tracking backend")
 
-# CORS for web dashboard
+# CORS - iOS app uses Bearer tokens (not cookies), so credentials aren't needed
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(prompt_responses.router)
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(explore.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")
