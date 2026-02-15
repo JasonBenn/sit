@@ -14,9 +14,8 @@ struct HomeView: View {
 
     private var starters: [String] {
         authManager.user?.conversationStarters ?? [
-            "What patterns do you see in my practice?",
-            "How often have I been checking in?",
-            "What's my relationship with the View like lately?"
+            "What patterns do you see in my last 10 voice notes?",
+            "How often have I been in the View each month?"
         ]
     }
 
@@ -59,18 +58,20 @@ struct HomeView: View {
                     VStack(spacing: 16) {
                         ZStack {
                             Circle()
-                                .strokeBorder(Theme.sage, lineWidth: 2)
+                                .fill(Theme.sage)
                                 .frame(width: 160, height: 160)
+                                .shadow(color: Theme.sage.opacity(0.3), radius: 16, x: 0, y: 4)
 
                             Text("Check In")
-                                .font(Theme.display(24))
-                                .foregroundColor(Theme.sageText)
+                                .font(Theme.body(18, weight: .medium))
+                                .foregroundColor(.white)
                         }
 
                         if let flow = currentFlow {
                             Text(flow.name)
-                                .font(Theme.body(14))
-                                .foregroundColor(Theme.textMuted)
+                                .font(Theme.display(14))
+                                .italic()
+                                .foregroundColor(Theme.textDim)
                         }
                     }
                 }
@@ -86,12 +87,14 @@ struct HomeView: View {
                         } label: {
                             Text(starter)
                                 .font(Theme.body(14))
-                                .foregroundColor(Theme.text)
+                                .foregroundColor(Theme.textMuted)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.card)
-                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .strokeBorder(Theme.border, lineWidth: 1)
+                                )
                         }
                     }
                 }
@@ -107,17 +110,16 @@ struct HomeView: View {
                         .background(Theme.card)
                         .cornerRadius(12)
 
-                    if !chatInput.isEmpty {
-                        Button {
-                            initialChatMessage = chatInput
-                            chatInput = ""
-                            navigateToChat = true
-                        } label: {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(Theme.sage)
-                        }
+                    Button {
+                        initialChatMessage = chatInput
+                        chatInput = ""
+                        navigateToChat = true
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(Theme.sage)
                     }
+                    .disabled(chatInput.isEmpty)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -131,6 +133,32 @@ struct HomeView: View {
             if let flow = currentFlow {
                 DynamicFlowView(flow: flow, isPreview: false) {
                     showFlow = false
+                }
+            } else {
+                ZStack {
+                    Theme.bg.ignoresSafeArea()
+
+                    VStack(spacing: 24) {
+                        Text("No flow selected")
+                            .font(Theme.display(24))
+                            .foregroundColor(Theme.text)
+
+                        Text("Choose a flow in Settings to start checking in.")
+                            .font(Theme.body(16))
+                            .foregroundColor(Theme.textMuted)
+                            .multilineTextAlignment(.center)
+
+                        Button { showFlow = false } label: {
+                            Text("Close")
+                                .font(Theme.body(16, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 32)
+                                .padding(.vertical, 12)
+                                .background(Theme.sage)
+                                .cornerRadius(12)
+                        }
+                    }
+                    .padding(32)
                 }
             }
         }
