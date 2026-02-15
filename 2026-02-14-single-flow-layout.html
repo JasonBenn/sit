@@ -305,7 +305,7 @@
       <div class="callout callout-key max-w-2xl">
         <div class="callout-header" style="color: #A0906C;">Key Difference</div>
         <p class="text-warm-700 text-sm leading-relaxed font-light">
-          No "My Flows" list. Settings &rarr; "My Flow" goes directly to the flow editor. Notifications use a single stepper instead of per-flow controls. Explore "Use" replaces your current flow (destructive, with confirmation).
+          No "My Flows" list. Settings &rarr; "Edit Watch Check-In Flow" goes directly to the flow editor. Notifications use a single stepper instead of per-flow controls. Explore "Use" replaces your current flow (destructive, with confirmation).
         </p>
       </div>
     </header>
@@ -329,7 +329,10 @@
               <div class="p-6 pt-14 pb-0">
                 <div class="flex justify-between items-center mt-4">
                   <div class="text-2xl font-light sit-brand" style="font-family: 'Cormorant Garamond', serif; letter-spacing: 0.02em;">Sit</div>
-                  <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-muted text-lg">&#9881;</div>
+                  <div class="flex gap-2">
+                    <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-dim text-sm font-medium">?</div>
+                    <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-muted text-lg">&#9881;</div>
+                  </div>
                 </div>
               </div>
 
@@ -374,7 +377,10 @@
               <div class="p-6 pt-14 pb-0">
                 <div class="flex justify-between items-center mt-4 mb-2">
                   <div class="text-2xl font-light sit-brand" style="font-family: 'Cormorant Garamond', serif; letter-spacing: 0.02em;">Sit</div>
-                  <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-muted text-lg">&#9881;</div>
+                  <div class="flex gap-2">
+                    <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-dim text-sm font-medium">?</div>
+                    <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-muted text-lg">&#9881;</div>
+                  </div>
                 </div>
               </div>
 
@@ -471,6 +477,10 @@
               <div class="text-center dev-text-muted text-sm">
                 Don't have an account? <span class="dev-green">Sign Up</span>
               </div>
+
+              <div class="text-center mt-8">
+                <a href="mailto:jasoncbenn@gmail.com" class="dev-text-dim text-xs" style="text-decoration: none;">Feedback? <span style="text-decoration: underline;">Email Jason Benn</span></a>
+              </div>
             </div>
           </div>
         </div>
@@ -504,6 +514,93 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ONBOARDING -->
+    <!-- ============================================================ -->
+    <div class="feature-section fade-section">
+      <h2 class="section-title mb-2">Onboarding<span class="badge-simplified">New</span></h2>
+      <p class="section-subtitle mb-10 max-w-2xl">Shown once after first login. Also accessible via the ? button on key screens. Single scrollable screen that explains the core loop.</p>
+
+      <div class="flex gap-14 flex-wrap items-start">
+
+        <div class="relative">
+          <div class="device-label">Onboarding (first launch)</div>
+          <div class="iphone">
+            <div class="iphone-screen dev-bg dev-text flex flex-col">
+
+              <div class="flex-1 overflow-y-auto px-6 py-10 flex flex-col items-center">
+
+                <!-- Brand -->
+                <div class="sit-brand mb-2" style="font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 0.04em;">Sit</div>
+                <div class="dev-text-dim text-sm mb-10" style="font-style: italic; font-family: 'Cormorant Garamond', serif;">A practice companion</div>
+
+                <!-- How it works -->
+                <div class="w-full space-y-6 mb-10">
+
+                  <div class="flex gap-4 items-start">
+                    <div class="dev-green-bg rounded-full w-8 h-8 flex items-center justify-center text-white text-sm font-medium flex-shrink-0" style="margin-top: 2px;">1</div>
+                    <div>
+                      <div class="text-sm font-medium mb-1">You'll get nudged throughout the day</div>
+                      <div class="dev-text-dim text-sm leading-relaxed">Notifications ask a simple question: are you in the View right now? You can set how many per day.</div>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4 items-start">
+                    <div class="dev-green-bg rounded-full w-8 h-8 flex items-center justify-center text-white text-sm font-medium flex-shrink-0" style="margin-top: 2px;">2</div>
+                    <div>
+                      <div class="text-sm font-medium mb-1">Check in from your Watch or iPhone</div>
+                      <div class="dev-text-dim text-sm leading-relaxed">Tap a notification to open a short check-in flow. Answer honestly &mdash; yes or no &mdash; and follow the prompts. Takes about 10 seconds.</div>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4 items-start">
+                    <div class="dev-green-bg rounded-full w-8 h-8 flex items-center justify-center text-white text-sm font-medium flex-shrink-0" style="margin-top: 2px;">3</div>
+                    <div>
+                      <div class="text-sm font-medium mb-1">Record a voice note if you want</div>
+                      <div class="dev-text-dim text-sm leading-relaxed">Some prompts offer a voice note option. Speak freely about what you're noticing. These get transcribed and stored.</div>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4 items-start">
+                    <div class="dev-green-bg rounded-full w-8 h-8 flex items-center justify-center text-white text-sm font-medium flex-shrink-0" style="margin-top: 2px;">4</div>
+                    <div>
+                      <div class="text-sm font-medium mb-1">Ask about your practice anytime</div>
+                      <div class="dev-text-dim text-sm leading-relaxed">Use the chat on the home screen to ask questions about your check-in history, patterns, and progress over time.</div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Customize hint -->
+                <div class="rounded-2xl px-5 py-4 w-full mb-8" style="background: rgba(95, 133, 102, 0.08); border: 1px solid rgba(95, 133, 102, 0.12);">
+                  <div class="text-sm dev-text-muted leading-relaxed text-center">You can customize your check-in flow and explore flows from others in Settings.</div>
+                </div>
+
+                <!-- CTA -->
+                <div class="w-full">
+                  <div class="dev-green-bg rounded-2xl py-4 text-center text-base font-medium text-white">Get Started</div>
+                </div>
+
+                <div class="text-center mt-5">
+                  <a href="mailto:jasoncbenn@gmail.com" class="dev-text-dim text-xs" style="text-decoration: none;">Feedback? <span style="text-decoration: underline;">Email Jason Benn</span></a>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-ux self-center mt-4">
+          <div class="callout-header" style="color: #5F8566;">UX Flow: Onboarding</div>
+          <p class="text-warm-700 text-sm leading-relaxed font-light">
+            <strong class="font-medium">First launch:</strong> Shown once after login/signup. "Get Started" dismisses it and goes to the home screen. A flag in UserDefaults prevents it from showing again.<br><br>
+            <strong class="font-medium">? button:</strong> A small ? icon appears on the home screen (top bar, next to the gear) and in Settings. Tapping it shows this same screen as a modal sheet, with "Done" instead of "Get Started".
+          </p>
+        </div>
+
       </div>
     </div>
 
@@ -592,13 +689,13 @@
     <!-- ============================================================ -->
     <div class="feature-section fade-section">
       <h2 class="section-title mb-2">Flow Editor<span class="badge-simplified">Simplified</span></h2>
-      <p class="section-subtitle mb-10 max-w-2xl">Same editor, but reached directly from Settings &rarr; My Flow. Back button goes to Settings (not a flow list). Shows attribution when adopted. Auto-saves (no explicit Save button).</p>
+      <p class="section-subtitle mb-10 max-w-2xl">Same editor, but reached directly from Settings &rarr; Edit Watch Check-In Flow. Back button goes to Settings (not a flow list). Shows attribution when adopted. Auto-saves (no explicit Save button).</p>
 
       <div class="flex gap-14 flex-wrap items-start">
 
         <!-- User's own flow -->
         <div class="relative">
-          <div class="device-label">Settings &rarr; My Flow (own)</div>
+          <div class="device-label">Settings &rarr; Edit Watch Check-In Flow (own)</div>
           <div class="iphone">
             <div class="iphone-screen dev-bg dev-text flex flex-col">
               <div class="p-4 pt-14 flex items-center">
@@ -903,38 +1000,38 @@
       <div class="flex gap-14 flex-wrap items-start">
 
         <div class="relative">
-          <div class="device-label">Preview Step</div>
-          <div class="watch" style="width: 220px; height: 270px;">
-            <div class="watch-screen text-white flex flex-col" style="padding: 10px;">
+          <div class="device-label">Preview Step (iPhone)</div>
+          <div class="iphone">
+            <div class="iphone-screen dev-bg dev-text flex flex-col">
               <!-- Preview Mode banner -->
-              <div class="rounded-xl px-2.5 py-1.5 mb-2 flex items-center justify-between" style="background: rgba(180, 160, 120, 0.15); border: 1px solid rgba(180, 160, 120, 0.25);">
-                <div class="text-[9px] font-medium flex items-center gap-1" style="color: #C8A060;">
-                  &#9654; Preview
+              <div class="mx-4 mt-14 rounded-xl px-4 py-2.5 flex items-center justify-between" style="background: rgba(180, 160, 120, 0.12); border: 1px solid rgba(180, 160, 120, 0.2);">
+                <div class="text-xs font-medium flex items-center gap-1.5" style="color: #C8A060;">
+                  &#9654; Preview Mode
                 </div>
-                <div class="text-[9px] font-medium" style="color: #C8A060;">&times;</div>
+                <div class="text-sm font-medium" style="color: #C8A060;">&times;</div>
               </div>
 
               <!-- Step content -->
-              <div class="flex-1 flex flex-col items-center justify-center">
-                <div class="text-center mb-3">
-                  <div class="dev-text-dim text-[9px] uppercase tracking-wide mb-2">Step 1 of 4</div>
-                  <div class="text-sm font-light leading-snug" style="font-family: 'Cormorant Garamond', serif;">
+              <div class="flex-1 flex flex-col items-center justify-center px-8">
+                <div class="text-center mb-6">
+                  <div class="dev-text-dim text-xs uppercase tracking-wide mb-3">Step 1 of 4</div>
+                  <div class="text-2xl font-light leading-snug" style="font-family: 'Cormorant Garamond', serif;">
                     Are you in the View?
                   </div>
                 </div>
 
-                <div class="w-full space-y-2">
-                  <div class="dev-green-bg rounded-xl py-2 text-center text-[11px] font-medium text-white">
+                <div class="w-full max-w-[280px] space-y-3">
+                  <div class="dev-green-bg rounded-2xl py-4 text-center text-base font-medium text-white">
                     Yes
                   </div>
-                  <div class="rounded-xl py-2 text-center text-[11px] font-medium text-white" style="background: #9A7040;">
+                  <div class="rounded-2xl py-4 text-center text-base font-medium text-white" style="background: #9A7040;">
                     No
                   </div>
                 </div>
               </div>
 
-              <div class="text-center mt-1">
-                <div class="dev-text-dim text-[8px]">Responses won't be saved</div>
+              <div class="text-center pb-8">
+                <div class="dev-text-dim text-sm">Responses won't be saved</div>
               </div>
             </div>
           </div>
@@ -1493,7 +1590,7 @@
     <!-- ============================================================ -->
     <div class="feature-section fade-section">
       <h2 class="section-title mb-2">iOS Settings Menu<span class="badge-simplified">Simplified</span></h2>
-      <p class="section-subtitle mb-10 max-w-2xl">"My Flows" &rarr; "My Flow" (singular). Goes directly to the flow editor, no list screen. "Explore" renamed to "Flows from the sangha".</p>
+      <p class="section-subtitle mb-10 max-w-2xl">"My Flows" &rarr; "Edit Watch Check-In Flow". Goes directly to the flow editor, no list screen. "Explore" subtitle renamed to "Check-in flows from the sangha".</p>
 
       <div class="flex gap-14 flex-wrap items-start">
         <div class="relative">
@@ -1503,7 +1600,7 @@
               <div class="p-4 pt-14 flex items-center">
                 <div class="text-sm" style="color: #7BA085;">&larr; Home</div>
                 <div class="flex-1 text-center font-medium text-sm">Settings</div>
-                <div class="w-12"></div>
+                <div class="w-12 flex justify-end"><span class="dev-card rounded-full w-7 h-7 flex items-center justify-center dev-text-dim text-xs font-medium">?</span></div>
               </div>
 
               <div class="px-4 py-4 space-y-3">
@@ -1517,7 +1614,7 @@
 
                 <div class="dev-card rounded-2xl p-4 flex justify-between items-center">
                   <div>
-                    <div class="font-medium text-sm">My Flow</div>
+                    <div class="font-medium text-sm">Edit Watch Check-In Flow</div>
                     <div class="dev-text-dim text-xs mt-0.5">In the View? &middot; 4 steps</div>
                   </div>
                   <div class="dev-text-dim">&rsaquo;</div>
@@ -1534,7 +1631,7 @@
                 <div class="dev-card rounded-2xl p-4 flex justify-between items-center">
                   <div>
                     <div class="font-medium text-sm">Explore</div>
-                    <div class="dev-text-dim text-xs mt-0.5">Flows from the sangha</div>
+                    <div class="dev-text-dim text-xs mt-0.5">Check-in flows from the sangha</div>
                   </div>
                   <div class="dev-text-dim">&rsaquo;</div>
                 </div>
@@ -1551,6 +1648,10 @@
                   <div class="dev-card rounded-2xl p-4 text-center">
                     <div class="text-sm" style="color: #C08060;">Log Out</div>
                   </div>
+                </div>
+
+                <div class="text-center mt-6">
+                  <a href="mailto:jasoncbenn@gmail.com" class="dev-text-dim text-xs" style="text-decoration: none;">Feedback? <span style="text-decoration: underline;">Email Jason Benn</span></a>
                 </div>
               </div>
             </div>
@@ -1647,7 +1748,7 @@
           <div class="callout-header" style="color: #B8917A;">Changed from Multi-Flow</div>
           <div class="text-warm-700 text-sm leading-relaxed font-light">
             <strong class="font-medium">Before:</strong> "My Flows" with subtitle "3 flows" &rarr; opens a list of flows.<br><br>
-            <strong class="font-medium">Now:</strong> "My Flow" with subtitle "In the View? &middot; 4 steps" &rarr; goes directly to the flow editor. No intermediate list screen. "Explore" shows "Flows from the sangha".
+            <strong class="font-medium">Now:</strong> "Edit Watch Check-In Flow" with subtitle "In the View? &middot; 4 steps" &rarr; goes directly to the flow editor. No intermediate list screen. "Explore" shows "Check-in flows from the sangha".
           </div>
         </div>
       </div>
