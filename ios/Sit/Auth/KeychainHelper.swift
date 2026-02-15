@@ -5,7 +5,6 @@ class KeychainHelper {
     static let shared = KeychainHelper()
 
     private let service = "com.jasonbenn.sit.auth-token"
-    private let accessGroup = "$(TeamIdentifierPrefix)com.jasonbenn.sit.shared"
 
     func saveToken(_ token: String) {
         let data = token.data(using: .utf8)!
@@ -16,7 +15,6 @@ class KeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccessGroup as String: accessGroup,
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
         ]
@@ -28,7 +26,6 @@ class KeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccessGroup as String: accessGroup,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
@@ -47,7 +44,6 @@ class KeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccessGroup as String: accessGroup,
         ]
 
         SecItemDelete(query as CFDictionary)
