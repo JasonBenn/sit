@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -8,7 +9,8 @@ import openai
 from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPException
 from sqlmodel import Session, select
 from app.db import get_session
-from app.models import PromptResponse
+from app.auth import get_current_user
+from app.models import PromptResponse, User
 
 router = APIRouter(prefix="/api/prompt-responses", tags=["prompt_responses"])
 
@@ -24,13 +26,12 @@ def get_s3_client():
 def transcribe_audio(file_contents: bytes, filename: str) -> str:
     """Transcribe audio using OpenAI Whisper API."""
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
-    
-    # Write to temp file (OpenAI API needs a file)
+
     suffix = "." + filename.split(".")[-1] if "." in filename else ".m4a"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
         f.write(file_contents)
         temp_path = f.name
-    
+
     try:
         with open(temp_path, "rb") as audio_file:
             transcript = client.audio.transcriptions.create(
@@ -46,9 +47,14 @@ def transcribe_audio(file_contents: bytes, filename: str) -> str:
 @router.get("")
 def list_prompt_responses(
     limit: Optional[int] = Query(default=None),
-    session: Session = Depends(get_session)
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
 ) -> list[PromptResponse]:
-    statement = select(PromptResponse).order_by(PromptResponse.responded_at.desc())
+    statement = (
+        select(PromptResponse)
+        .where(PromptResponse.user_id == user.id)
+        .order_by(PromptResponse.responded_at.desc())
+    )
     if limit:
         statement = statement.limit(limit)
     return session.exec(statement).all()
@@ -57,12 +63,12 @@ def list_prompt_responses(
 @router.post("")
 async def log_prompt_response(
     responded_at: float = Form(...),
-    initial_answer: str = Form(...),
-    final_state: str = Form(...),
-    gate_exercise_result: Optional[str] = Form(None),
+    flow_id: Optional[str] = Form(None),
+    steps: Optional[str] = Form(None),
     voice_note_duration_seconds: Optional[float] = Form(None),
     voice_note: Optional[UploadFile] = File(None),
-    session: Session = Depends(get_session)
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
 ) -> PromptResponse:
     s3_url = None
     transcription = None
@@ -81,23 +87,25 @@ async def log_prompt_response(
             ContentType=voice_note.content_type or "audio/m4a"
         )
         s3_url = f"s3://{S3_BUCKET}/{s3_key}"
-        
-        # Transcribe synchronously (voice notes are short)
+
         if OPENAI_API_KEY:
             transcription = transcribe_audio(contents, voice_note.filename)
             transcription_status = "completed"
         else:
             transcription_status = "skipped_no_api_key"
 
+    parsed_steps = json.loads(steps) if steps else None
+    parsed_flow_id = UUID(flow_id) if flow_id else None
+
     response = PromptResponse(
+        user_id=user.id,
+        flow_id=parsed_flow_id,
         responded_at=datetime.fromtimestamp(responded_at / 1000),
-        initial_answer=initial_answer,
-        gate_exercise_result=gate_exercise_result,
-        final_state=final_state,
+        steps=parsed_steps,
         voice_note_s3_url=s3_url,
         voice_note_duration_seconds=voice_note_duration_seconds,
         transcription=transcription,
-        transcription_status=transcription_status
+        transcription_status=transcription_status,
     )
 
     session.add(response)
@@ -110,16 +118,15 @@ async def log_prompt_response(
 @router.delete("/{response_id}")
 def delete_prompt_response(
     response_id: UUID,
-    session: Session = Depends(get_session)
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
 ) -> dict:
     response = session.get(PromptResponse, response_id)
-    if not response:
+    if not response or response.user_id != user.id:
         raise HTTPException(status_code=404, detail="Prompt response not found")
 
-    # Delete S3 object if exists
     if response.voice_note_s3_url:
         s3_client = get_s3_client()
-        # Parse s3://bucket/key format
         s3_key = response.voice_note_s3_url.replace(f"s3://{S3_BUCKET}/", "")
         s3_client.delete_object(Bucket=S3_BUCKET, Key=s3_key)
 
