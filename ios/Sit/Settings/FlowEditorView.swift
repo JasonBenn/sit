@@ -43,6 +43,27 @@ struct FlowEditorView: View {
                         .cornerRadius(16)
                     }
 
+                    // Title
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("TITLE")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
+
+                        TextField("Flow name", text: $flowName)
+                            .font(Theme.body(15))
+                            .foregroundColor(Theme.text)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 12)
+                            .background(Theme.cardAlt)
+                            .cornerRadius(8)
+                            .onChange(of: flowName) { scheduleAutoSave() }
+                            .padding(16)
+                            .background(Theme.card)
+                            .cornerRadius(16)
+                    }
+
                     // Description
                     VStack(alignment: .leading, spacing: 6) {
                         Text("DESCRIPTION")
@@ -51,19 +72,19 @@ struct FlowEditorView: View {
                             .tracking(1)
                             .padding(.leading, 4)
 
-                        VStack(alignment: .leading, spacing: 0) {
-                            TextField("What is this flow about?", text: $flowDescription)
-                                .font(Theme.body(15))
-                                .foregroundColor(Theme.textMuted)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Theme.cardAlt)
-                                .cornerRadius(8)
-                                .onChange(of: flowDescription) { scheduleAutoSave() }
-                        }
-                        .padding(16)
-                        .background(Theme.card)
-                        .cornerRadius(16)
+                        TextEditor(text: $flowDescription)
+                            .font(Theme.body(15))
+                            .foregroundColor(Theme.textMuted)
+                            .scrollContentBackground(.hidden)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .frame(minHeight: 60)
+                            .background(Theme.cardAlt)
+                            .cornerRadius(8)
+                            .onChange(of: flowDescription) { scheduleAutoSave() }
+                            .padding(16)
+                            .background(Theme.card)
+                            .cornerRadius(16)
                     }
 
                     // Visibility
@@ -133,33 +154,28 @@ struct FlowEditorView: View {
                         }
                     }
 
-                }
-                .padding(16)
-            }
-
-            // Preview button pinned to bottom
-            VStack(spacing: 0) {
-                Theme.border.frame(height: 1)
-                Button {
-                    showPreview = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Text("\u{25B6}")
-                            .foregroundColor(Color(hex: "7BA085"))
-                        Text("Preview")
-                            .font(Theme.body(14, weight: .medium))
-                            .foregroundColor(Theme.textMuted)
+                    // Preview button
+                    Button {
+                        showPreview = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("\u{25B6}")
+                                .foregroundColor(Color(hex: "7BA085"))
+                            Text("Preview")
+                                .font(Theme.body(14, weight: .medium))
+                                .foregroundColor(Theme.textMuted)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Theme.card)
+                        .cornerRadius(16)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Theme.card)
-                    .cornerRadius(16)
+
                 }
                 .padding(16)
             }
-            .background(Theme.bg)
         }
-        .navigationTitle(flowName.isEmpty ? "Edit Flow" : flowName)
+        .navigationTitle("Edit Flow")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {

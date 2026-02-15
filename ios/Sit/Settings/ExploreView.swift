@@ -156,7 +156,6 @@ struct ExploreView: View {
                             Text(step.prompt)
                                 .font(Theme.body(12))
                                 .foregroundColor(Theme.textMuted)
-                                .lineLimit(1)
                             HStack(spacing: 6) {
                                 ForEach(step.answers, id: \.label) { answer in
                                     let dest: String = {

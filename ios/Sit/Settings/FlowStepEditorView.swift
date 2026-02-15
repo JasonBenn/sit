@@ -74,19 +74,6 @@ struct FlowStepEditorView: View {
                         }
                     }
 
-                    // Voice note option
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("PER-ANSWER OPTIONS")
-                            .font(Theme.body(11))
-                            .foregroundColor(Theme.textDim)
-                            .tracking(1)
-                            .padding(.leading, 4)
-
-                        Text("Voice note recording can be enabled per answer in each answer's settings above.")
-                            .font(Theme.body(12))
-                            .foregroundColor(Theme.textMuted)
-                    }
-
                     // Delete step
                     if steps.count > 1 {
                         Button {
@@ -233,42 +220,62 @@ struct FlowStepEditorView: View {
     }
 
     private var watchPreview: some View {
-        VStack(spacing: 4) {
-            Text("Watch Preview")
-                .font(Theme.body(11))
-                .foregroundColor(Theme.textDim)
+        VStack(spacing: 8) {
+            Text(step.prompt)
+                .font(Theme.display(14))
+                .foregroundColor(Theme.text)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
 
-            VStack(spacing: 8) {
-                Text(step.prompt)
-                    .font(Theme.display(14))
-                    .foregroundColor(Theme.text)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-
-                ForEach(Array(step.answers.prefix(3).enumerated()), id: \.offset) { index, answer in
-                    Text(answer.label)
-                        .font(Theme.body(11))
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(index == 0 ? Theme.sage : (index == 1 ? Theme.amber : Theme.cardAlt))
-                        .cornerRadius(12)
+            ForEach(Array(step.answers.prefix(3).enumerated()), id: \.offset) { index, answer in
+                let destIndex = destinationStepIndex(for: answer)
+                if let destIndex = destIndex {
+                    NavigationLink {
+                        FlowStepEditorView(steps: $steps, stepIndex: destIndex, onChanged: onChanged)
+                    } label: {
+                        previewButton(answer: answer, index: index)
+                    }
+                } else {
+                    previewButton(answer: answer, index: index)
                 }
             }
-            .padding(12)
-            .frame(width: 162, height: 198)
-            .background(Theme.card)
-            .cornerRadius(36)
-            .overlay(
-                RoundedRectangle(cornerRadius: 36)
-                    .strokeBorder(Theme.border, lineWidth: 2)
-            )
-
-            Text("Tap a button to save & navigate to that step")
-                .font(Theme.body(10))
-                .foregroundColor(Theme.textDim)
         }
+        .padding(12)
+        .frame(width: 162, height: 198)
+        .background(Theme.card)
+        .cornerRadius(36)
+        .overlay(
+            RoundedRectangle(cornerRadius: 36)
+                .strokeBorder(Theme.border, lineWidth: 2)
+        )
         .frame(maxWidth: .infinity)
+    }
+
+    private func previewButton(answer: FlowAnswer, index: Int) -> some View {
+        HStack(spacing: 4) {
+            if answer.recordVoiceNote {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 8))
+            }
+            Text(answer.label)
+                .font(Theme.body(11))
+                .fontWeight(.medium)
+        }
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(answer.recordVoiceNote
+            ? Color(red: 140/255, green: 110/255, blue: 170/255)
+            : (index == 0 ? Theme.sage : (index == 1 ? Theme.amber : Theme.cardAlt)))
+        .cornerRadius(12)
+    }
+
+    private func destinationStepIndex(for answer: FlowAnswer) -> Int? {
+        switch answer.destination {
+        case .step(let id):
+            return steps.firstIndex(where: { $0.id == id })
+        case .submit:
+            return nil
+        }
     }
 }
