@@ -7,7 +7,7 @@ Meditation prompt flow app for iOS and watchOS.
 deployCommand: |
   ssh jason "cd /opt/sit && git pull && source .venv/bin/activate && python -m alembic upgrade head && sudo systemctl restart sit"
   if xcrun simctl list devices | grep -q Booted; then
-    cd ios && xcodebuild -project Sit.xcodeproj -scheme Sit -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | tail -5 && xcrun simctl launch --terminate-existing booted com.jasonbenn.sit
+    cd ios && xcodebuild -project Sit.xcodeproj -scheme Sit -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | tail -5 && xcrun simctl launch --terminate-running-process booted com.jasonbenn.sit
   fi
 ```
 

@@ -51,23 +51,27 @@ struct FlowEditorView: View {
                             .tracking(1)
                             .padding(.leading, 4)
 
-                        TextField("What is this flow about?", text: $flowDescription)
-                            .font(Theme.body(15))
-                            .foregroundColor(Theme.text)
-                            .padding(12)
-                            .background(Theme.card)
-                            .cornerRadius(10)
-                            .onChange(of: flowDescription) { scheduleAutoSave() }
+                        VStack(alignment: .leading, spacing: 0) {
+                            TextField("What is this flow about?", text: $flowDescription)
+                                .font(Theme.body(15))
+                                .foregroundColor(Theme.textMuted)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Theme.cardAlt)
+                                .cornerRadius(8)
+                                .onChange(of: flowDescription) { scheduleAutoSave() }
+                        }
+                        .padding(16)
+                        .background(Theme.card)
+                        .cornerRadius(16)
                     }
 
                     // Visibility
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("VISIBILITY")
-                            .font(Theme.body(11))
-                            .foregroundColor(Theme.textDim)
-                            .tracking(1)
-                            .padding(.leading, 4)
-
+                    HStack {
+                        Text("Visibility")
+                            .font(Theme.body(14))
+                            .foregroundColor(Theme.textMuted)
+                        Spacer()
                         HStack(spacing: 8) {
                             ForEach(["public", "private"], id: \.self) { option in
                                 Button {
@@ -78,13 +82,16 @@ struct FlowEditorView: View {
                                         .font(Theme.body(12, weight: visibility == option ? .medium : .regular))
                                         .foregroundColor(visibility == option ? .white : Theme.textMuted)
                                         .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .padding(.vertical, 4)
                                         .background(visibility == option ? Theme.sage : Theme.cardAlt)
                                         .cornerRadius(8)
                                 }
                             }
                         }
                     }
+                    .padding(16)
+                    .background(Theme.card)
+                    .cornerRadius(16)
 
                     // Steps
                     VStack(alignment: .leading, spacing: 12) {
@@ -126,25 +133,31 @@ struct FlowEditorView: View {
                         }
                     }
 
-                    // Preview button
-                    Button {
-                        showPreview = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("\u{25B6}")
-                                .foregroundColor(Color(hex: "7BA085"))
-                            Text("Preview")
-                                .font(Theme.body(14, weight: .medium))
-                                .foregroundColor(Theme.textMuted)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Theme.card)
-                        .cornerRadius(16)
-                    }
                 }
                 .padding(16)
             }
+
+            // Preview button pinned to bottom
+            VStack(spacing: 0) {
+                Theme.border.frame(height: 1)
+                Button {
+                    showPreview = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("\u{25B6}")
+                            .foregroundColor(Color(hex: "7BA085"))
+                        Text("Preview")
+                            .font(Theme.body(14, weight: .medium))
+                            .foregroundColor(Theme.textMuted)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Theme.card)
+                    .cornerRadius(16)
+                }
+                .padding(16)
+            }
+            .background(Theme.bg)
         }
         .navigationTitle(flowName.isEmpty ? "Edit Flow" : flowName)
         .navigationBarTitleDisplayMode(.inline)
@@ -192,30 +205,36 @@ struct FlowEditorView: View {
 
     private func stepCard(_ step: FlowStep) -> some View {
         let stepIndex = steps.firstIndex(where: { $0.id == step.id }).map({ $0 + 1 }) ?? step.id
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Step \(stepIndex) – \(step.title)")
-                .font(Theme.body(12, weight: .medium))
-                .foregroundColor(Theme.sageText)
+        return HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Step \(stepIndex) – \(step.title)")
+                    .font(Theme.body(12, weight: .medium))
+                    .foregroundColor(Theme.sageText)
 
-            Text(step.prompt)
-                .font(Theme.body(14, weight: .medium))
-                .foregroundColor(Theme.text)
-                .lineLimit(2)
+                Text(step.prompt)
+                    .font(Theme.body(14, weight: .medium))
+                    .foregroundColor(Theme.text)
+                    .lineLimit(2)
 
-            // Routing badges
-            HStack(spacing: 6) {
-                ForEach(Array(step.answers.enumerated()), id: \.offset) { _, answer in
-                    routingBadge(answer: answer)
+                // Routing badges
+                HStack(spacing: 6) {
+                    ForEach(Array(step.answers.enumerated()), id: \.offset) { answerIndex, answer in
+                        routingBadge(answer: answer, answerIndex: answerIndex)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("\u{203A}")
+                .font(Theme.body(20))
+                .foregroundColor(Theme.textDim)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Theme.card)
         .cornerRadius(16)
     }
 
-    private func routingBadge(answer: FlowAnswer) -> some View {
+    private func routingBadge(answer: FlowAnswer, answerIndex: Int) -> some View {
         let destLabel: String = {
             switch answer.destination {
             case .step(let id):
@@ -227,12 +246,18 @@ struct FlowEditorView: View {
             }
         }()
 
-        let bgColor: Color = answer.recordVoiceNote
-            ? Color(red: 140/255, green: 110/255, blue: 170/255).opacity(0.12)
-            : Color(hex: "5F8566").opacity(0.15)
-        let textColor: Color = answer.recordVoiceNote
-            ? Color(hex: "B8A0D0")
-            : Theme.sageText
+        let bgColor: Color
+        let textColor: Color
+        if answer.recordVoiceNote {
+            bgColor = Color(red: 140/255, green: 110/255, blue: 170/255).opacity(0.12)
+            textColor = Color(hex: "B8A0D0")
+        } else if answerIndex == 0 {
+            bgColor = Color(hex: "5F8566").opacity(0.15)
+            textColor = Theme.sageText
+        } else {
+            bgColor = Color(red: 200/255, green: 140/255, blue: 80/255).opacity(0.12)
+            textColor = Color(hex: "C8A060")
+        }
 
         return Text(destLabel)
             .font(Theme.body(11))

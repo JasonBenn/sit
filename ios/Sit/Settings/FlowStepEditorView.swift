@@ -29,14 +29,14 @@ struct FlowStepEditorView: View {
                         TextField("Step title", text: stepBinding(\.title))
                             .font(Theme.body(15))
                             .foregroundColor(Theme.text)
-                            .padding(12)
-                            .background(Theme.card)
-                            .cornerRadius(10)
+                            .padding(16)
+                            .background(Theme.cardAlt)
+                            .cornerRadius(12)
                     }
 
                     // Prompt
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Prompt")
+                        Text("Prompt text")
                             .font(Theme.body(13))
                             .foregroundColor(Theme.textMuted)
 
@@ -44,33 +44,33 @@ struct FlowStepEditorView: View {
                             .font(Theme.body(15))
                             .foregroundColor(Theme.text)
                             .scrollContentBackground(.hidden)
-                            .padding(8)
+                            .padding(16)
                             .frame(minHeight: 100)
-                            .background(Theme.card)
-                            .cornerRadius(10)
+                            .background(Theme.cardAlt)
+                            .cornerRadius(12)
                     }
 
                     // Answers
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Answers")
-                            .font(Theme.body(13))
-                            .foregroundColor(Theme.textMuted)
+                        HStack {
+                            Text("Answers")
+                                .font(Theme.body(13))
+                                .foregroundColor(Theme.textMuted)
+                            Spacer()
+                            Button {
+                                steps[stepIndex].answers.append(
+                                    FlowAnswer(label: "New answer", destination: .submit, recordVoiceNote: false)
+                                )
+                                onChanged()
+                            } label: {
+                                Text("+ Add Answer")
+                                    .font(Theme.body(14))
+                                    .foregroundColor(Theme.sageText)
+                            }
+                        }
 
                         ForEach(Array(step.answers.enumerated()), id: \.offset) { answerIndex, _ in
                             answerEditor(answerIndex: answerIndex)
-                        }
-
-                        Button {
-                            steps[stepIndex].answers.append(
-                                FlowAnswer(label: "New answer", destination: .submit, recordVoiceNote: false)
-                            )
-                            onChanged()
-                        } label: {
-                            Text("+ Add Answer")
-                                .font(Theme.body(14))
-                                .foregroundColor(Theme.sageText)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
                         }
                     }
 
@@ -108,7 +108,7 @@ struct FlowStepEditorView: View {
                 .padding(16)
             }
         }
-        .navigationTitle(step.title.isEmpty ? "Step \(step.id)" : step.title)
+        .navigationTitle("Edit Step \(stepIndex + 1)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .alert("Delete Step?", isPresented: $showDeleteConfirm) {
