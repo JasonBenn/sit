@@ -17,6 +17,7 @@ xcuserdata/
 
 # Build artifacts
 web/dist/
+ios/build/
 
 # Python
 .venv/
