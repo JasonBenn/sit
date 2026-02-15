@@ -11,12 +11,17 @@ struct ChatBubbleView: View {
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.content)
-                    .font(Theme.body(15))
+                    .font(Theme.body(14))
                     .foregroundColor(Theme.text)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(isUser ? Theme.sage.opacity(0.3) : Theme.card)
-                    .cornerRadius(16)
+                    .background(isUser ? Color(hex: "4A6B50") : Theme.card)
+                    .clipShape(UnevenRoundedRectangle(
+                        topLeadingRadius: 16,
+                        bottomLeadingRadius: isUser ? 16 : 6,
+                        bottomTrailingRadius: isUser ? 6 : 16,
+                        topTrailingRadius: 16
+                    ))
 
                 if let createdAt = message.createdAt {
                     Text(createdAt)

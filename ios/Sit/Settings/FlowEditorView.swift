@@ -23,25 +23,33 @@ struct FlowEditorView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Attribution
                     if let sourceUser = sourceUsername, let sourceName = sourceFlowName {
-                        HStack(spacing: 8) {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 12))
-                            Text("Based on \(sourceUser)'s \(sourceName)")
-                                .font(Theme.body(13))
+                        HStack(spacing: 0) {
+                            Text("Based on ")
+                                .font(Theme.body(12))
+                            + Text("'\(sourceName)'")
+                                .font(Theme.body(12, weight: .medium))
+                            + Text(" by \(sourceUser)")
+                                .font(Theme.body(12))
                         }
-                        .foregroundColor(Theme.amber)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .foregroundColor(Color(hex: "7BA085"))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.amber.opacity(0.1))
-                        .cornerRadius(10)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color(hex: "5F8566").opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(Color(hex: "5F8566").opacity(0.15), lineWidth: 1)
+                        )
+                        .cornerRadius(16)
                     }
 
                     // Description
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Description")
-                            .font(Theme.body(13))
-                            .foregroundColor(Theme.textMuted)
+                        Text("DESCRIPTION")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
 
                         TextField("What is this flow about?", text: $flowDescription)
                             .font(Theme.body(15))
@@ -54,23 +62,37 @@ struct FlowEditorView: View {
 
                     // Visibility
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Visibility")
-                            .font(Theme.body(13))
-                            .foregroundColor(Theme.textMuted)
+                        Text("VISIBILITY")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
 
-                        Picker("Visibility", selection: $visibility) {
-                            Text("Private").tag("private")
-                            Text("Public").tag("public")
+                        HStack(spacing: 8) {
+                            ForEach(["public", "private"], id: \.self) { option in
+                                Button {
+                                    visibility = option
+                                    scheduleAutoSave()
+                                } label: {
+                                    Text(option.capitalized)
+                                        .font(Theme.body(12, weight: visibility == option ? .medium : .regular))
+                                        .foregroundColor(visibility == option ? .white : Theme.textMuted)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(visibility == option ? Theme.sage : Theme.cardAlt)
+                                        .cornerRadius(8)
+                                }
+                            }
                         }
-                        .pickerStyle(.segmented)
-                        .onChange(of: visibility) { scheduleAutoSave() }
                     }
 
                     // Steps
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Steps")
-                            .font(Theme.body(13))
-                            .foregroundColor(Theme.textMuted)
+                        Text("STEPS (STARTS AT STEP 1)")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
 
                         ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                             NavigationLink {
@@ -92,16 +114,15 @@ struct FlowEditorView: View {
                             ))
                             scheduleAutoSave()
                         } label: {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                Text("Add Step")
-                                    .font(Theme.body(14))
-                            }
-                            .foregroundColor(Theme.sage)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Theme.sage.opacity(0.1))
-                            .cornerRadius(12)
+                            Text("+ Add Step")
+                                .font(Theme.body(14, weight: .medium))
+                                .foregroundColor(Theme.sageText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .strokeBorder(Theme.border, style: StrokeStyle(lineWidth: 1.5, dash: [8, 4]))
+                                )
                         }
                     }
 
@@ -109,22 +130,23 @@ struct FlowEditorView: View {
                     Button {
                         showPreview = true
                     } label: {
-                        HStack {
-                            Image(systemName: "eye.fill")
-                            Text("Preview Flow")
-                                .font(Theme.body(15))
+                        HStack(spacing: 6) {
+                            Text("\u{25B6}")
+                                .foregroundColor(Color(hex: "7BA085"))
+                            Text("Preview")
+                                .font(Theme.body(14, weight: .medium))
+                                .foregroundColor(Theme.textMuted)
                         }
-                        .foregroundColor(Theme.text)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 16)
                         .background(Theme.card)
-                        .cornerRadius(12)
+                        .cornerRadius(16)
                     }
                 }
                 .padding(16)
             }
         }
-        .navigationTitle("Edit Flow")
+        .navigationTitle(flowName.isEmpty ? "Edit Flow" : flowName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
@@ -169,43 +191,56 @@ struct FlowEditorView: View {
     }
 
     private func stepCard(_ step: FlowStep) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(step.title.isEmpty ? "Step \(step.id)" : step.title)
-                .font(Theme.body(15))
-                .foregroundColor(Theme.text)
+        let stepIndex = steps.firstIndex(where: { $0.id == step.id }).map({ $0 + 1 }) ?? step.id
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Step \(stepIndex) – \(step.title)")
+                .font(Theme.body(12, weight: .medium))
+                .foregroundColor(Theme.sageText)
 
             Text(step.prompt)
-                .font(Theme.body(13))
-                .foregroundColor(Theme.textMuted)
+                .font(Theme.body(14, weight: .medium))
+                .foregroundColor(Theme.text)
                 .lineLimit(2)
 
             // Routing badges
             HStack(spacing: 6) {
                 ForEach(Array(step.answers.enumerated()), id: \.offset) { _, answer in
-                    let destLabel: String = {
-                        switch answer.destination {
-                        case .step(let id):
-                            let target = steps.first(where: { $0.id == id })
-                            return "→ \(target?.title.isEmpty == false ? target!.title : "Step \(id)")"
-                        case .submit:
-                            return "→ Submit"
-                        }
-                    }()
-
-                    Text(destLabel)
-                        .font(Theme.body(11))
-                        .foregroundColor(Theme.textDim)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Theme.cardAlt)
-                        .cornerRadius(6)
+                    routingBadge(answer: answer)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(16)
         .background(Theme.card)
-        .cornerRadius(12)
+        .cornerRadius(16)
+    }
+
+    private func routingBadge(answer: FlowAnswer) -> some View {
+        let destLabel: String = {
+            switch answer.destination {
+            case .step(let id):
+                let target = steps.first(where: { $0.id == id })
+                let targetTitle = target?.title.isEmpty == false ? target?.title ?? "Step \(id)" : "Step \(id)"
+                return "\(answer.label) → \(targetTitle)"
+            case .submit:
+                return "\(answer.label) → Submit"
+            }
+        }()
+
+        let bgColor: Color = answer.recordVoiceNote
+            ? Color(red: 140/255, green: 110/255, blue: 170/255).opacity(0.12)
+            : Color(hex: "5F8566").opacity(0.15)
+        let textColor: Color = answer.recordVoiceNote
+            ? Color(hex: "B8A0D0")
+            : Theme.sageText
+
+        return Text(destLabel)
+            .font(Theme.body(11))
+            .foregroundColor(textColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(bgColor)
+            .cornerRadius(4)
     }
 
     private func scheduleAutoSave() {

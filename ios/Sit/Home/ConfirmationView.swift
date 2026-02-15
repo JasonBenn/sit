@@ -10,21 +10,22 @@ struct ConfirmationView: View {
             Theme.bg.ignoresSafeArea()
 
             VStack(spacing: 24) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.sage.opacity(0.2))
-                        .frame(width: 120, height: 120)
+                Text("\u{2713}")
+                    .font(.system(size: 60))
+                    .foregroundColor(Theme.sageText)
+                    .opacity(0.9)
 
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 48, weight: .medium))
-                        .foregroundColor(Theme.sageText)
+                VStack(spacing: 8) {
+                    Text("Check-in saved")
+                        .font(Theme.display(24))
+                        .foregroundColor(Color(hex: "C0BDB6"))
+
+                    Text("Returning home...")
+                        .font(Theme.body(14))
+                        .foregroundColor(Theme.textDim)
                 }
-                .scaleEffect(scale)
-
-                Text("Check-in saved")
-                    .font(Theme.display(24))
-                    .foregroundColor(Theme.text)
             }
+            .scaleEffect(scale)
             .opacity(opacity)
         }
         .onAppear {

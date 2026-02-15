@@ -6,7 +6,7 @@ struct TimerPresetsView: View {
     @State private var showCustomPicker = false
 
     private let presets: [(label: String, minutes: Int)] = [
-        ("1m", 1), ("2m", 2), ("5m", 5), ("10m", 10),
+        ("1m", 1), ("3m", 3), ("5m", 5), ("10m", 10),
         ("15m", 15), ("20m", 20), ("30m", 30), ("60m", 60)
     ]
 
@@ -22,12 +22,12 @@ struct TimerPresetsView: View {
                     NavigationLink(destination: LiveTimerView(minutes: preset.minutes)) {
                         Text(preset.label)
                             .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(WatchTheme.amberText)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(WatchTheme.amber.opacity(0.25))
-                            .cornerRadius(12)
+                            .aspectRatio(1, contentMode: .fit)
+                            .background(WatchTheme.amber)
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -36,14 +36,14 @@ struct TimerPresetsView: View {
                     WKInterfaceDevice.current().play(.click)
                     showCustomPicker = true
                 } label: {
-                    Image(systemName: "plus")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(WatchTheme.amberText)
+                    Text("+")
+                        .font(.title3)
+                        .fontWeight(.light)
+                        .foregroundColor(WatchTheme.textMuted)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(WatchTheme.amber.opacity(0.15))
-                        .cornerRadius(12)
+                        .aspectRatio(1, contentMode: .fit)
+                        .background(WatchTheme.card)
+                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
             }

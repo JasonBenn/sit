@@ -22,16 +22,24 @@ struct WatchDynamicStepView: View {
                         Text(answer.label)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(WatchTheme.sageText)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(WatchTheme.sage.opacity(0.25))
+                            .background(watchButtonColor(for: index))
                             .cornerRadius(10)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 4)
+        }
+    }
+
+    private func watchButtonColor(for index: Int) -> Color {
+        switch index {
+        case 0: return WatchTheme.sage
+        case 1: return WatchTheme.amber
+        default: return WatchTheme.card
         }
     }
 }

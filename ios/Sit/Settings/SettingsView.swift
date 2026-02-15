@@ -4,41 +4,32 @@ struct SettingsView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showOnboarding = false
 
+    private var flow: FlowDefinition? { authManager.user?.currentFlow }
+
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 24) {
-                    // Flow
-                    settingsSection("Flow") {
-                        settingsRow("Edit Watch Check-In Flow", subtitle: authManager.user?.currentFlow?.name ?? "Default") {
-                            FlowEditorView()
-                        }
+                VStack(spacing: 12) {
+                    settingsRow("Notifications", subtitle: notificationSubtitle) {
+                        NotificationSettingsView()
                     }
 
-                    // Preferences
-                    settingsSection("Preferences") {
-                        settingsRow("Notifications", subtitle: "\(authManager.user?.notificationCount ?? 3) per day") {
-                            NotificationSettingsView()
-                        }
-                        settingsRow("Conversation Starters") {
-                            ConversationStartersView()
-                        }
+                    settingsRow("Edit Watch Check-In Flow", subtitle: flowSubtitle) {
+                        FlowEditorView()
                     }
 
-                    // Discover
-                    settingsSection("Discover") {
-                        settingsRow("Explore Flows") {
-                            ExploreView()
-                        }
+                    settingsRow("Conversation Starters", subtitle: startersSubtitle) {
+                        ConversationStartersView()
                     }
 
-                    // Account
-                    settingsSection("Account") {
-                        settingsRow("Account") {
-                            AccountView()
-                        }
+                    settingsRow("Explore", subtitle: "Check-in flows from the sangha") {
+                        ExploreView()
+                    }
+
+                    settingsRow("Account", subtitle: authManager.user?.username) {
+                        AccountView()
                     }
 
                     // Log Out
@@ -46,32 +37,25 @@ struct SettingsView: View {
                         authManager.logout()
                     } label: {
                         Text("Log Out")
-                            .font(Theme.body(16))
-                            .foregroundColor(.red)
+                            .font(Theme.body(14))
+                            .foregroundColor(Color(hex: "C08060"))
                             .frame(maxWidth: .infinity)
-                            .padding()
+                            .padding(.vertical, 16)
                             .background(Theme.card)
-                            .cornerRadius(12)
+                            .cornerRadius(16)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 20)
 
-                    // Footer
-                    VStack(spacing: 12) {
-                        Button { showOnboarding = true } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "questionmark.circle")
-                                    .font(.system(size: 14))
-                                Text("How Sit Works")
-                                    .font(Theme.body(13))
-                            }
-                            .foregroundColor(Theme.textMuted)
-                        }
-
-                        Link("Feedback: jason@jasonbenn.com", destination: URL(string: "mailto:jason@jasonbenn.com")!)
-                            .font(Theme.body(12))
+                    // Feedback email
+                    Link(destination: URL(string: "mailto:jasoncbenn@gmail.com")!) {
+                        (Text("Feedback? ")
+                            .foregroundColor(Theme.textDim) +
+                        Text("Email Jason Benn")
                             .foregroundColor(Theme.textDim)
+                            .underline())
                     }
-                    .padding(.top, 8)
+                    .font(Theme.body(12))
+                    .padding(.top, 12)
                     .padding(.bottom, 32)
                 }
                 .padding(.horizontal, 16)
@@ -81,20 +65,44 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showOnboarding = true } label: {
+                    Text("?")
+                        .font(Theme.body(12, weight: .medium))
+                        .foregroundColor(Theme.textDim)
+                        .frame(width: 28, height: 28)
+                        .background(Theme.card)
+                        .clipShape(Circle())
+                }
+            }
+        }
         .sheet(isPresented: $showOnboarding) {
             OnboardingView()
         }
     }
 
-    private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title.uppercased())
-                .font(Theme.body(11))
-                .foregroundColor(Theme.textDim)
-                .padding(.leading, 4)
-                .padding(.bottom, 4)
-            content()
-        }
+    private var notificationSubtitle: String {
+        let count = authManager.user?.notificationCount ?? 3
+        let start = formatHour(authManager.user?.notificationStartHour ?? 9)
+        let end = formatHour(authManager.user?.notificationEndHour ?? 22)
+        return "\(count) per day, \(start)\u{2013}\(end)"
+    }
+
+    private var flowSubtitle: String? {
+        guard let flow = flow else { return nil }
+        return "\(flow.name) \u{00B7} \(flow.stepsJson.count) steps"
+    }
+
+    private var startersSubtitle: String {
+        let count = authManager.user?.conversationStarters?.count ?? 0
+        return "\(count) prompts on home screen"
+    }
+
+    private func formatHour(_ hour: Int) -> String {
+        let h = hour % 12 == 0 ? 12 : hour % 12
+        let ampm = hour < 12 ? "AM" : "PM"
+        return "\(h)\(ampm)"
     }
 
     private func settingsRow<Destination: View>(_ title: String, subtitle: String? = nil, @ViewBuilder destination: () -> Destination) -> some View {
@@ -102,24 +110,23 @@ struct SettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(Theme.body(16))
+                        .font(Theme.body(14, weight: .medium))
                         .foregroundColor(Theme.text)
                     if let subtitle {
                         Text(subtitle)
                             .font(Theme.body(12))
-                            .foregroundColor(Theme.textMuted)
+                            .foregroundColor(Theme.textDim)
                     }
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                Text("\u{203A}")
+                    .font(.system(size: 18))
                     .foregroundColor(Theme.textDim)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 16)
             .background(Theme.card)
-            .cornerRadius(12)
+            .cornerRadius(16)
         }
     }
 }
-

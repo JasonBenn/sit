@@ -27,7 +27,7 @@ struct LiveTimerView: View {
             ZStack {
                 // Background ring
                 Circle()
-                    .stroke(WatchTheme.amber.opacity(0.2), lineWidth: 6)
+                    .stroke(Color(hex: "2A2825"), lineWidth: 6)
 
                 // Progress ring
                 Circle()
@@ -37,15 +37,37 @@ struct LiveTimerView: View {
                     .animation(.linear(duration: 1), value: progress)
 
                 // Time text
-                Text(formatTime(timerManager.timeRemaining))
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .monospacedDigit()
-                    .foregroundColor(WatchTheme.text)
+                VStack(spacing: 2) {
+                    Text(formatTime(timerManager.timeRemaining))
+                        .font(.title2)
+                        .fontWeight(.medium)
+                        .monospacedDigit()
+                        .foregroundColor(WatchTheme.text)
+                    Text("of \(formatTime(timerManager.totalTime))")
+                        .font(.caption2)
+                        .foregroundColor(WatchTheme.textMuted)
+                }
             }
-            .frame(width: 120, height: 120)
+            .frame(width: 128, height: 128)
 
             HStack(spacing: 16) {
+                // Cancel on left
+                Button {
+                    timerManager.cancel()
+                    dismiss()
+                } label: {
+                    Text("×")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(WatchTheme.textMuted)
+                        .frame(width: 40, height: 40)
+                        .background(WatchTheme.card)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                // Pause/Play on right
                 if timerManager.isPaused {
                     Button {
                         WKInterfaceDevice.current().play(.click)
@@ -53,7 +75,10 @@ struct LiveTimerView: View {
                     } label: {
                         Image(systemName: "play.fill")
                             .font(.caption)
-                            .foregroundColor(WatchTheme.amberText)
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(WatchTheme.amber)
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 } else {
@@ -61,23 +86,17 @@ struct LiveTimerView: View {
                         WKInterfaceDevice.current().play(.click)
                         timerManager.pause()
                     } label: {
-                        Image(systemName: "pause.fill")
-                            .font(.caption)
-                            .foregroundColor(WatchTheme.amberText)
+                        Text("❚❚")
+                            .font(.caption2)
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(WatchTheme.amber)
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
-
-                Button {
-                    timerManager.cancel()
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption)
-                        .foregroundColor(WatchTheme.textMuted)
-                }
-                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 16)
         }
     }
 

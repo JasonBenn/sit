@@ -11,9 +11,10 @@ struct DynamicStepView: View {
             Spacer()
 
             VStack(spacing: 16) {
-                Text("Step \(stepNumber) of \(totalSteps)")
-                    .font(Theme.body(14))
-                    .foregroundColor(Theme.textMuted)
+                Text("STEP \(stepNumber) OF \(totalSteps)")
+                    .font(Theme.body(11))
+                    .foregroundColor(Theme.textDim)
+                    .tracking(1)
 
                 Text(step.prompt)
                     .font(Theme.display(28))
@@ -32,10 +33,10 @@ struct DynamicStepView: View {
                     } label: {
                         Text(answer.label)
                             .font(Theme.body(16))
-                            .foregroundColor(index == 0 ? Theme.sageText : Theme.text)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
-                            .background(index == 0 ? Theme.sage.opacity(0.3) : Theme.card)
+                            .background(buttonColor(for: index))
                             .cornerRadius(16)
                     }
                     .buttonStyle(.plain)
@@ -44,6 +45,14 @@ struct DynamicStepView: View {
             .padding(.horizontal, 24)
 
             Spacer()
+        }
+    }
+
+    private func buttonColor(for index: Int) -> Color {
+        switch index {
+        case 0: return Theme.sage
+        case 1: return Theme.amber
+        default: return Theme.card
         }
     }
 }

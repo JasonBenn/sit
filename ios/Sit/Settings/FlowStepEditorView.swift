@@ -66,17 +66,25 @@ struct FlowStepEditorView: View {
                             )
                             onChanged()
                         } label: {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                Text("Add Answer")
-                                    .font(Theme.body(14))
-                            }
-                            .foregroundColor(Theme.sage)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Theme.sage.opacity(0.1))
-                            .cornerRadius(10)
+                            Text("+ Add Answer")
+                                .font(Theme.body(14))
+                                .foregroundColor(Theme.sageText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
                         }
+                    }
+
+                    // Voice note option
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("PER-ANSWER OPTIONS")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
+
+                        Text("Voice note recording can be enabled per answer in each answer's settings above.")
+                            .font(Theme.body(12))
+                            .foregroundColor(Theme.textMuted)
                     }
 
                     // Delete step
@@ -89,10 +97,10 @@ struct FlowStepEditorView: View {
                                 Text("Delete Step")
                                     .font(Theme.body(14))
                             }
-                            .foregroundColor(.red)
+                            .foregroundColor(Color(hex: "C08060"))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.red.opacity(0.1))
+                            .background(Theme.card)
                             .cornerRadius(12)
                         }
                     }
@@ -137,34 +145,45 @@ struct FlowStepEditorView: View {
 
     private func answerEditor(answerIndex: Int) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Header row
             HStack {
-                TextField("Answer label", text: Binding(
-                    get: { steps[stepIndex].answers[answerIndex].label },
-                    set: {
-                        steps[stepIndex].answers[answerIndex].label = $0
-                        onChanged()
-                    }
-                ))
-                .font(Theme.body(15))
-                .foregroundColor(Theme.text)
-
+                Text("Answer \(answerIndex + 1)")
+                    .font(Theme.body(12))
+                    .foregroundColor(Theme.textDim)
+                Spacer()
                 if steps[stepIndex].answers.count > 1 {
                     Button {
                         steps[stepIndex].answers.remove(at: answerIndex)
                         onChanged()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Theme.textDim)
+                        Text("Remove")
+                            .font(Theme.body(12))
+                            .foregroundColor(Color(hex: "C08060"))
                     }
                 }
             }
 
-            // Destination picker
+            // Label field in sub-card
+            TextField("Answer label", text: Binding(
+                get: { steps[stepIndex].answers[answerIndex].label },
+                set: {
+                    steps[stepIndex].answers[answerIndex].label = $0
+                    onChanged()
+                }
+            ))
+            .font(Theme.body(14))
+            .foregroundColor(Theme.text)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Theme.card)
+            .cornerRadius(8)
+
+            // Destination
             HStack {
                 Text("Goes to:")
                     .font(Theme.body(12))
-                    .foregroundColor(Theme.textMuted)
-
+                    .foregroundColor(Theme.textDim)
+                Spacer()
                 Picker("Destination", selection: destinationBinding(answerIndex: answerIndex)) {
                     ForEach(steps.filter({ $0.id != steps[stepIndex].id })) { otherStep in
                         Text(otherStep.title.isEmpty ? "Step \(otherStep.id)" : otherStep.title)
@@ -172,7 +191,11 @@ struct FlowStepEditorView: View {
                     }
                     Text("Submit").tag(-1)
                 }
-                .tint(Theme.text)
+                .tint(Theme.sageText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Theme.card)
+                .cornerRadius(8)
             }
 
             // Voice note toggle
@@ -189,9 +212,9 @@ struct FlowStepEditorView: View {
             }
             .tint(Theme.sage)
         }
-        .padding(12)
-        .background(Theme.card)
-        .cornerRadius(10)
+        .padding(16)
+        .background(Theme.cardAlt)
+        .cornerRadius(12)
     }
 
     private func destinationBinding(answerIndex: Int) -> Binding<Int> {
@@ -224,22 +247,27 @@ struct FlowStepEditorView: View {
 
                 ForEach(Array(step.answers.prefix(3).enumerated()), id: \.offset) { index, answer in
                     Text(answer.label)
-                        .font(Theme.body(10))
-                        .foregroundColor(index == 0 ? Theme.sageText : Theme.text)
+                        .font(Theme.body(11))
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
-                        .background(index == 0 ? Theme.sage.opacity(0.3) : Theme.cardAlt)
-                        .cornerRadius(8)
+                        .background(index == 0 ? Theme.sage : (index == 1 ? Theme.amber : Theme.cardAlt))
+                        .cornerRadius(12)
                 }
             }
             .padding(12)
-            .frame(width: 180, height: 200)
+            .frame(width: 162, height: 198)
             .background(Theme.card)
-            .cornerRadius(16)
+            .cornerRadius(36)
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(Theme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 36)
+                    .strokeBorder(Theme.border, lineWidth: 2)
             )
+
+            Text("Tap a button to save & navigate to that step")
+                .font(Theme.body(10))
+                .foregroundColor(Theme.textDim)
         }
         .frame(maxWidth: .infinity)
     }

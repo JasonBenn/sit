@@ -85,7 +85,7 @@ struct LoginView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(Theme.sage)
-                    .foregroundColor(Theme.text)
+                    .foregroundColor(.white)
                     .cornerRadius(12)
                 }
                 .disabled(isLoading || username.isEmpty || password.isEmpty)
@@ -104,14 +104,16 @@ struct LoginView: View {
 
                 Spacer()
 
-                Text("Feedback? ")
-                    .foregroundColor(Theme.textDim) +
-                Text("Email Jason Benn")
-                    .foregroundColor(Theme.textDim)
-                    .underline()
+                Link(destination: URL(string: "mailto:jasoncbenn@gmail.com")!) {
+                    (Text("Feedback? ")
+                        .foregroundColor(Theme.textDim) +
+                    Text("Email Jason Benn")
+                        .foregroundColor(Theme.textDim)
+                        .underline())
+                }
+                .font(Theme.body(12))
+                .padding(.bottom, 16)
             }
-            .font(Theme.body(12))
-            .padding(.bottom, 16)
         }
     }
 

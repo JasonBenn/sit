@@ -9,17 +9,31 @@ struct FlowPreviewView: View {
             Theme.bg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Amber preview banner
-                HStack(spacing: 8) {
-                    Image(systemName: "eye.fill")
-                        .font(.system(size: 14))
-                    Text("Preview Mode")
-                        .font(Theme.body(14))
+                // Preview banner
+                HStack {
+                    HStack(spacing: 6) {
+                        Text("\u{25B6}")
+                        Text("Preview Mode")
+                            .font(Theme.body(12, weight: .medium))
+                    }
+                    .foregroundColor(Color(hex: "C8A060"))
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Text("×")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(Color(hex: "C8A060"))
+                    }
                 }
-                .foregroundColor(Theme.amber)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(Theme.amber.opacity(0.15))
+                .background(Color(hex: "B4A078").opacity(0.12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color(hex: "B4A078").opacity(0.2), lineWidth: 1)
+                )
+                .cornerRadius(12)
+                .padding(.horizontal, 16)
+                .padding(.top, 56)
 
                 DynamicFlowView(flow: flow, isPreview: true) {
                     dismiss()

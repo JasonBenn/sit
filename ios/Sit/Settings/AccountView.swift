@@ -15,35 +15,39 @@ struct AccountView: View {
                 VStack(spacing: 24) {
                     // Username
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Username")
-                            .font(Theme.body(12))
-                            .foregroundColor(Theme.textMuted)
+                        Text("USERNAME")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
                         Text(authManager.user?.username ?? "")
                             .font(Theme.body(16))
                             .foregroundColor(Theme.text)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Theme.card)
-                            .cornerRadius(12)
+                            .cornerRadius(16)
                     }
 
-                    // Change Password
+                    // Security
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Change Password")
-                            .font(Theme.body(12))
-                            .foregroundColor(Theme.textMuted)
+                        Text("SECURITY")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
 
                         SecureField("Current password", text: $currentPassword)
                             .foregroundColor(Theme.text)
                             .padding()
                             .background(Theme.card)
-                            .cornerRadius(12)
+                            .cornerRadius(16)
 
                         SecureField("New password", text: $newPassword)
                             .foregroundColor(Theme.text)
                             .padding()
                             .background(Theme.card)
-                            .cornerRadius(12)
+                            .cornerRadius(16)
 
                         if let msg = passwordMessage {
                             Text(msg)
@@ -54,30 +58,43 @@ struct AccountView: View {
                         Button {
                             Task { await changePassword() }
                         } label: {
-                            Text("Update Password")
+                            Text("Change Password")
                                 .font(Theme.body(14, weight: .medium))
                                 .foregroundColor(Theme.text)
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(Theme.sage)
-                                .cornerRadius(12)
+                                .cornerRadius(16)
                         }
                         .disabled(currentPassword.isEmpty || newPassword.count < 6)
                     }
 
                     Spacer().frame(height: 32)
 
-                    // Delete Account
-                    Button {
-                        showDeleteConfirm = true
-                    } label: {
-                        Text("Delete Account")
-                            .font(Theme.body(14))
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(12)
+                    // Danger Zone
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("DANGER ZONE")
+                            .font(Theme.body(11))
+                            .foregroundColor(Theme.textDim)
+                            .tracking(1)
+                            .padding(.leading, 4)
+
+                        Button {
+                            showDeleteConfirm = true
+                        } label: {
+                            Text("Delete Account")
+                                .font(Theme.body(14))
+                                .foregroundColor(Color(hex: "C08060"))
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Theme.card)
+                                .cornerRadius(16)
+                        }
+
+                        Text("This permanently deletes all your data")
+                            .font(Theme.body(12))
+                            .foregroundColor(Theme.textDim)
+                            .padding(.leading, 4)
                     }
                 }
                 .padding(16)

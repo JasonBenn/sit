@@ -6,13 +6,14 @@ struct WatchConfirmationView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 44))
-                .foregroundColor(WatchTheme.sageText)
+            Text("\u{2713}")
+                .font(.system(size: 36))
+                .foregroundColor(WatchTheme.sage)
 
             Text(wasQueued ? "Saved Offline" : "Saved")
-                .font(.headline)
-                .foregroundColor(WatchTheme.text)
+                .font(.caption)
+                .fontWeight(.light)
+                .foregroundColor(Color(hex: "C0BDB6"))
 
             if wasQueued {
                 Text("Will sync when online")

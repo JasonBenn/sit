@@ -36,16 +36,24 @@ struct HomeView: View {
 
                     Spacer()
 
-                    Button { showOnboarding = true } label: {
-                        Image(systemName: "questionmark.circle")
-                            .font(.system(size: 20))
-                            .foregroundColor(Theme.textMuted)
-                    }
+                    HStack(spacing: 8) {
+                        Button { showOnboarding = true } label: {
+                            Text("?")
+                                .font(Theme.body(14, weight: .medium))
+                                .foregroundColor(Theme.textDim)
+                                .frame(width: 40, height: 40)
+                                .background(Theme.card)
+                                .clipShape(Circle())
+                        }
 
-                    NavigationLink(destination: SettingsView()) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 20))
-                            .foregroundColor(Theme.textMuted)
+                        NavigationLink(destination: SettingsView()) {
+                            Text("\u{2699}")
+                                .font(.system(size: 18))
+                                .foregroundColor(Theme.textMuted)
+                                .frame(width: 40, height: 40)
+                                .background(Theme.card)
+                                .clipShape(Circle())
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
@@ -68,7 +76,7 @@ struct HomeView: View {
                         }
 
                         if let flow = currentFlow {
-                            Text(flow.name)
+                            Text("\(flow.name) · \(flow.stepsJson.count) steps")
                                 .font(Theme.display(14))
                                 .italic()
                                 .foregroundColor(Theme.textDim)
@@ -101,6 +109,9 @@ struct HomeView: View {
                 .padding(.horizontal, 24)
 
                 // Chat input
+                Divider()
+                    .background(Theme.border)
+
                 HStack(spacing: 12) {
                     TextField("Ask about your practice...", text: $chatInput)
                         .font(Theme.body(14))
@@ -108,16 +119,19 @@ struct HomeView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(Theme.card)
-                        .cornerRadius(12)
+                        .clipShape(Capsule())
 
                     Button {
                         initialChatMessage = chatInput
                         chatInput = ""
                         navigateToChat = true
                     } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(Theme.sage)
+                        Text("\u{2191}")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Theme.sage)
+                            .clipShape(Circle())
                     }
                     .disabled(chatInput.isEmpty)
                 }

@@ -43,26 +43,30 @@ struct ChatView: View {
 
                 // Input bar
                 HStack(spacing: 12) {
-                    TextField("Message...", text: $viewModel.inputText)
+                    TextField("Ask anything...", text: $viewModel.inputText)
                         .font(Theme.body(14))
                         .foregroundColor(Theme.text)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(Theme.card)
-                        .cornerRadius(12)
+                        .clipShape(Capsule())
 
-                    if !viewModel.inputText.isEmpty {
-                        Button {
-                            Task { await viewModel.sendMessage() }
-                        } label: {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(Theme.sage)
-                        }
+                    Button {
+                        Task { await viewModel.sendMessage() }
+                    } label: {
+                        Text("\u{2191}")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Theme.sage)
+                            .clipShape(Circle())
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Theme.border).frame(height: 1)
+                }
                 .background(Theme.bg)
             }
         }
