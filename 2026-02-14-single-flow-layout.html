@@ -316,7 +316,7 @@
     <!-- ============================================================ -->
     <div class="feature-section fade-section">
       <h2 class="section-title mb-2">iOS Home Screen</h2>
-      <p class="section-subtitle mb-10 max-w-2xl">Home screen is the chat interface. Check In button at top, preset questions in empty state, Settings in top-right. Chat input always visible at bottom.</p>
+      <p class="section-subtitle mb-10 max-w-2xl">Home screen centers a large circular Check In button. Gear icon in top-right opens Settings. Chat input at bottom &mdash; tapping it or sending a message pushes Check In off-screen to make room for the conversation.</p>
 
       <div class="flex gap-14 flex-wrap items-start">
 
@@ -325,34 +325,39 @@
           <div class="device-label">Home (Empty)</div>
           <div class="iphone">
             <div class="iphone-screen dev-bg dev-text flex flex-col">
-              <div class="flex-1 p-6 pt-14 flex flex-col">
-                <div class="flex justify-between items-center mt-4 mb-8">
+              <!-- Top bar -->
+              <div class="p-6 pt-14 pb-0">
+                <div class="flex justify-between items-center mt-4">
                   <div class="text-2xl font-light sit-brand" style="font-family: 'Cormorant Garamond', serif; letter-spacing: 0.02em;">Sit</div>
-                  <div class="dev-card rounded-full px-4 py-2 text-sm dev-text-muted">Settings</div>
-                </div>
-
-                <button class="w-full dev-green-bg text-white rounded-2xl py-4 text-lg font-medium" style="font-family: 'Outfit', sans-serif; font-weight: 400;">
-                  Check In
-                </button>
-
-                <div class="flex-1 flex flex-col justify-center">
-                  <div class="dev-text-muted text-center mb-5" style="font-style: italic; font-family: 'Cormorant Garamond', serif; font-size: 1rem;">Ask about your practice</div>
-
-                  <div class="space-y-3">
-                    <div class="dev-card rounded-2xl px-4 py-4 text-sm dev-text" style="opacity: 0.8;">
-                      What patterns do you see in my last 10 voice notes?
-                    </div>
-                    <div class="dev-card rounded-2xl px-4 py-4 text-sm dev-text" style="opacity: 0.8;">
-                      How often have I been in the View each month?
-                    </div>
-                  </div>
+                  <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-muted text-lg">&#9881;</div>
                 </div>
               </div>
 
+              <!-- Check In circle - upper half -->
+              <div class="flex-1 flex flex-col items-center justify-center" style="margin-top: -40px;">
+                <div class="dev-green-bg rounded-full flex items-center justify-center text-white" style="width: 160px; height: 160px; box-shadow: 0 4px 32px rgba(95, 133, 102, 0.3);">
+                  <div class="text-center">
+                    <div class="text-lg font-medium" style="font-family: 'Outfit', sans-serif;">Check In</div>
+                  </div>
+                </div>
+                <div class="dev-text-dim text-xs mt-5" style="font-style: italic; font-family: 'Cormorant Garamond', serif;">In the View? &middot; 4 steps</div>
+              </div>
+
+              <!-- Conversation starters -->
+              <div class="px-5 pb-3 space-y-2">
+                <div class="rounded-2xl px-4 py-3 text-sm dev-text-muted" style="border: 1px solid #2A2825;">
+                  What patterns do you see in my last 10 voice notes?
+                </div>
+                <div class="rounded-2xl px-4 py-3 text-sm dev-text-muted" style="border: 1px solid #2A2825;">
+                  How often have I been in the View each month?
+                </div>
+              </div>
+
+              <!-- Chat input -->
               <div class="p-4 dev-border" style="border-top-width: 1px;">
                 <div class="flex gap-2">
                   <div class="flex-1 dev-card rounded-full px-5 py-3 dev-text-muted text-sm">
-                    Ask about your meditation data...
+                    Ask about your practice...
                   </div>
                   <div class="dev-green-bg rounded-full w-10 h-10 flex items-center justify-center text-white">&uarr;</div>
                 </div>
@@ -367,14 +372,10 @@
           <div class="iphone">
             <div class="iphone-screen dev-bg dev-text flex flex-col">
               <div class="p-6 pt-14 pb-0">
-                <div class="flex justify-between items-center mt-4 mb-4">
+                <div class="flex justify-between items-center mt-4 mb-2">
                   <div class="text-2xl font-light sit-brand" style="font-family: 'Cormorant Garamond', serif; letter-spacing: 0.02em;">Sit</div>
-                  <div class="dev-card rounded-full px-4 py-2 text-sm dev-text-muted">Settings</div>
+                  <div class="dev-card rounded-full w-10 h-10 flex items-center justify-center dev-text-muted text-lg">&#9881;</div>
                 </div>
-
-                <button class="w-full dev-green-bg text-white rounded-2xl py-4 text-lg font-medium mb-4" style="font-family: 'Outfit', sans-serif; font-weight: 400;">
-                  Check In
-                </button>
               </div>
 
               <div class="flex-1 overflow-y-auto px-6 py-2 space-y-4">
@@ -423,11 +424,13 @@
           </div>
         </div>
 
-        <!-- UX flow note: Check In -->
+        <!-- UX flow note -->
         <div class="callout callout-ux self-center mt-4">
-          <div class="callout-header" style="color: #5F8566;">UX Flow: Check In</div>
+          <div class="callout-header" style="color: #5F8566;">UX Flow: Home Screen</div>
           <p class="text-warm-700 text-sm leading-relaxed font-light">
-            Tapping <strong class="font-medium">"Check In"</strong> pushes a full-screen prompt flow (same as the current app behavior). The user walks through each step of their active flow. On completion, returns to this home screen.
+            <strong class="font-medium">Check In:</strong> Tapping the large circle pushes a full-screen prompt flow. On completion, returns to home.<br><br>
+            <strong class="font-medium">Chat:</strong> Tapping the input or sending a message scrolls the Check In button off-screen. The conversation fills the space. Returning to home (e.g. after backgrounding the app) restores the Check In button.<br><br>
+            <strong class="font-medium">Settings:</strong> Gear icon opens Settings. Explore is accessible from there.
           </p>
         </div>
 
@@ -633,11 +636,11 @@
                 <div class="dev-card rounded-2xl p-4">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 1</div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 1 &ndash; Check</div>
                       <div class="text-sm font-medium mb-2">Are you in the View?</div>
                       <div class="flex gap-2 flex-wrap">
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Yes &rarr; Step 2</span>
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(200, 140, 80, 0.12); color: #C8A060;">No &rarr; Step 3</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Yes &rarr; Reflection</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(200, 140, 80, 0.12); color: #C8A060;">No &rarr; Gate Opening</span>
                       </div>
                     </div>
                     <div class="dev-text-dim">&rsaquo;</div>
@@ -665,8 +668,8 @@
                       <div class="dev-green text-xs font-medium mb-1">Step 3 &ndash; Gate Opening</div>
                       <div class="text-sm font-medium mb-2">Open through the gate of the ears...</div>
                       <div class="flex gap-2 flex-wrap">
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">It worked &rarr; Step 2</span>
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(200, 140, 80, 0.12); color: #C8A060;">Didn't work &rarr; Step 4</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">It worked &rarr; Reflection</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(200, 140, 80, 0.12); color: #C8A060;">Didn't work &rarr; Journal</span>
                       </div>
                     </div>
                     <div class="dev-text-dim">&rsaquo;</div>
@@ -677,7 +680,7 @@
                 <div class="dev-card rounded-2xl p-4">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 4</div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 4 &ndash; Journal</div>
                       <div class="text-sm font-medium mb-2">What's alive for you right now?</div>
                       <div class="flex gap-2 flex-wrap">
                         <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(140, 110, 170, 0.12); color: #B8A0D0;">Record &rarr; Submit</span>
@@ -697,7 +700,9 @@
               </div>
 
               <div class="p-4 dev-border" style="border-top-width: 1px;">
-                <div class="dev-green-bg rounded-2xl py-4 text-center text-sm font-medium text-white">Done</div>
+                <div class="dev-card rounded-2xl py-4 text-center text-sm font-medium dev-text-muted flex items-center justify-center gap-2">
+                  <span style="color: #7BA085;">&#9654;</span> Preview
+                </div>
               </div>
             </div>
           </div>
@@ -727,26 +732,16 @@
                   </div>
                 </div>
 
-                <div class="dev-card rounded-2xl p-4">
-                  <div class="flex justify-between items-center">
-                    <div class="text-sm dev-text-muted">Visibility</div>
-                    <div class="flex gap-2">
-                      <div class="dev-green-bg rounded-lg px-3 py-1 text-xs font-medium text-white">Public</div>
-                      <div class="dev-card-alt rounded-lg px-3 py-1 text-xs dev-text-muted">Private</div>
-                    </div>
-                  </div>
-                </div>
-
                 <div class="dev-text-dim text-xs uppercase tracking-wide mt-4 mb-2 px-1">Steps (starts at Step 1)</div>
 
                 <div class="dev-card rounded-2xl p-4">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 1</div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 1 &ndash; Scan</div>
                       <div class="text-sm font-medium mb-2">Where do you feel tension in your body?</div>
                       <div class="flex gap-2 flex-wrap">
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Head/neck &rarr; Step 2</span>
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Shoulders/back &rarr; Step 2</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Head/neck &rarr; Breathe</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Shoulders/back &rarr; Breathe</span>
                         <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Nowhere &rarr; Submit</span>
                       </div>
                     </div>
@@ -757,7 +752,7 @@
                 <div class="dev-card rounded-2xl p-4">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 2</div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 2 &ndash; Breathe</div>
                       <div class="text-sm font-medium mb-2">Breathe into that area. What shifted?</div>
                       <div class="flex gap-2 flex-wrap">
                         <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(140, 110, 170, 0.12); color: #B8A0D0;">Record &rarr; Submit</span>
@@ -776,8 +771,10 @@
               </div>
 
               <div class="p-4 dev-border space-y-2" style="border-top-width: 1px;">
-                <div class="dev-green-bg rounded-2xl py-4 text-center text-sm font-medium text-white">Done</div>
-                <div class="dev-card rounded-2xl py-4 text-center text-sm font-medium dev-text-dim">Save as New Flow</div>
+                <div class="dev-card rounded-2xl py-4 text-center text-sm font-medium dev-text-muted flex items-center justify-center gap-2">
+                  <span style="color: #7BA085;">&#9654;</span> Preview
+                </div>
+                <div class="dev-card rounded-2xl py-4 text-center text-sm font-medium dev-text-dim">Publish to Explore</div>
               </div>
             </div>
           </div>
@@ -823,11 +820,11 @@
                 <div class="dev-card rounded-2xl p-4">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 1</div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 1 &ndash; Scan</div>
                       <div class="text-sm font-medium mb-2">Where do you feel tension in your body?</div>
                       <div class="flex gap-2 flex-wrap">
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Head/neck &rarr; Step 2</span>
-                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Shoulders/back &rarr; Step 2</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Head/neck &rarr; Breathe</span>
+                        <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Shoulders/back &rarr; Breathe</span>
                         <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Nowhere &rarr; Submit</span>
                       </div>
                     </div>
@@ -838,7 +835,7 @@
                 <div class="dev-card rounded-2xl p-4">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 2</div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 2 &ndash; Breathe</div>
                       <div class="text-sm font-medium mb-2">Breathe into that area. What shifted?</div>
                       <div class="flex gap-2 flex-wrap">
                         <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(140, 110, 170, 0.12); color: #B8A0D0;">Record &rarr; Submit</span>
@@ -853,7 +850,7 @@
                 <div class="dev-card rounded-2xl p-4" style="border: 1px solid rgba(95, 133, 102, 0.2);">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="dev-green text-xs font-medium mb-1">Step 3 <span class="dev-text-dim font-normal">&middot; new</span></div>
+                      <div class="dev-green text-xs font-medium mb-1">Step 3 &ndash; Ease <span class="dev-text-dim font-normal">&middot; new</span></div>
                       <div class="text-sm font-medium mb-2">How does ease feel right now?</div>
                       <div class="flex gap-2 flex-wrap">
                         <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Expansive &rarr; Submit</span>
@@ -872,8 +869,10 @@
               </div>
 
               <div class="p-4 dev-border space-y-2" style="border-top-width: 1px;">
-                <div class="dev-green-bg rounded-2xl py-4 text-center text-sm font-medium text-white">Done</div>
-                <div class="rounded-2xl py-4 text-center text-sm font-medium text-white" style="background: #4A6B80;">Save as New Flow</div>
+                <div class="dev-card rounded-2xl py-4 text-center text-sm font-medium dev-text-muted flex items-center justify-center gap-2">
+                  <span style="color: #7BA085;">&#9654;</span> Preview
+                </div>
+                <div class="rounded-2xl py-4 text-center text-sm font-medium text-white" style="background: #4A6B80;">Publish to Explore</div>
               </div>
             </div>
           </div>
@@ -885,10 +884,67 @@
           <div class="text-warm-700 text-sm leading-relaxed font-light">
             <strong class="font-medium">Back button:</strong> "&larr; Settings" instead of "&larr; My Flows"<br><br>
             <strong class="font-medium">Attribution:</strong> Shows "Based on 'Body Scan' by sarah" when flow was adopted from Explore<br><br>
-            <strong class="font-medium">Button:</strong> "Done" instead of "Save Flow" (auto-saves)<br><br>
-            <strong class="font-medium">Save as:</strong> Disabled until you make a change. Copies your modified version as a new standalone flow (drops attribution, resets visibility to private)<br><br>
+            <strong class="font-medium">Preview:</strong> Launches a read-only walkthrough of the flow (no data saved). Replaces the old "Done" button &mdash; auto-save means no explicit save is needed<br><br>
+            <strong class="font-medium">Publish to Explore:</strong> Disabled until you make a change. Publishes your modified version as a new standalone flow (drops attribution, resets visibility)<br><br>
             <strong class="font-medium">Visibility:</strong> Auto-flips to private when you edit an adopted flow
           </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PREVIEW MODE -->
+    <!-- ============================================================ -->
+    <div class="feature-section fade-section">
+      <h2 class="section-title mb-2">Preview Mode</h2>
+      <p class="section-subtitle mb-10 max-w-2xl">Read-only walkthrough of a flow. Same UI as a check-in, but no data is saved. Accessible from the Flow Editor and Explore page.</p>
+
+      <div class="flex gap-14 flex-wrap items-start">
+
+        <div class="relative">
+          <div class="device-label">Preview Step</div>
+          <div class="watch" style="width: 220px; height: 270px;">
+            <div class="watch-screen text-white flex flex-col" style="padding: 10px;">
+              <!-- Preview Mode banner -->
+              <div class="rounded-xl px-2.5 py-1.5 mb-2 flex items-center justify-between" style="background: rgba(180, 160, 120, 0.15); border: 1px solid rgba(180, 160, 120, 0.25);">
+                <div class="text-[9px] font-medium flex items-center gap-1" style="color: #C8A060;">
+                  &#9654; Preview
+                </div>
+                <div class="text-[9px] font-medium" style="color: #C8A060;">&times;</div>
+              </div>
+
+              <!-- Step content -->
+              <div class="flex-1 flex flex-col items-center justify-center">
+                <div class="text-center mb-3">
+                  <div class="dev-text-dim text-[9px] uppercase tracking-wide mb-2">Step 1 of 4</div>
+                  <div class="text-sm font-light leading-snug" style="font-family: 'Cormorant Garamond', serif;">
+                    Are you in the View?
+                  </div>
+                </div>
+
+                <div class="w-full space-y-2">
+                  <div class="dev-green-bg rounded-xl py-2 text-center text-[11px] font-medium text-white">
+                    Yes
+                  </div>
+                  <div class="rounded-xl py-2 text-center text-[11px] font-medium text-white" style="background: #9A7040;">
+                    No
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center mt-1">
+                <div class="dev-text-dim text-[8px]">Responses won't be saved</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-ux self-center mt-4">
+          <div class="callout-header" style="color: #5F8566;">UX Flow: Preview</div>
+          <p class="text-warm-700 text-sm leading-relaxed font-light">
+            Tapping an answer advances to the next step (following the same routing rules as a real check-in), but <strong class="font-medium">nothing is saved</strong> to the server. The "Preview Mode" banner stays visible throughout. Tapping "Close" returns to wherever the preview was launched from (Flow Editor or Explore page).
+          </p>
         </div>
 
       </div>
@@ -908,14 +964,14 @@
           <div class="iphone">
             <div class="iphone-screen dev-bg dev-text flex flex-col">
               <div class="p-4 pt-14 flex items-center">
-                <div class="text-sm" style="color: #7BA085;">&larr; Flow</div>
+                <div class="text-sm" style="color: #7BA085;">&larr; In the View?</div>
                 <div class="flex-1 text-center font-medium text-sm">Edit Step 3</div>
                 <div class="w-12"></div>
               </div>
 
               <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
 
-                <!-- Watch preview -->
+                <!-- Watch preview (tappable) -->
                 <div class="flex justify-center">
                   <div class="watch" style="width: 162px; height: 198px; border-width: 2px; border-radius: 36px;">
                     <div class="watch-screen text-white flex flex-col" style="padding: 8px;">
@@ -927,6 +983,15 @@
                         <div class="rounded-xl py-1.5 text-center text-[11px] font-medium text-white" style="background: #9A7040;">Didn't work</div>
                       </div>
                     </div>
+                  </div>
+                </div>
+                <div class="text-center dev-text-dim text-[10px]">Tap a button to save &amp; navigate to that step</div>
+
+                <!-- Step title -->
+                <div>
+                  <div class="dev-text-muted text-sm mb-2 ml-1">Title</div>
+                  <div class="dev-card-alt rounded-xl p-4 text-sm">
+                    Gate Opening
                   </div>
                 </div>
 
@@ -954,7 +1019,7 @@
                       <div class="dev-card rounded-lg px-3 py-2 text-sm mb-2">It worked</div>
                       <div class="flex justify-between items-center">
                         <div class="text-xs dev-text-dim">Goes to:</div>
-                        <div class="dev-card rounded-lg px-3 py-1 text-sm dev-green">Step 2 &#9662;</div>
+                        <div class="dev-card rounded-lg px-3 py-1 text-sm dev-green">Reflection &#9662;</div>
                       </div>
                     </div>
 
@@ -966,7 +1031,7 @@
                       <div class="dev-card rounded-lg px-3 py-2 text-sm mb-2">Didn't work</div>
                       <div class="flex justify-between items-center">
                         <div class="text-xs dev-text-dim">Goes to:</div>
-                        <div class="dev-card rounded-lg px-3 py-1 text-sm" style="color: #C8A060;">Step 4 &#9662;</div>
+                        <div class="dev-card rounded-lg px-3 py-1 text-sm" style="color: #C8A060;">Journal &#9662;</div>
                       </div>
                     </div>
                   </div>
@@ -999,6 +1064,13 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="callout callout-ux self-center mt-4">
+          <div class="callout-header" style="color: #5F8566;">Watch Preview Interaction</div>
+          <p class="text-warm-700 text-sm leading-relaxed font-light">
+            The watch preview at the top of the step editor is <strong class="font-medium">interactive</strong>. Tapping an answer button saves your current edits and navigates directly to that step's editor. This lets you walk through the flow's routing while editing.
+          </p>
         </div>
 
       </div>
@@ -1086,6 +1158,102 @@
           </div>
         </div>
 
+        <!-- Explore with expanded flow (accordion) -->
+        <div class="relative">
+          <div class="device-label">Flow Expanded (Accordion)</div>
+          <div class="iphone">
+            <div class="iphone-screen dev-bg dev-text flex flex-col">
+              <div class="p-4 pt-14 flex items-center">
+                <div class="text-sm" style="color: #7BA085;">&larr; Settings</div>
+                <div class="flex-1 text-center font-medium text-sm">Explore</div>
+                <div class="w-12"></div>
+              </div>
+
+              <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                <div class="dev-text-dim text-xs uppercase tracking-wide mb-2 px-1">Public flows from all users</div>
+
+                <!-- Collapsed flow -->
+                <div class="dev-card rounded-2xl p-4">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <div class="text-sm font-medium mb-1">In the View?</div>
+                      <div class="text-xs dev-text-dim mb-2">by jasonbenn &middot; 4 steps</div>
+                      <div class="text-xs dev-text-dim leading-snug" style="opacity: 0.7;">Awareness check-in with gate opening exercise and voice note journaling.</div>
+                    </div>
+                    <div class="dev-green-bg rounded-lg px-3 py-1.5 text-xs font-medium ml-3 text-white">Use</div>
+                  </div>
+                </div>
+
+                <!-- Expanded flow (Body Scan) -->
+                <div class="rounded-2xl overflow-hidden" style="border: 1px solid rgba(95, 133, 102, 0.25); background: #1C1B19;">
+                  <div class="p-4">
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1">
+                        <div class="text-sm font-medium mb-1">Body Scan</div>
+                        <div class="text-xs dev-text-dim mb-2">by sarah &middot; 2 steps</div>
+                        <div class="text-xs dev-text-dim leading-snug" style="opacity: 0.7;">Quick body awareness check: where is tension, where is ease?</div>
+                      </div>
+                      <div class="dev-green-bg rounded-lg px-3 py-1.5 text-xs font-medium ml-3 text-white">Use</div>
+                    </div>
+                  </div>
+
+                  <!-- Expanded step list -->
+                  <div class="px-4 pb-4 space-y-2" style="border-top: 1px solid #2A2825;">
+                    <div class="pt-3">
+                      <div class="dev-card-alt rounded-xl p-3">
+                        <div class="dev-green text-xs font-medium mb-1">Step 1 &ndash; Scan</div>
+                        <div class="text-xs dev-text-muted mb-1">Where do you feel tension in your body?</div>
+                        <div class="flex gap-1.5 flex-wrap">
+                          <span class="px-1.5 py-0.5 rounded text-[10px]" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Head/neck &rarr; Breathe</span>
+                          <span class="px-1.5 py-0.5 rounded text-[10px]" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Shoulders &rarr; Breathe</span>
+                          <span class="px-1.5 py-0.5 rounded text-[10px]" style="background: rgba(95, 133, 102, 0.15); color: #8DB897;">Nowhere &rarr; Submit</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="dev-card-alt rounded-xl p-3">
+                      <div class="dev-green text-xs font-medium mb-1">Step 2 &ndash; Breathe</div>
+                      <div class="text-xs dev-text-muted mb-1">Breathe into that area. What shifted?</div>
+                      <div class="flex gap-1.5 flex-wrap">
+                        <span class="px-1.5 py-0.5 rounded text-[10px]" style="background: rgba(140, 110, 170, 0.12); color: #B8A0D0;">Record &rarr; Submit</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] dev-card dev-text-muted">Skip &rarr; Submit</span>
+                      </div>
+                    </div>
+
+                    <div class="pt-1">
+                      <div class="dev-card-alt rounded-xl py-3 text-center text-xs font-medium flex items-center justify-center gap-1.5" style="color: #7BA085;">
+                        <span>&#9654;</span> Preview Flow
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- More collapsed flows -->
+                <div class="dev-card rounded-2xl p-4">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <div class="text-sm font-medium mb-1">Noting Practice</div>
+                      <div class="text-xs dev-text-dim mb-2">by mike &middot; 3 steps</div>
+                      <div class="text-xs dev-text-dim leading-snug" style="opacity: 0.7;">What's present? Seeing, hearing, feeling, or thinking? Then record what you noticed.</div>
+                    </div>
+                    <div class="dev-green-bg rounded-lg px-3 py-1.5 text-xs font-medium ml-3 text-white">Use</div>
+                  </div>
+                </div>
+
+                <div class="dev-card rounded-2xl p-4">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <div class="text-sm font-medium mb-1">Gratitude Journal</div>
+                      <div class="text-xs dev-text-dim mb-2">by alex &middot; 3 steps</div>
+                      <div class="text-xs dev-text-dim leading-snug" style="opacity: 0.7;">Name 3 things you're grateful for, then record a voice note about one.</div>
+                    </div>
+                    <div class="dev-green-bg rounded-lg px-3 py-1.5 text-xs font-medium ml-3 text-white">Use</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Confirmation dialog -->
         <div class="relative">
           <div class="device-label">Confirmation Dialog</div>
@@ -1107,9 +1275,9 @@
               <div class="absolute inset-0 modal-overlay flex items-center justify-center px-8">
                 <div class="dev-card rounded-2xl w-full max-w-sm overflow-hidden" style="box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
                   <div class="p-6 text-center">
-                    <div class="text-lg font-medium mb-3">Replace your current flow?</div>
+                    <div class="text-lg font-medium mb-3">Replace <strong>'In the View?'</strong> with <strong>'Body Scan'</strong>?</div>
                     <div class="text-sm dev-text-muted leading-relaxed">
-                      Your edits to <strong class="dev-text">'In the View?'</strong> will be lost. This can't be undone.
+                      Your edits will be lost. This can't be undone.
                     </div>
                   </div>
                   <div class="flex dev-border" style="border-top-width: 1px;">
@@ -1325,7 +1493,7 @@
     <!-- ============================================================ -->
     <div class="feature-section fade-section">
       <h2 class="section-title mb-2">iOS Settings Menu<span class="badge-simplified">Simplified</span></h2>
-      <p class="section-subtitle mb-10 max-w-2xl">"My Flows" &rarr; "My Flow" (singular). Goes directly to the flow editor, no list screen.</p>
+      <p class="section-subtitle mb-10 max-w-2xl">"My Flows" &rarr; "My Flow" (singular). Goes directly to the flow editor, no list screen. "Explore" renamed to "Flows from the sangha".</p>
 
       <div class="flex gap-14 flex-wrap items-start">
         <div class="relative">
@@ -1357,8 +1525,16 @@
 
                 <div class="dev-card rounded-2xl p-4 flex justify-between items-center">
                   <div>
+                    <div class="font-medium text-sm">Conversation Starters</div>
+                    <div class="dev-text-dim text-xs mt-0.5">2 prompts on home screen</div>
+                  </div>
+                  <div class="dev-text-dim">&rsaquo;</div>
+                </div>
+
+                <div class="dev-card rounded-2xl p-4 flex justify-between items-center">
+                  <div>
                     <div class="font-medium text-sm">Explore</div>
-                    <div class="dev-text-dim text-xs mt-0.5">Browse public flows</div>
+                    <div class="dev-text-dim text-xs mt-0.5">Flows from the sangha</div>
                   </div>
                   <div class="dev-text-dim">&rsaquo;</div>
                 </div>
@@ -1430,8 +1606,8 @@
         <div class="callout callout-change self-start mt-4">
           <div class="callout-header" style="color: #B8917A;">Changed from Multi-Flow</div>
           <div class="text-warm-700 text-sm leading-relaxed font-light">
-            <strong class="font-medium">Before:</strong> "My Flows" with subtitle "3 flows" &rarr; opens a list of flows<br><br>
-            <strong class="font-medium">Now:</strong> "My Flow" with subtitle "In the View? &middot; 4 steps" &rarr; goes directly to the flow editor. No intermediate list screen.
+            <strong class="font-medium">Before:</strong> "My Flows" with subtitle "3 flows" &rarr; opens a list of flows.<br><br>
+            <strong class="font-medium">Now:</strong> "My Flow" with subtitle "In the View? &middot; 4 steps" &rarr; goes directly to the flow editor. No intermediate list screen. "Explore" shows "Flows from the sangha".
           </div>
         </div>
       </div>
@@ -1447,7 +1623,7 @@
           <strong class="font-medium text-warm-900">Single Flow Model:</strong> <span class="font-light">Each user has exactly one flow (stored as JSON on the server). The "Explore &rarr; Use" action replaces the user's flow entirely. The previous flow is not preserved &mdash; it's overwritten. Attribution metadata (original author + flow name) is stored alongside the flow JSON.</span>
         </div>
         <div>
-          <strong class="font-medium text-warm-900">Auto-Save:</strong> <span class="font-light">Flow edits are saved automatically as the user makes changes (debounced). The "Done" button simply navigates back to Settings. No explicit save action needed.</span>
+          <strong class="font-medium text-warm-900">Auto-Save:</strong> <span class="font-light">Flow edits are saved automatically as the user makes changes (debounced). The "&larr; Settings" back button navigates back. No explicit save action needed. The "Preview" button launches a read-only walkthrough.</span>
         </div>
         <div>
           <strong class="font-medium text-warm-900">Visibility Auto-Flip:</strong> <span class="font-light">When a user modifies an adopted flow (one with attribution), visibility automatically changes to "Private". The user can manually set it back to "Public" if they want to share their modified version.</span>
@@ -1488,7 +1664,7 @@
         <div class="callout callout-ux" style="max-width: 100%;">
           <div class="callout-header" style="color: #5F8566;">Flow Replacement (Explore &rarr; Use)</div>
           <p class="text-warm-700 text-sm leading-relaxed font-light">
-            When the user taps "Use" on a public flow in Explore, a confirmation dialog appears: <em>"Replace your current flow? Your edits to '[current flow name]' will be lost."</em> On confirm, the server replaces the user's flow JSON with a copy of the selected public flow, plus attribution metadata. The old flow is gone &mdash; no undo. A success toast confirms: <em>"Now using '[flow name]'!"</em>
+            When the user taps "Use" on a public flow in Explore, a confirmation dialog appears: <em>"Replace '[current flow]' with '[new flow]'?"</em> If the current flow has edits, it adds: <em>"Your edits will be lost."</em> Otherwise: <em>"Your current flow will be replaced."</em> On confirm, the server replaces the user's flow JSON with a copy of the selected public flow, plus attribution metadata. The old flow is gone &mdash; no undo. A success toast confirms: <em>"Now using '[flow name]'!"</em>
           </p>
         </div>
 
