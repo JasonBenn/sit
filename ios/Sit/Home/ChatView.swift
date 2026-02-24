@@ -4,6 +4,7 @@ struct ChatView: View {
     var initialMessage: String?
 
     @StateObject private var viewModel = ChatViewModel()
+    @FocusState private var isInputFocused: Bool
 
     var body: some View {
         ZStack {
@@ -50,8 +51,10 @@ struct ChatView: View {
                         .padding(.vertical, 12)
                         .background(Theme.card)
                         .clipShape(Capsule())
+                        .focused($isInputFocused)
 
                     Button {
+                        isInputFocused = false
                         Task { await viewModel.sendMessage() }
                     } label: {
                         Text("\u{2191}")
