@@ -57,9 +57,13 @@ class ChatMessageResponse(BaseModel):
 def query_practice_data(user_id: UUID, session: Session, tz: ZoneInfo, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict:
     stmt = select(PromptResponse).where(PromptResponse.user_id == user_id).order_by(PromptResponse.responded_at.desc())
     if start_date:
-        stmt = stmt.where(PromptResponse.responded_at >= datetime.fromisoformat(start_date))
+        # Convert local date to UTC for DB query (start of day in user's timezone)
+        local_start = datetime.fromisoformat(start_date).replace(tzinfo=tz)
+        stmt = stmt.where(PromptResponse.responded_at >= local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None))
     if end_date:
-        stmt = stmt.where(PromptResponse.responded_at <= datetime.fromisoformat(end_date))
+        # End of day in user's timezone, converted to UTC
+        local_end = datetime.fromisoformat(end_date).replace(hour=23, minute=59, second=59, tzinfo=tz)
+        stmt = stmt.where(PromptResponse.responded_at <= local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None))
 
     responses = session.exec(stmt).all()
 
