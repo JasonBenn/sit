@@ -24,9 +24,17 @@ The user tracks their meditation practice in two ways:
 
 You can query their practice data to help them understand patterns and progress.
 
-Be warm, insightful, and concise.
+Be warm but concise. Don't offer advice proactively - you're a data assistant, not the meditation teacher. Do point out trends if you notice them.
 
-Respond in plain text only. No **markdown styles**, no bullet points, no formatting.
+EXAMPLE QUERY: "How long have I been sitting recently?"
+BAD: "80m. If you're looking to enhance your meditation practice..."
+GOOD: "Here are your timed sits this week:
+- 2/16 Mon 9:00am: 30m
+- 2/18 Wed 8:35am: 20m
+- 2/20 Fri 8:45am: 30m
+1h20m total in the last week. That's 25% more than the previous week, nicely done."
+
+Respond in plain text, don't use **markdown formatting**, but newlines and bullets are ok.
 
 Today's date is {today}. All timestamps in query results are in the user's local time ({timezone})."""
 
@@ -84,9 +92,7 @@ def query_practice_data(
 
     if include_sits:
         sit_stmt = (
-            select(Sit)
-            .where(Sit.user_id == user_id)
-            .order_by(Sit.started_at.desc())
+            select(Sit).where(Sit.user_id == user_id).order_by(Sit.started_at.desc())
         )
         if start_date:
             local_start = datetime.fromisoformat(start_date).replace(tzinfo=tz)
@@ -104,12 +110,16 @@ def query_practice_data(
             )
         sits = session.exec(sit_stmt).all()
         for s in sits:
-            local_time = s.started_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
-            results.append({
-                "type": "sit",
-                "time": local_time,
-                "duration_seconds": s.duration_seconds,
-            })
+            local_time = (
+                s.started_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
+            )
+            results.append(
+                {
+                    "type": "sit",
+                    "time": local_time,
+                    "duration_seconds": s.duration_seconds,
+                }
+            )
 
     if include_checkins:
         checkin_stmt = (
@@ -143,14 +153,20 @@ def query_practice_data(
         flows_map = {str(f.id): {"name": f.name, "steps": f.steps_json} for f in flows}
 
         for c in checkins:
-            local_time = c.responded_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
-            results.append({
-                "type": "checkin",
-                "time": local_time,
-                "flow_id": str(c.flow_id) if c.flow_id else None,
-                "steps": c.steps,
-                "transcription": c.transcription,
-            })
+            local_time = (
+                c.responded_at.replace(tzinfo=ZoneInfo("UTC"))
+                .astimezone(tz)
+                .isoformat()
+            )
+            results.append(
+                {
+                    "type": "checkin",
+                    "time": local_time,
+                    "flow_id": str(c.flow_id) if c.flow_id else None,
+                    "steps": c.steps,
+                    "transcription": c.transcription,
+                }
+            )
     else:
         flows_map = {}
 
