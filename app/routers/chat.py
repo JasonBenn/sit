@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import UUID
 from zoneinfo import ZoneInfo
 from pydantic import BaseModel
-import openai
+import anthropic
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 from app.db import get_session
@@ -14,7 +14,7 @@ from app.models import User, Flow, Sit, Checkin, ChatMessage
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 SYSTEM_PROMPT_TEMPLATE = """You are a meditation practice assistant for the Sit app.
 
@@ -39,26 +39,23 @@ Respond in plain text, don't use **markdown formatting**, but newlines and bulle
 Today's date is {today}. All timestamps in query results are in the user's local time ({timezone})."""
 
 QUERY_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "query_practice_data",
-        "description": "Query the user's meditation practice data. Returns sits (timed seated meditation with duration_seconds) and/or checkins (flow-based check-ins with steps and optional voice note transcriptions).",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "start_date": {
-                    "type": "string",
-                    "description": "Start date filter (ISO format, e.g. 2026-01-01). Optional.",
-                },
-                "end_date": {
-                    "type": "string",
-                    "description": "End date filter (ISO format). Optional.",
-                },
-                "type": {
-                    "type": "string",
-                    "enum": ["sits", "checkins", "all"],
-                    "description": "Type of practice data to query. 'sits' for timed meditation sessions, 'checkins' for flow-based check-ins, 'all' for both. Defaults to 'all'.",
-                },
+    "name": "query_practice_data",
+    "description": "Query the user's meditation practice data. Returns sits (timed seated meditation with duration_seconds) and/or checkins (flow-based check-ins with steps and optional voice note transcriptions).",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "start_date": {
+                "type": "string",
+                "description": "Start date filter (ISO format, e.g. 2026-01-01). Optional.",
+            },
+            "end_date": {
+                "type": "string",
+                "description": "End date filter (ISO format). Optional.",
+            },
+            "type": {
+                "type": "string",
+                "enum": ["sits", "checkins", "all"],
+                "description": "Type of practice data to query. 'sits' for timed meditation sessions, 'checkins' for flow-based check-ins, 'all' for both. Defaults to 'all'.",
             },
         },
     },
@@ -207,48 +204,58 @@ def chat(
     ).all()
     history.reverse()
 
-    messages = [{"role": "system", "content": system_prompt}]
+    messages = []
     for msg in history:
         messages.append({"role": msg.role, "content": msg.content})
 
-    client = openai.OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        system=system_prompt,
         messages=messages,
         tools=[QUERY_TOOL],
     )
 
-    choice = response.choices[0]
+    # Handle tool use
+    if response.stop_reason == "tool_use":
+        # Build assistant message with all content blocks
+        messages.append({"role": "assistant", "content": response.content})
 
-    # Handle tool calls
-    if choice.finish_reason == "tool_calls":
-        messages.append(choice.message.model_dump())
-        for tool_call in choice.message.tool_calls:
-            args = json.loads(tool_call.function.arguments)
-            result = query_practice_data(
-                user.id,
-                session,
-                tz,
-                args.get("start_date"),
-                args.get("end_date"),
-                args.get("type", "all"),
-            )
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": json.dumps(result),
-                }
-            )
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                args = block.input
+                result = query_practice_data(
+                    user.id,
+                    session,
+                    tz,
+                    args.get("start_date"),
+                    args.get("end_date"),
+                    args.get("type", "all"),
+                )
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps(result),
+                    }
+                )
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        messages.append({"role": "user", "content": tool_results})
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=system_prompt,
             messages=messages,
             tools=[QUERY_TOOL],
         )
-        choice = response.choices[0]
 
-    assistant_content = choice.message.content or ""
+    assistant_content = ""
+    for block in response.content:
+        if hasattr(block, "text"):
+            assistant_content += block.text
 
     # Save assistant message
     assistant_msg = ChatMessage(
