@@ -2,7 +2,7 @@ import SwiftUI
 import WatchKit
 
 struct WatchDynamicFlowView: View {
-    @StateObject private var connectivity = WatchConnectivityManager.shared
+    @EnvironmentObject var authManager: WatchAuthManager
     @StateObject private var queue = ResponseQueue.shared
     @State private var currentStepId: Int = 0
     @State private var collectedSteps: [[Int]] = []
@@ -13,7 +13,7 @@ struct WatchDynamicFlowView: View {
     @State private var voiceNoteDuration: Double?
 
     private var flow: FlowDefinition? {
-        connectivity.currentFlow ?? Self.defaultFlow
+        authManager.currentFlow ?? Self.defaultFlow
     }
 
     private var currentStep: FlowStep? {
@@ -96,7 +96,7 @@ struct WatchDynamicFlowView: View {
         }
     }
 
-    // Fallback flow when no flow is synced from iPhone
+    // Fallback flow when no flow is loaded from server
     static let defaultFlow = FlowDefinition(
         id: "default",
         userId: nil,
@@ -128,5 +128,6 @@ struct WatchDynamicFlowView: View {
 #Preview {
     NavigationStack {
         WatchDynamicFlowView()
+            .environmentObject(WatchAuthManager())
     }
 }

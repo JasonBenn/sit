@@ -13,14 +13,6 @@ class NotificationService {
         try await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
     }
 
-    func schedulePromptNotifications() async throws {
-        let settings = await WatchConnectivityManager.shared.notificationSettings
-        let perDay = settings?.count ?? 3
-        let startHour = settings?.startHour ?? 9
-        let endHour = settings?.endHour ?? 22
-        try await schedulePromptNotifications(perDay: perDay, startHour: startHour, endHour: endHour)
-    }
-
     func schedulePromptNotifications(perDay: Int, startHour: Int, endHour: Int) async throws {
         await cancelAllPromptNotifications()
 

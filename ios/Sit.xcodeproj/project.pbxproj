@@ -13,7 +13,6 @@
 		C0010001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010001 /* Theme.swift */; };
 		C0010002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010002 /* Models.swift */; };
 		C0010003 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010003 /* APIService.swift */; };
-		C0010004 /* PhoneConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010004 /* PhoneConnectivityManager.swift */; };
 		C0010005 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010005 /* KeychainHelper.swift */; };
 		C0010006 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010006 /* AuthManager.swift */; };
 		C0010007 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010007 /* LoginView.swift */; };
@@ -44,8 +43,9 @@
 		C0020001 /* WatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020001 /* WatchModels.swift */; };
 		C0020002 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020002 /* WatchTheme.swift */; };
 		C0020003 /* WatchHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020003 /* WatchHomeView.swift */; };
-		C0020004 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020004 /* WatchConnectivityManager.swift */; };
 		C0020005 /* WatchDynamicFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020005 /* WatchDynamicFlowView.swift */; };
+		C002000C /* WatchAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002000C /* WatchAuthManager.swift */; };
+		C002000D /* WatchLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002000D /* WatchLoginView.swift */; };
 		C0020006 /* WatchDynamicStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020006 /* WatchDynamicStepView.swift */; };
 		C0020007 /* WatchVoiceRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020007 /* WatchVoiceRecorderView.swift */; };
 		C0020008 /* WatchConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0020008 /* WatchConfirmationView.swift */; };
@@ -60,7 +60,6 @@
 /* === Frameworks and resources === */
 		D845B8AE2F815D6085030451 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B02C031A85EABEF97DB40A3 /* Foundation.framework */; };
 		F0E11FCA2F12CB9C0024B6F1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0E11FC92F12CB9C0024B6F1 /* Assets.xcassets */; };
-		F0E11FCB2F12CBB50024B6F1 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */; };
 		F0E11FD42F1323E50024B6F1 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0E11FD32F1323E50024B6F1 /* WidgetKit.framework */; };
 		F0E11FD62F1323E50024B6F1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0E11FD52F1323E50024B6F1 /* SwiftUI.framework */; };
 		F0E11FE32F1323E70024B6F1 /* SitWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0E11FD22F1323E50024B6F1 /* SitWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -100,7 +99,6 @@
 		B0010001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B0010002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		B0010003 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
-		B0010004 /* PhoneConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneConnectivityManager.swift; sourceTree = "<group>"; };
 		B0010005 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		B0010006 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		B0010007 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -135,8 +133,9 @@
 		B0020001 /* WatchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchModels.swift; sourceTree = "<group>"; };
 		B0020002 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
 		B0020003 /* WatchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHomeView.swift; sourceTree = "<group>"; };
-		B0020004 /* WatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManager.swift; sourceTree = "<group>"; };
 		B0020005 /* WatchDynamicFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDynamicFlowView.swift; sourceTree = "<group>"; };
+		B002000C /* WatchAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAuthManager.swift; sourceTree = "<group>"; };
+		B002000D /* WatchLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoginView.swift; sourceTree = "<group>"; };
 		B0020006 /* WatchDynamicStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDynamicStepView.swift; sourceTree = "<group>"; };
 		B0020007 /* WatchVoiceRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVoiceRecorderView.swift; sourceTree = "<group>"; };
 		B0020008 /* WatchConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConfirmationView.swift; sourceTree = "<group>"; };
@@ -149,9 +148,7 @@
 		FONT0001000000000003 /* Outfit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Regular.ttf"; sourceTree = "<group>"; };
 		FONT0001000000000004 /* Outfit-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Medium.ttf"; sourceTree = "<group>"; };
 /* === Frameworks === */
-		0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		5B02C031A85EABEF97DB40A3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		F0E11FD22F1323E50024B6F1 /* SitWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SitWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0E11FD32F1323E50024B6F1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F0E11FD52F1323E50024B6F1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -176,7 +173,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F0E11FCB2F12CBB50024B6F1 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,7 +241,6 @@
 				B0010001 /* Theme.swift */,
 				B0010002 /* Models.swift */,
 				B0010003 /* APIService.swift */,
-				B0010004 /* PhoneConnectivityManager.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -331,7 +326,8 @@
 				DDDD7007EEEE7007FFFF7007 /* ResponseQueue.swift */,
 				DDDD7008EEEE7008FFFF7008 /* NotificationService.swift */,
 				B0020003 /* WatchHomeView.swift */,
-				B0020004 /* WatchConnectivityManager.swift */,
+				B002000C /* WatchAuthManager.swift */,
+				B002000D /* WatchLoginView.swift */,
 				39441231A0CCAF3457160D74 /* Info.plist */,
 				D0020001 /* Core */,
 				D0020002 /* FlowRunner */,
@@ -373,7 +369,6 @@
 		CC1C08C9C9FDFF701CDB236E /* iOS */ = {
 			isa = PBXGroup;
 			children = (
-				0EA160D0A1C829172ACF69FA /* WatchConnectivity.framework */,
 			);
 			name = iOS;
 			sourceTree = "<group>";
@@ -382,7 +377,6 @@
 			isa = PBXGroup;
 			children = (
 				5B02C031A85EABEF97DB40A3 /* Foundation.framework */,
-				FE49D6C2A9E21AB6177EEE74 /* WatchConnectivity.framework */,
 			);
 			name = watchOS;
 			sourceTree = "<group>";
@@ -528,7 +522,8 @@
 				C0020001 /* WatchModels.swift in Sources */,
 				C0020002 /* WatchTheme.swift in Sources */,
 				C0020003 /* WatchHomeView.swift in Sources */,
-				C0020004 /* WatchConnectivityManager.swift in Sources */,
+				C002000C /* WatchAuthManager.swift in Sources */,
+				C002000D /* WatchLoginView.swift in Sources */,
 				C0020005 /* WatchDynamicFlowView.swift in Sources */,
 				C0020006 /* WatchDynamicStepView.swift in Sources */,
 				C0020007 /* WatchVoiceRecorderView.swift in Sources */,
@@ -548,7 +543,6 @@
 				C0010001 /* Theme.swift in Sources */,
 				C0010002 /* Models.swift in Sources */,
 				C0010003 /* APIService.swift in Sources */,
-				C0010004 /* PhoneConnectivityManager.swift in Sources */,
 				C0010005 /* KeychainHelper.swift in Sources */,
 				C0010006 /* AuthManager.swift in Sources */,
 				C0010007 /* LoginView.swift in Sources */,

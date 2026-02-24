@@ -1,10 +1,21 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject var authManager = WatchAuthManager()
+
     var body: some View {
-        NavigationStack {
-            WatchHomeView()
+        Group {
+            if authManager.isLoading {
+                ProgressView()
+            } else if authManager.isLoggedIn {
+                NavigationStack {
+                    WatchHomeView()
+                }
+            } else {
+                WatchLoginView()
+            }
         }
+        .environmentObject(authManager)
     }
 }
 

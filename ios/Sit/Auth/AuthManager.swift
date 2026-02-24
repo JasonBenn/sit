@@ -17,7 +17,6 @@ class AuthManager: ObservableObject {
     func login(username: String, password: String) async throws {
         let response = try await APIService.shared.login(username: username, password: password)
         KeychainHelper.shared.saveToken(response.token)
-        PhoneConnectivityManager.shared.sendAuthTokenToWatch(response.token)
         self.user = response.user
         self.isLoggedIn = true
     }
@@ -26,7 +25,6 @@ class AuthManager: ObservableObject {
     func signup(username: String, password: String) async throws {
         let response = try await APIService.shared.signup(username: username, password: password)
         KeychainHelper.shared.saveToken(response.token)
-        PhoneConnectivityManager.shared.sendAuthTokenToWatch(response.token)
         self.user = response.user
         self.isLoggedIn = true
     }
@@ -43,9 +41,6 @@ class AuthManager: ObservableObject {
         do {
             self.user = try await APIService.shared.getMe()
             self.isLoggedIn = true
-            if let token = KeychainHelper.shared.getToken() {
-                PhoneConnectivityManager.shared.sendAuthTokenToWatch(token)
-            }
         } catch {
             KeychainHelper.shared.deleteToken()
             self.isLoggedIn = false
