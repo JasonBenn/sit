@@ -10,21 +10,21 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 from app.db import get_session
 from app.auth import get_current_user
-from app.models import User, Flow, PromptResponse, ChatMessage
+from app.models import User, Flow, Sit, Checkin, ChatMessage
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT_TEMPLATE = """You are a meditation practice assistant for the Sit app. 
+SYSTEM_PROMPT_TEMPLATE = """You are a meditation practice assistant for the Sit app.
 
-The user tracks their meditation practice in two ways: 
+The user tracks their meditation practice in two ways:
 1. Through seated practice.
 2. Through random check-ins throughout the day.
 
-You can query their practice data to help them understand patterns and progress. 
+You can query their practice data to help them understand patterns and progress.
 
-Be warm, insightful, and concise. 
+Be warm, insightful, and concise.
 
 Respond in plain text only. No **markdown styles**, no bullet points, no formatting.
 
@@ -34,7 +34,7 @@ QUERY_TOOL = {
     "type": "function",
     "function": {
         "name": "query_practice_data",
-        "description": "Query the user's meditation practice data. Returns two types of entries: 'timer' (timed seated meditation with duration_seconds) and 'check-in' (flow-based check-ins with steps and optional voice note transcriptions).",
+        "description": "Query the user's meditation practice data. Returns sits (timed seated meditation with duration_seconds) and/or checkins (flow-based check-ins with steps and optional voice note transcriptions).",
         "parameters": {
             "type": "object",
             "properties": {
@@ -45,6 +45,11 @@ QUERY_TOOL = {
                 "end_date": {
                     "type": "string",
                     "description": "End date filter (ISO format). Optional.",
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["sits", "checkins", "all"],
+                    "description": "Type of practice data to query. 'sits' for timed meditation sessions, 'checkins' for flow-based check-ins, 'all' for both. Defaults to 'all'.",
                 },
             },
         },
@@ -70,60 +75,92 @@ def query_practice_data(
     tz: ZoneInfo,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    type: Optional[str] = "all",
 ) -> dict:
-    stmt = (
-        select(PromptResponse)
-        .where(PromptResponse.user_id == user_id)
-        .order_by(PromptResponse.responded_at.desc())
-    )
-    if start_date:
-        # Convert local date to UTC for DB query (start of day in user's timezone)
-        local_start = datetime.fromisoformat(start_date).replace(tzinfo=tz)
-        stmt = stmt.where(
-            PromptResponse.responded_at
-            >= local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
-        )
-    if end_date:
-        # End of day in user's timezone, converted to UTC
-        local_end = datetime.fromisoformat(end_date).replace(
-            hour=23, minute=59, second=59, tzinfo=tz
-        )
-        stmt = stmt.where(
-            PromptResponse.responded_at
-            <= local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
-        )
+    results = []
 
-    responses = session.exec(stmt).all()
+    include_sits = type in ("sits", "all", None)
+    include_checkins = type in ("checkins", "all", None)
 
-    # Collect unique flow IDs and batch-fetch definitions
-    flow_ids = {r.flow_id for r in responses if r.flow_id}
-    flows = (
-        session.exec(select(Flow).where(Flow.id.in_(flow_ids))).all()
-        if flow_ids
-        else []
-    )
-    flows_map = {str(f.id): {"name": f.name, "steps": f.steps_json} for f in flows}
-
-    def format_response(r):
-        local_time = r.responded_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
-        if r.duration_seconds:
-            return {
-                "type": "timer",
+    if include_sits:
+        sit_stmt = (
+            select(Sit)
+            .where(Sit.user_id == user_id)
+            .order_by(Sit.started_at.desc())
+        )
+        if start_date:
+            local_start = datetime.fromisoformat(start_date).replace(tzinfo=tz)
+            sit_stmt = sit_stmt.where(
+                Sit.started_at
+                >= local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            )
+        if end_date:
+            local_end = datetime.fromisoformat(end_date).replace(
+                hour=23, minute=59, second=59, tzinfo=tz
+            )
+            sit_stmt = sit_stmt.where(
+                Sit.started_at
+                <= local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            )
+        sits = session.exec(sit_stmt).all()
+        for s in sits:
+            local_time = s.started_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
+            results.append({
+                "type": "sit",
                 "time": local_time,
-                "duration_seconds": r.duration_seconds,
-            }
-        return {
-            "type": "check-in",
-            "time": local_time,
-            "flow_id": str(r.flow_id) if r.flow_id else None,
-            "steps": r.steps,
-            "transcription": r.transcription,
-        }
+                "duration_seconds": s.duration_seconds,
+            })
+
+    if include_checkins:
+        checkin_stmt = (
+            select(Checkin)
+            .where(Checkin.user_id == user_id)
+            .order_by(Checkin.responded_at.desc())
+        )
+        if start_date:
+            local_start = datetime.fromisoformat(start_date).replace(tzinfo=tz)
+            checkin_stmt = checkin_stmt.where(
+                Checkin.responded_at
+                >= local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            )
+        if end_date:
+            local_end = datetime.fromisoformat(end_date).replace(
+                hour=23, minute=59, second=59, tzinfo=tz
+            )
+            checkin_stmt = checkin_stmt.where(
+                Checkin.responded_at
+                <= local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            )
+        checkins = session.exec(checkin_stmt).all()
+
+        # Batch-fetch flow definitions
+        flow_ids = {c.flow_id for c in checkins if c.flow_id}
+        flows = (
+            session.exec(select(Flow).where(Flow.id.in_(flow_ids))).all()
+            if flow_ids
+            else []
+        )
+        flows_map = {str(f.id): {"name": f.name, "steps": f.steps_json} for f in flows}
+
+        for c in checkins:
+            local_time = c.responded_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
+            results.append({
+                "type": "checkin",
+                "time": local_time,
+                "flow_id": str(c.flow_id) if c.flow_id else None,
+                "steps": c.steps,
+                "transcription": c.transcription,
+            })
+    else:
+        flows_map = {}
+
+    # Sort merged results by time descending
+    results.sort(key=lambda r: r["time"], reverse=True)
 
     return {
         "flows": flows_map,
-        "responses": [format_response(r) for r in responses],
-        "total_count": len(responses),
+        "responses": results,
+        "total_count": len(results),
     }
 
 
@@ -173,7 +210,12 @@ def chat(
         for tool_call in choice.message.tool_calls:
             args = json.loads(tool_call.function.arguments)
             result = query_practice_data(
-                user.id, session, tz, args.get("start_date"), args.get("end_date")
+                user.id,
+                session,
+                tz,
+                args.get("start_date"),
+                args.get("end_date"),
+                args.get("type", "all"),
             )
             messages.append(
                 {

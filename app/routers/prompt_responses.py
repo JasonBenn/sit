@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPExcep
 from sqlmodel import Session, select
 from app.db import get_session
 from app.auth import get_current_user
-from app.models import PromptResponse, User
+from app.models import Sit, Checkin, User
 
 router = APIRouter(prefix="/api/prompt-responses", tags=["prompt_responses"])
 
@@ -49,11 +49,11 @@ def list_prompt_responses(
     limit: Optional[int] = Query(default=None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
-) -> list[PromptResponse]:
+) -> list[Checkin]:
     statement = (
-        select(PromptResponse)
-        .where(PromptResponse.user_id == user.id)
-        .order_by(PromptResponse.responded_at.desc())
+        select(Checkin)
+        .where(Checkin.user_id == user.id)
+        .order_by(Checkin.responded_at.desc())
     )
     if limit:
         statement = statement.limit(limit)
@@ -70,7 +70,21 @@ async def log_prompt_response(
     voice_note: Optional[UploadFile] = File(None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
-) -> PromptResponse:
+):
+    # Route to Sit if duration_seconds is provided (timer/meditation session)
+    if duration_seconds is not None:
+        started_at = datetime.utcfromtimestamp((responded_at - duration_seconds * 1000) / 1000)
+        sit = Sit(
+            user_id=user.id,
+            duration_seconds=duration_seconds,
+            started_at=started_at,
+        )
+        session.add(sit)
+        session.commit()
+        session.refresh(sit)
+        return sit
+
+    # Otherwise create a Checkin
     s3_url = None
     transcription = None
     transcription_status = None
@@ -98,7 +112,7 @@ async def log_prompt_response(
     parsed_steps = json.loads(steps) if steps else None
     parsed_flow_id = UUID(flow_id) if flow_id else None
 
-    response = PromptResponse(
+    checkin = Checkin(
         user_id=user.id,
         flow_id=parsed_flow_id,
         responded_at=datetime.utcfromtimestamp(responded_at / 1000),
@@ -107,14 +121,13 @@ async def log_prompt_response(
         voice_note_duration_seconds=voice_note_duration_seconds,
         transcription=transcription,
         transcription_status=transcription_status,
-        duration_seconds=duration_seconds,
     )
 
-    session.add(response)
+    session.add(checkin)
     session.commit()
-    session.refresh(response)
+    session.refresh(checkin)
 
-    return response
+    return checkin
 
 
 @router.delete("/{response_id}")
@@ -123,15 +136,23 @@ def delete_prompt_response(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> dict:
-    response = session.get(PromptResponse, response_id)
-    if not response or response.user_id != user.id:
+    # Check sits first
+    sit = session.get(Sit, response_id)
+    if sit and sit.user_id == user.id:
+        session.delete(sit)
+        session.commit()
+        return {"deleted": True}
+
+    # Then check checkins
+    checkin = session.get(Checkin, response_id)
+    if not checkin or checkin.user_id != user.id:
         raise HTTPException(status_code=404, detail="Prompt response not found")
 
-    if response.voice_note_s3_url:
+    if checkin.voice_note_s3_url:
         s3_client = get_s3_client()
-        s3_key = response.voice_note_s3_url.replace(f"s3://{S3_BUCKET}/", "")
+        s3_key = checkin.voice_note_s3_url.replace(f"s3://{S3_BUCKET}/", "")
         s3_client.delete_object(Bucket=S3_BUCKET, Key=s3_key)
 
-    session.delete(response)
+    session.delete(checkin)
     session.commit()
     return {"deleted": True}

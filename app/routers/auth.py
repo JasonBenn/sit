@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.db import get_session
 from app.auth import hash_password, verify_password, create_token, get_current_user
-from app.models import User, Flow, PromptResponse, ChatMessage
+from app.models import User, Flow, Sit, Checkin, ChatMessage
 from app.default_flow import DEFAULT_FLOW_NAME, DEFAULT_FLOW_DESCRIPTION, DEFAULT_FLOW_STEPS
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -129,8 +129,10 @@ def delete_account(
     # Delete all user data
     for msg in session.exec(select(ChatMessage).where(ChatMessage.user_id == user.id)):
         session.delete(msg)
-    for resp in session.exec(select(PromptResponse).where(PromptResponse.user_id == user.id)):
-        session.delete(resp)
+    for sit in session.exec(select(Sit).where(Sit.user_id == user.id)):
+        session.delete(sit)
+    for checkin in session.exec(select(Checkin).where(Checkin.user_id == user.id)):
+        session.delete(checkin)
     for flow in session.exec(select(Flow).where(Flow.user_id == user.id)):
         session.delete(flow)
     session.delete(user)

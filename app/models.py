@@ -34,10 +34,19 @@ class Flow(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class PromptResponse(SQLModel, table=True):
-    __tablename__ = "prompt_responses"
+class Sit(SQLModel, table=True):
+    __tablename__ = "sits"
     id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
-    user_id: Optional[UUID] = Field(default=None, foreign_key="users.id")
+    user_id: UUID = Field(foreign_key="users.id")
+    duration_seconds: float
+    started_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Checkin(SQLModel, table=True):
+    __tablename__ = "checkins"
+    id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    user_id: UUID = Field(foreign_key="users.id")
     flow_id: Optional[UUID] = Field(default=None, foreign_key="flows.id")
     responded_at: datetime
     steps: Optional[list] = Field(default=None, sa_column=Column(JSONB))
@@ -45,7 +54,6 @@ class PromptResponse(SQLModel, table=True):
     voice_note_duration_seconds: Optional[float] = None
     transcription: Optional[str] = Field(default=None, sa_column=Column(Text))
     transcription_status: Optional[str] = None
-    duration_seconds: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
