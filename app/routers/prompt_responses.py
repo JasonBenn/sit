@@ -66,6 +66,7 @@ async def log_prompt_response(
     flow_id: Optional[str] = Form(None),
     steps: Optional[str] = Form(None),
     voice_note_duration_seconds: Optional[float] = Form(None),
+    duration_seconds: Optional[float] = Form(None),
     voice_note: Optional[UploadFile] = File(None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -100,12 +101,13 @@ async def log_prompt_response(
     response = PromptResponse(
         user_id=user.id,
         flow_id=parsed_flow_id,
-        responded_at=datetime.fromtimestamp(responded_at / 1000),
+        responded_at=datetime.utcfromtimestamp(responded_at / 1000),
         steps=parsed_steps,
         voice_note_s3_url=s3_url,
         voice_note_duration_seconds=voice_note_duration_seconds,
         transcription=transcription,
         transcription_status=transcription_status,
+        duration_seconds=duration_seconds,
     )
 
     session.add(response)

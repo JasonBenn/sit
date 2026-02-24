@@ -3,17 +3,19 @@ import Foundation
 struct QueuedResponse: Codable, Identifiable {
     let id: UUID
     let respondedAt: Double
-    let flowId: String
-    let steps: [[Int]]
+    let flowId: String?
+    let steps: [[Int]]?
     let voiceNoteDuration: Double?
     let voiceNoteFilePath: String?  // Filename in Documents/VoiceNotes/
+    let durationSeconds: Double?
 
     init(
         respondedAt: Double,
-        flowId: String,
-        steps: [[Int]],
-        voiceNoteDuration: Double?,
-        voiceNoteFilePath: String? = nil
+        flowId: String? = nil,
+        steps: [[Int]]? = nil,
+        voiceNoteDuration: Double? = nil,
+        voiceNoteFilePath: String? = nil,
+        durationSeconds: Double? = nil
     ) {
         self.id = UUID()
         self.respondedAt = respondedAt
@@ -21,6 +23,7 @@ struct QueuedResponse: Codable, Identifiable {
         self.steps = steps
         self.voiceNoteDuration = voiceNoteDuration
         self.voiceNoteFilePath = voiceNoteFilePath
+        self.durationSeconds = durationSeconds
     }
 }
 
@@ -82,6 +85,24 @@ class ResponseQueue: ObservableObject {
         }
     }
 
+    /// Submit a timer completion
+    func submitTimer(durationSeconds: Double) async -> Bool {
+        let response = QueuedResponse(
+            respondedAt: Date().timeIntervalSince1970 * 1000,
+            durationSeconds: durationSeconds
+        )
+
+        do {
+            try await sendToAPI(response, voiceNoteURL: nil)
+            print("✅ Timer sent immediately")
+            return true
+        } catch {
+            print("⚠️ API failed, queuing timer locally: \(error)")
+            addToQueue(response)
+            return false
+        }
+    }
+
     /// Attempt to sync all queued responses
     func syncPending() async {
         guard !isSyncing else { return }
@@ -127,7 +148,8 @@ class ResponseQueue: ObservableObject {
             flowId: response.flowId,
             steps: response.steps,
             voiceNoteDuration: response.voiceNoteDuration,
-            voiceNoteURL: voiceNoteURL
+            voiceNoteURL: voiceNoteURL,
+            durationSeconds: response.durationSeconds
         )
     }
 

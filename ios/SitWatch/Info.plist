@@ -22,6 +22,10 @@
 	<string>1</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record voice notes about your meditation experience</string>
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>self-care</string>
+	</array>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKWatchOnly</key>

@@ -16,9 +16,13 @@ struct LiveTimerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(WatchTheme.bg)
-        .navigationBarBackButtonHidden(timerManager.isRunning)
+        .navigationBarBackButtonHidden(timerManager.isRunning || timerManager.isComplete)
         .onAppear {
             timerManager.start(minutes: minutes)
+        }
+        .onDisappear {
+            timerManager.stopAlarm()
+            timerManager.cancel()
         }
     }
 
@@ -111,6 +115,10 @@ struct LiveTimerView: View {
                 .foregroundColor(WatchTheme.text)
 
             Button {
+                timerManager.stopAlarm()
+                Task {
+                    await ResponseQueue.shared.submitTimer(durationSeconds: timerManager.totalTime)
+                }
                 dismiss()
             } label: {
                 Text("Close")

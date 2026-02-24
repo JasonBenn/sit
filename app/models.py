@@ -45,6 +45,7 @@ class PromptResponse(SQLModel, table=True):
     voice_note_duration_seconds: Optional[float] = None
     transcription: Optional[str] = Field(default=None, sa_column=Column(Text))
     transcription_status: Optional[str] = None
+    duration_seconds: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

@@ -19,10 +19,11 @@ class APIService {
 
     func logPromptResponse(
         respondedAt: Double,
-        flowId: String,
-        steps: [[Int]],
+        flowId: String? = nil,
+        steps: [[Int]]? = nil,
         voiceNoteDuration: Double?,
-        voiceNoteURL: URL? = nil
+        voiceNoteURL: URL? = nil,
+        durationSeconds: Double? = nil
     ) async throws {
         guard let url = URL(string: "\(baseURL)/api/prompt-responses") else {
             throw APIError.invalidURL
@@ -50,13 +51,22 @@ class APIService {
         }
 
         addField("responded_at", String(respondedAt))
-        addField("flow_id", flowId)
 
-        let stepsData = try JSONSerialization.data(withJSONObject: steps)
-        addField("steps", String(data: stepsData, encoding: .utf8)!)
+        if let flowId {
+            addField("flow_id", flowId)
+        }
+
+        if let steps {
+            let stepsData = try JSONSerialization.data(withJSONObject: steps)
+            addField("steps", String(data: stepsData, encoding: .utf8)!)
+        }
 
         if let duration = voiceNoteDuration {
             addField("voice_note_duration_seconds", String(duration))
+        }
+
+        if let durationSeconds {
+            addField("duration_seconds", String(durationSeconds))
         }
 
         if let fileURL = voiceNoteURL, let fileData = try? Data(contentsOf: fileURL) {
