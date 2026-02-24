@@ -24,6 +24,8 @@ struct TimerPresetsView: View {
                             .font(.caption)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fit)
                             .background(WatchTheme.amber)
