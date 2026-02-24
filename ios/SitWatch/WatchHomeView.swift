@@ -6,7 +6,7 @@ struct WatchHomeView: View {
         VStack(spacing: 10) {
             Spacer()
             VStack(spacing: 12) {
-                NavigationLink(destination: WatchDynamicFlowView()) {
+                NavigationLink(value: WatchDestination.checkIn) {
                     Text("Check In")
                         .font(.caption)
                         .fontWeight(.medium)
@@ -18,7 +18,7 @@ struct WatchHomeView: View {
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink(destination: TimerPresetsView()) {
+                NavigationLink(value: WatchDestination.timers) {
                     Text("Timers")
                         .font(.caption)
                         .fontWeight(.medium)
