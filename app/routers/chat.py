@@ -137,8 +137,9 @@ def chat(
     assistant_msg = ChatMessage(user_id=user.id, role="assistant", content=assistant_content)
     session.add(assistant_msg)
     session.commit()
+    session.refresh(assistant_msg)
 
-    return {"message": assistant_content}
+    return {"id": str(assistant_msg.id), "role": assistant_msg.role, "content": assistant_msg.content, "created_at": assistant_msg.created_at.isoformat()}
 
 
 @router.get("/history", response_model=list[ChatMessageResponse])
