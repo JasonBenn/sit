@@ -11,45 +11,44 @@ struct TimerPresetsView: View {
     ]
 
     private let columns = [
-        GridItem(.flexible(), spacing: 8),
-        GridItem(.flexible(), spacing: 8)
+        GridItem(.flexible(), spacing: 6),
+        GridItem(.flexible(), spacing: 6)
     ]
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(presets, id: \.minutes) { preset in
-                    NavigationLink(destination: LiveTimerView(minutes: preset.minutes)) {
-                        Text(preset.label)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                            .frame(maxWidth: .infinity)
-                            .aspectRatio(1, contentMode: .fit)
-                            .background(WatchTheme.amber)
+        GeometryReader { geo in
+            let circleSize = (geo.size.width - 6) / 2  // 2 columns with 6pt gap
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 6) {
+                    ForEach(presets, id: \.minutes) { preset in
+                        NavigationLink(destination: LiveTimerView(minutes: preset.minutes)) {
+                            Text(preset.label)
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                                .frame(width: circleSize, height: circleSize)
+                                .background(WatchTheme.amber)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Button {
+                        WKInterfaceDevice.current().play(.click)
+                        showCustomPicker = true
+                    } label: {
+                        Text("+")
+                            .font(.title3)
+                            .fontWeight(.light)
+                            .foregroundColor(WatchTheme.textMuted)
+                            .frame(width: circleSize, height: circleSize)
+                            .background(WatchTheme.card)
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
-
-                Button {
-                    WKInterfaceDevice.current().play(.click)
-                    showCustomPicker = true
-                } label: {
-                    Text("+")
-                        .font(.title3)
-                        .fontWeight(.light)
-                        .foregroundColor(WatchTheme.textMuted)
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fit)
-                        .background(WatchTheme.card)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 4)
         }
         .navigationTitle("Timers")
         .sheet(isPresented: $showCustomPicker) {
