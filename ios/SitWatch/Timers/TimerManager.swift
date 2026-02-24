@@ -55,11 +55,13 @@ class TimerManager: NSObject, ObservableObject, WKExtendedRuntimeSessionDelegate
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.tick()
             }
         }
+        RunLoop.current.add(t, forMode: .common)
+        timer = t
     }
 
     private func tick() {
@@ -75,11 +77,14 @@ class TimerManager: NSObject, ObservableObject, WKExtendedRuntimeSessionDelegate
     }
 
     private func startRepeatingHaptics() {
+        hapticTimer?.invalidate()
         let device = WKInterfaceDevice.current()
         device.play(.notification)
-        hapticTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+        let t = Timer(timeInterval: 2, repeats: true) { _ in
             device.play(.notification)
         }
+        RunLoop.current.add(t, forMode: .common)
+        hapticTimer = t
     }
 
     private func startExtendedSession() {
