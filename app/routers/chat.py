@@ -16,7 +16,17 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT_TEMPLATE = """You are a meditation practice assistant for the Sit app. The user tracks their meditation practice through check-in flows. You can query their practice data to help them understand patterns and progress. Be warm, insightful, and concise. Respond in plain text only — no markdown, no bullet points, no formatting.
+SYSTEM_PROMPT_TEMPLATE = """You are a meditation practice assistant for the Sit app. 
+
+The user tracks their meditation practice in two ways: 
+1. Through seated practice.
+2. Through random check-ins throughout the day.
+
+You can query their practice data to help them understand patterns and progress. 
+
+Be warm, insightful, and concise. 
+
+Respond in plain text only. No **markdown styles**, no bullet points, no formatting.
 
 Today's date is {today}. All timestamps in query results are in the user's local time ({timezone})."""
 
@@ -24,7 +34,7 @@ QUERY_TOOL = {
     "type": "function",
     "function": {
         "name": "query_practice_data",
-        "description": "Query the user's meditation practice data. Returns check-in responses with flow definitions.",
+        "description": "Query the user's meditation practice data. Returns two types of entries: 'timer' (timed seated meditation with duration_seconds) and 'check-in' (flow-based check-ins with steps and optional voice note transcriptions).",
         "parameters": {
             "type": "object",
             "properties": {
@@ -54,36 +64,65 @@ class ChatMessageResponse(BaseModel):
     created_at: datetime
 
 
-def query_practice_data(user_id: UUID, session: Session, tz: ZoneInfo, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict:
-    stmt = select(PromptResponse).where(PromptResponse.user_id == user_id).order_by(PromptResponse.responded_at.desc())
+def query_practice_data(
+    user_id: UUID,
+    session: Session,
+    tz: ZoneInfo,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> dict:
+    stmt = (
+        select(PromptResponse)
+        .where(PromptResponse.user_id == user_id)
+        .order_by(PromptResponse.responded_at.desc())
+    )
     if start_date:
         # Convert local date to UTC for DB query (start of day in user's timezone)
         local_start = datetime.fromisoformat(start_date).replace(tzinfo=tz)
-        stmt = stmt.where(PromptResponse.responded_at >= local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None))
+        stmt = stmt.where(
+            PromptResponse.responded_at
+            >= local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        )
     if end_date:
         # End of day in user's timezone, converted to UTC
-        local_end = datetime.fromisoformat(end_date).replace(hour=23, minute=59, second=59, tzinfo=tz)
-        stmt = stmt.where(PromptResponse.responded_at <= local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None))
+        local_end = datetime.fromisoformat(end_date).replace(
+            hour=23, minute=59, second=59, tzinfo=tz
+        )
+        stmt = stmt.where(
+            PromptResponse.responded_at
+            <= local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        )
 
     responses = session.exec(stmt).all()
 
     # Collect unique flow IDs and batch-fetch definitions
     flow_ids = {r.flow_id for r in responses if r.flow_id}
-    flows = session.exec(select(Flow).where(Flow.id.in_(flow_ids))).all() if flow_ids else []
+    flows = (
+        session.exec(select(Flow).where(Flow.id.in_(flow_ids))).all()
+        if flow_ids
+        else []
+    )
     flows_map = {str(f.id): {"name": f.name, "steps": f.steps_json} for f in flows}
+
+    def format_response(r):
+        local_time = r.responded_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
+        if r.duration_seconds:
+            return {
+                "type": "timer",
+                "time": local_time,
+                "duration_seconds": r.duration_seconds,
+            }
+        return {
+            "type": "check-in",
+            "time": local_time,
+            "flow_id": str(r.flow_id) if r.flow_id else None,
+            "steps": r.steps,
+            "transcription": r.transcription,
+        }
 
     return {
         "flows": flows_map,
-        "responses": [
-            {
-                "flow_id": str(r.flow_id) if r.flow_id else None,
-                "steps": r.steps,
-                "responded_at": r.responded_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat(),
-                "duration_seconds": r.duration_seconds,
-                "transcription": r.transcription,
-            }
-            for r in responses
-        ],
+        "responses": [format_response(r) for r in responses],
         "total_count": len(responses),
     }
 
@@ -133,12 +172,16 @@ def chat(
         messages.append(choice.message.model_dump())
         for tool_call in choice.message.tool_calls:
             args = json.loads(tool_call.function.arguments)
-            result = query_practice_data(user.id, session, tz, args.get("start_date"), args.get("end_date"))
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(result),
-            })
+            result = query_practice_data(
+                user.id, session, tz, args.get("start_date"), args.get("end_date")
+            )
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(result),
+                }
+            )
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -150,12 +193,19 @@ def chat(
     assistant_content = choice.message.content or ""
 
     # Save assistant message
-    assistant_msg = ChatMessage(user_id=user.id, role="assistant", content=assistant_content)
+    assistant_msg = ChatMessage(
+        user_id=user.id, role="assistant", content=assistant_content
+    )
     session.add(assistant_msg)
     session.commit()
     session.refresh(assistant_msg)
 
-    return {"id": str(assistant_msg.id), "role": assistant_msg.role, "content": assistant_msg.content, "created_at": assistant_msg.created_at.isoformat()}
+    return {
+        "id": str(assistant_msg.id),
+        "role": assistant_msg.role,
+        "content": assistant_msg.content,
+        "created_at": assistant_msg.created_at.isoformat(),
+    }
 
 
 @router.get("/history", response_model=list[ChatMessageResponse])
