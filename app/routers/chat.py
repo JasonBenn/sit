@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
+from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 import openai
 from fastapi import APIRouter, Depends
@@ -15,7 +16,9 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT = """You are a meditation practice assistant for the Sit app. The user tracks their meditation practice through check-in flows. You can query their practice data to help them understand patterns and progress. Be warm, insightful, and concise."""
+SYSTEM_PROMPT_TEMPLATE = """You are a meditation practice assistant for the Sit app. The user tracks their meditation practice through check-in flows. You can query their practice data to help them understand patterns and progress. Be warm, insightful, and concise.
+
+Today's date is {today}. All timestamps in query results are in the user's local time ({timezone})."""
 
 QUERY_TOOL = {
     "type": "function",
@@ -41,6 +44,7 @@ QUERY_TOOL = {
 
 class ChatRequest(BaseModel):
     message: str
+    timezone: str = "UTC"
 
 
 class ChatMessageResponse(BaseModel):
@@ -50,7 +54,7 @@ class ChatMessageResponse(BaseModel):
     created_at: datetime
 
 
-def query_practice_data(user_id: UUID, session: Session, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict:
+def query_practice_data(user_id: UUID, session: Session, tz: ZoneInfo, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict:
     stmt = select(PromptResponse).where(PromptResponse.user_id == user_id).order_by(PromptResponse.responded_at.desc())
     if start_date:
         stmt = stmt.where(PromptResponse.responded_at >= datetime.fromisoformat(start_date))
@@ -70,7 +74,8 @@ def query_practice_data(user_id: UUID, session: Session, start_date: Optional[st
             {
                 "flow_id": str(r.flow_id) if r.flow_id else None,
                 "steps": r.steps,
-                "responded_at": r.responded_at.isoformat(),
+                "responded_at": r.responded_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat(),
+                "duration_seconds": r.duration_seconds,
                 "transcription": r.transcription,
             }
             for r in responses
@@ -85,6 +90,13 @@ def chat(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    tz = ZoneInfo(body.timezone)
+    now_local = datetime.now(tz)
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        today=now_local.strftime("%A, %B %-d, %Y"),
+        timezone=body.timezone,
+    )
+
     # Save user message
     user_msg = ChatMessage(user_id=user.id, role="user", content=body.message)
     session.add(user_msg)
@@ -99,7 +111,7 @@ def chat(
     ).all()
     history.reverse()
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": system_prompt}]
     for msg in history:
         messages.append({"role": msg.role, "content": msg.content})
 
@@ -117,7 +129,7 @@ def chat(
         messages.append(choice.message.model_dump())
         for tool_call in choice.message.tool_calls:
             args = json.loads(tool_call.function.arguments)
-            result = query_practice_data(user.id, session, args.get("start_date"), args.get("end_date"))
+            result = query_practice_data(user.id, session, tz, args.get("start_date"), args.get("end_date"))
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,

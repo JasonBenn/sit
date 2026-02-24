@@ -95,7 +95,7 @@ class APIService {
     // MARK: - Chat
 
     func sendChatMessage(_ message: String) async throws -> ChatMessage {
-        try await post("/api/chat", body: ["message": message])
+        try await post("/api/chat", body: ["message": message, "timezone": TimeZone.current.identifier])
     }
 
     func getChatHistory() async throws -> [ChatMessage] {
