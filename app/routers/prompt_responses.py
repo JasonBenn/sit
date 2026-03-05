@@ -67,6 +67,7 @@ async def log_prompt_response(
     steps: Optional[str] = Form(None),
     voice_note_duration_seconds: Optional[float] = Form(None),
     duration_seconds: Optional[float] = Form(None),
+    schedule_type: Optional[str] = Form(None),
     voice_note: Optional[UploadFile] = File(None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -121,6 +122,7 @@ async def log_prompt_response(
         voice_note_duration_seconds=voice_note_duration_seconds,
         transcription=transcription,
         transcription_status=transcription_status,
+        schedule_type=schedule_type,
     )
 
     session.add(checkin)

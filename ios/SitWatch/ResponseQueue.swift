@@ -8,6 +8,7 @@ struct QueuedResponse: Codable, Identifiable {
     let voiceNoteDuration: Double?
     let voiceNoteFilePath: String?  // Filename in Documents/VoiceNotes/
     let durationSeconds: Double?
+    let scheduleType: String?
 
     init(
         respondedAt: Double,
@@ -15,7 +16,8 @@ struct QueuedResponse: Codable, Identifiable {
         steps: [[Int]]? = nil,
         voiceNoteDuration: Double? = nil,
         voiceNoteFilePath: String? = nil,
-        durationSeconds: Double? = nil
+        durationSeconds: Double? = nil,
+        scheduleType: String? = nil
     ) {
         self.id = UUID()
         self.respondedAt = respondedAt
@@ -24,6 +26,7 @@ struct QueuedResponse: Codable, Identifiable {
         self.voiceNoteDuration = voiceNoteDuration
         self.voiceNoteFilePath = voiceNoteFilePath
         self.durationSeconds = durationSeconds
+        self.scheduleType = scheduleType
     }
 }
 
@@ -47,7 +50,8 @@ class ResponseQueue: ObservableObject {
         flowId: String,
         steps: [[Int]],
         voiceNoteDuration: Double?,
-        voiceNoteURL: URL? = nil
+        voiceNoteURL: URL? = nil,
+        scheduleType: String? = nil
     ) async -> Bool {
         // Persist voice note from temp to Documents if present
         let voiceNoteFilePath: String?
@@ -65,7 +69,8 @@ class ResponseQueue: ObservableObject {
             flowId: flowId,
             steps: steps,
             voiceNoteDuration: voiceNoteDuration,
-            voiceNoteFilePath: voiceNoteFilePath
+            voiceNoteFilePath: voiceNoteFilePath,
+            scheduleType: scheduleType
         )
 
         // Try to send immediately
@@ -149,7 +154,8 @@ class ResponseQueue: ObservableObject {
             steps: response.steps,
             voiceNoteDuration: response.voiceNoteDuration,
             voiceNoteURL: voiceNoteURL,
-            durationSeconds: response.durationSeconds
+            durationSeconds: response.durationSeconds,
+            scheduleType: response.scheduleType
         )
     }
 

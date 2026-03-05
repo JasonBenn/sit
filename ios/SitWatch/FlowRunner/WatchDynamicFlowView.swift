@@ -11,9 +11,11 @@ struct WatchDynamicFlowView: View {
     @State private var isSubmitting = false
     @State private var voiceNoteURL: URL?
     @State private var voiceNoteDuration: Double?
+    @State private var activeFlow: FlowDefinition? = nil
+    @State private var activeScheduleType: String? = nil
 
     private var flow: FlowDefinition? {
-        authManager.currentFlow ?? Self.defaultFlow
+        activeFlow ?? authManager.currentFlow ?? Self.defaultFlow
     }
 
     private var currentStep: FlowStep? {
@@ -71,6 +73,15 @@ struct WatchDynamicFlowView: View {
             WatchConfirmationView(wasQueued: wasQueued)
         }
         .onAppear {
+            // Pick up any flow + schedule_type set by AppDelegate from an APNs notification
+            if let injected = AppDelegate.pendingFlow {
+                activeFlow = injected
+                AppDelegate.pendingFlow = nil
+            }
+            if let st = AppDelegate.pendingScheduleType {
+                activeScheduleType = st
+                AppDelegate.pendingScheduleType = nil
+            }
             if let flow = flow, let firstStep = flow.stepsJson.first {
                 currentStepId = firstStep.id
             }
@@ -79,12 +90,14 @@ struct WatchDynamicFlowView: View {
 
     private func submitFlow(flow: FlowDefinition) {
         isSubmitting = true
+        let scheduleType = activeScheduleType
         Task {
             let sentImmediately = await queue.submit(
                 flowId: flow.id,
                 steps: collectedSteps,
                 voiceNoteDuration: voiceNoteDuration,
-                voiceNoteURL: voiceNoteURL
+                voiceNoteURL: voiceNoteURL,
+                scheduleType: scheduleType
             )
 
             await MainActor.run {

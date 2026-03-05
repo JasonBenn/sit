@@ -54,6 +54,16 @@ class Checkin(SQLModel, table=True):
     voice_note_duration_seconds: Optional[float] = None
     transcription: Optional[str] = Field(default=None, sa_column=Column(Text))
     transcription_status: Optional[str] = None
+    schedule_type: Optional[str] = None  # 'random' | 'webhook' | None (manual/legacy)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DeviceToken(SQLModel, table=True):
+    __tablename__ = "device_tokens"
+    id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    user_id: UUID = Field(foreign_key="users.id")
+    token: str = Field(unique=True)
+    platform: str  # 'watchos'
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

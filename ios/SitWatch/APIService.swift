@@ -143,6 +143,15 @@ class APIService {
         try await get("/api/me")
     }
 
+    // MARK: - Device Token
+
+    func registerDeviceToken(_ token: String, platform: String) async throws {
+        struct Body: Encodable { let token: String; let platform: String }
+        struct OkResponse: Decodable { let ok: Bool }
+        let _: OkResponse = try await post("/api/devices/register", body: Body(token: token, platform: platform))
+        print("✅ Device token registered with server")
+    }
+
     // MARK: - Prompt Response
 
     func logPromptResponse(
@@ -151,7 +160,8 @@ class APIService {
         steps: [[Int]]? = nil,
         voiceNoteDuration: Double?,
         voiceNoteURL: URL? = nil,
-        durationSeconds: Double? = nil
+        durationSeconds: Double? = nil,
+        scheduleType: String? = nil
     ) async throws {
         guard let url = URL(string: "\(baseURL)/api/prompt-responses") else {
             throw APIError.invalidURL
@@ -195,6 +205,10 @@ class APIService {
 
         if let durationSeconds {
             addField("duration_seconds", String(durationSeconds))
+        }
+
+        if let scheduleType {
+            addField("schedule_type", scheduleType)
         }
 
         if let fileURL = voiceNoteURL, let fileData = try? Data(contentsOf: fileURL) {

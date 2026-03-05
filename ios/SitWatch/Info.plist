@@ -24,7 +24,7 @@
 	<string>Record voice notes about your meditation experience</string>
 	<key>WKBackgroundModes</key>
 	<array>
-		<string>self-care</string>
+		<string>remote-notification</string>
 	</array>
 	<key>WKApplication</key>
 	<true/>

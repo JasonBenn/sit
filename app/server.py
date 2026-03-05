@@ -16,7 +16,7 @@ if sentry_dsn:
     )
 
 from app.db import init_db
-from app.routers import prompt_responses, auth, users, explore, chat
+from app.routers import prompt_responses, auth, users, explore, chat, triggers
 
 app = FastAPI(title="Sit API", description="Meditation tracking backend")
 
@@ -34,6 +34,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(explore.router)
 app.include_router(chat.router)
+app.include_router(triggers.router)
 
 
 @app.get("/health")
