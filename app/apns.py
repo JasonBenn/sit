@@ -1,10 +1,10 @@
 """Apple Push Notification service (APNs) sender.
 
 Requires env vars:
-  APNS_KEY_ID      — 10-char key ID from Apple Developer (e.g. AB1234CDEF)
-  APNS_TEAM_ID     — 10-char team ID (e.g. JGB9FCMU22)
-  APNS_AUTH_KEY    — Full contents of the .p8 file including BEGIN/END lines
-  APNS_PRODUCTION  — Set to "true" for production APNs, omit for sandbox
+  APNS_KEY_ID       — 10-char key ID from Apple Developer (e.g. G2X3SPLGVU)
+  APNS_TEAM_ID      — 10-char team ID (e.g. JGB9FCMU22)
+  APNS_AUTH_KEY_PATH — Path to the .p8 file (e.g. /opt/sit/AuthKey_G2X3SPLGVU.p8)
+  APNS_PRODUCTION   — Set to "true" for production APNs, omit for sandbox/development
 """
 import os
 import time
@@ -14,7 +14,7 @@ import httpx
 
 APNS_KEY_ID = os.getenv("APNS_KEY_ID")
 APNS_TEAM_ID = os.getenv("APNS_TEAM_ID", "JGB9FCMU22")
-APNS_AUTH_KEY = os.getenv("APNS_AUTH_KEY")  # PEM content of .p8 file
+APNS_AUTH_KEY_PATH = os.getenv("APNS_AUTH_KEY_PATH")
 APNS_PRODUCTION = os.getenv("APNS_PRODUCTION", "").lower() == "true"
 
 WATCH_BUNDLE_ID = "com.jasonbenn.sit.watchkitapp"
@@ -26,6 +26,13 @@ APNS_HOST = (
 )
 
 
+def _load_auth_key() -> str:
+    if APNS_AUTH_KEY_PATH:
+        with open(APNS_AUTH_KEY_PATH) as f:
+            return f.read()
+    raise RuntimeError("APNS_AUTH_KEY_PATH not set")
+
+
 def _make_jwt() -> str:
     """Create a signed JWT for APNs authentication. Valid for 1 hour."""
     payload = {
@@ -34,7 +41,7 @@ def _make_jwt() -> str:
     }
     return jwt.encode(
         payload,
-        APNS_AUTH_KEY,
+        _load_auth_key(),
         algorithm="ES256",
         headers={"kid": APNS_KEY_ID},
     )
@@ -70,4 +77,4 @@ async def send_push(device_token: str, title: str, body: str, extra: dict = None
 
 
 def is_configured() -> bool:
-    return bool(APNS_KEY_ID and APNS_AUTH_KEY)
+    return bool(APNS_KEY_ID and APNS_AUTH_KEY_PATH)
