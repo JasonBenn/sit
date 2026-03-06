@@ -2,6 +2,7 @@ import SwiftUI
 import WatchKit
 
 struct WatchDynamicFlowView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: WatchAuthManager
     @StateObject private var queue = ResponseQueue.shared
     @State private var currentStepId: Int = 0
@@ -69,7 +70,7 @@ struct WatchDynamicFlowView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showConfirmation) {
+        .fullScreenCover(isPresented: $showConfirmation, onDismiss: { dismiss() }) {
             WatchConfirmationView(wasQueued: wasQueued)
         }
         .onAppear {
