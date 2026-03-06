@@ -71,8 +71,17 @@ async def send_push(device_token: str, title: str, body: str, extra: dict = None
         "apns-priority": "10",
     }
 
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("APNs send → %s host=%s topic=%s", device_token[:8] + "...", APNS_HOST, WATCH_BUNDLE_ID)
+    logger.info("APNs payload: %s", json.dumps(payload))
+
     async with httpx.AsyncClient(http2=True) as client:
         response = await client.post(url, content=json.dumps(payload), headers=headers)
+        logger.info("APNs response: status=%s apns-id=%s body=%s",
+                    response.status_code,
+                    response.headers.get("apns-id", "none"),
+                    response.text or "(empty)")
         response.raise_for_status()
 
 

@@ -18,6 +18,13 @@ class AppDelegate: NSObject, WKApplicationDelegate, UNUserNotificationCenterDele
     static var pendingFlow: FlowDefinition? = nil
     static var pendingScheduleType: String? = nil
 
+    // Called when a notification arrives while the app is in the foreground.
+    // Without this, watchOS silently drops the notification.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        print("📨 Notification arriving in foreground: \(notification.request.content.userInfo)")
+        return [.banner, .sound]
+    }
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let userInfo = response.notification.request.content.userInfo
 
