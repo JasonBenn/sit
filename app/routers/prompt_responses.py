@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 import os
@@ -68,17 +68,19 @@ async def log_prompt_response(
     voice_note_duration_seconds: Optional[float] = Form(None),
     duration_seconds: Optional[float] = Form(None),
     schedule_type: Optional[str] = Form(None),
+    timezone_param: str = Form(..., alias="timezone"),
     voice_note: Optional[UploadFile] = File(None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     # Route to Sit if duration_seconds is provided (timer/meditation session)
     if duration_seconds is not None:
-        started_at = datetime.utcfromtimestamp((responded_at - duration_seconds * 1000) / 1000)
+        started_at = datetime.fromtimestamp((responded_at - duration_seconds * 1000) / 1000, tz=timezone.utc)
         sit = Sit(
             user_id=user.id,
             duration_seconds=duration_seconds,
             started_at=started_at,
+            timezone=timezone_param,
         )
         session.add(sit)
         session.commit()
@@ -92,7 +94,7 @@ async def log_prompt_response(
 
     if voice_note:
         s3_client = get_s3_client()
-        timestamp = int(datetime.utcnow().timestamp() * 1000)
+        timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
         s3_key = f"voice_notes/{timestamp}_{voice_note.filename}"
 
         contents = await voice_note.read()
@@ -116,13 +118,14 @@ async def log_prompt_response(
     checkin = Checkin(
         user_id=user.id,
         flow_id=parsed_flow_id,
-        responded_at=datetime.utcfromtimestamp(responded_at / 1000),
+        responded_at=datetime.fromtimestamp(responded_at / 1000, tz=timezone.utc),
         steps=parsed_steps,
         voice_note_s3_url=s3_url,
         voice_note_duration_seconds=voice_note_duration_seconds,
         transcription=transcription,
         transcription_status=transcription_status,
         schedule_type=schedule_type,
+        timezone=timezone_param,
     )
 
     session.add(checkin)

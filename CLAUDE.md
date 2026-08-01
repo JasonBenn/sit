@@ -5,7 +5,7 @@ Meditation prompt flow app for iOS and watchOS.
 ```yaml
 # Claude Code Config
 deployCommand: |
-  ssh jason "cd /opt/sit && git pull && source .venv/bin/activate && python -m alembic upgrade head && sudo systemctl restart sit"
+  git push && ssh jason "~/.claude/nose/deploy-pull.sh /opt/sit"
   if xcrun simctl list devices | grep -q Booted; then
     cd ios && xcodebuild -project Sit.xcodeproj -scheme Sit -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | tail -5 && xcrun simctl launch --terminate-running-process booted com.jasonbenn.sit
   fi

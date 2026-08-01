@@ -24,3 +24,7 @@ ios/build/
 __pycache__/
 *.pyc
 *.db
+
+# Apple signing keys — never commit
+*.p8
+AuthKey_*
