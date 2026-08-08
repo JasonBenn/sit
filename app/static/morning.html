@@ -289,6 +289,32 @@
   .outline a:hover { color: var(--ink-soft); }
   .outline a.active { color: var(--ink); }
 
+  .log-wrap.outline-hidden .outline { display: none; }
+
+  .log-header-right {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .outline-toggle {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    background: none;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+
+  .outline-toggle.on {
+    color: var(--ink-soft);
+    border-color: var(--hairline-strong);
+  }
+
   .entry { padding: 22px 0; border-bottom: 1px solid var(--hairline); }
   .entry:first-child { padding-top: 4px; }
 
@@ -435,7 +461,10 @@
   <section class="pane">
     <header class="pane-header">
       <h1>Wake up log</h1>
-      <span class="sub">Logs / Wake up.md</span>
+      <div class="log-header-right">
+        <span class="sub">Logs / Wake up.md</span>
+        <button class="outline-toggle" id="outline-toggle" title="Show or hide the outline">outline</button>
+      </div>
     </header>
 
     <div class="log-wrap">
@@ -804,6 +833,21 @@
       send();
     }
   });
+
+  const logWrap = document.querySelector('.log-wrap');
+  const outlineToggle = document.getElementById('outline-toggle');
+
+  function setOutlineVisible(visible) {
+    logWrap.classList.toggle('outline-hidden', !visible);
+    outlineToggle.classList.toggle('on', visible);
+    localStorage.setItem('outlineVisible', visible ? '1' : '0');
+  }
+
+  outlineToggle.addEventListener('click', () => {
+    setOutlineVisible(logWrap.classList.contains('outline-hidden'));
+  });
+
+  setOutlineVisible(localStorage.getItem('outlineVisible') !== '0');
 
   document.getElementById('durations').addEventListener('click', e => {
     const chip = e.target.closest('.chip');
