@@ -228,6 +228,8 @@
     resize: none;
     line-height: 1.5;
     padding: 6px 0;
+    max-height: 40vh;
+    overflow-y: auto;
   }
 
   .composer textarea::placeholder { color: var(--ink-faded); }
@@ -290,12 +292,6 @@
   .outline a.active { color: var(--ink); }
 
   .log-wrap.outline-hidden .outline { display: none; }
-
-  .log-header-right {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-  }
 
   .outline-toggle {
     font-family: var(--sans);
@@ -461,10 +457,7 @@
   <section class="pane">
     <header class="pane-header">
       <h1>Wake up log</h1>
-      <div class="log-header-right">
-        <span class="sub">Logs / Wake up.md</span>
-        <button class="outline-toggle" id="outline-toggle" title="Show or hide the outline">outline</button>
-      </div>
+      <button class="outline-toggle" id="outline-toggle" title="Show or hide the outline">outline</button>
     </header>
 
     <div class="log-wrap">
@@ -772,6 +765,7 @@
     const text = input.value.trim();
     if (!text || busy || index < 0) return;
     input.value = '';
+    autosize();
     messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
     setBusy(true);
     renderChat(pendingNode());
@@ -826,6 +820,12 @@
   nextBtn.addEventListener('click', () => { if (index < sessions.length - 1) openSession(index + 1); });
   newBtn.addEventListener('click', startSession);
   sendBtn.addEventListener('click', send);
+
+  function autosize() {
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+  }
+  input.addEventListener('input', autosize);
 
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
