@@ -646,7 +646,11 @@
     date.textContent = entry.raw_date || '';
     a.append(date, document.createTextNode(entry.title || ''));
     a.addEventListener('click', () => {
-      document.getElementById('entry-' + i)?.scrollIntoView({ block: 'start' });
+      const target = document.getElementById('entry-' + i);
+      if (target) {
+        journalPane.scrollTop += target.getBoundingClientRect().top
+          - journalPane.getBoundingClientRect().top - 12;
+      }
     });
     return a;
   }
@@ -663,7 +667,13 @@
         if (entries[i].getBoundingClientRect().top <= top) active = i; else break;
       }
       links.forEach((a, i) => a.classList.toggle('active', i === active));
-      links[active]?.scrollIntoView({ block: 'nearest' });
+      const link = links[active];
+      if (link) {
+        const r = link.getBoundingClientRect(), o = outlinePane.getBoundingClientRect();
+        if (r.top < o.top || r.bottom > o.bottom) {
+          outlinePane.scrollTop += r.top - o.top - o.height / 2;
+        }
+      }
     }
     journalPane.addEventListener('scroll', () => {
       if (!ticking) { ticking = true; requestAnimationFrame(update); }
