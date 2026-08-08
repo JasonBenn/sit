@@ -46,7 +46,7 @@
 
   /* ————— left: conversation ————— */
 
-  .pane { display: flex; flex-direction: column; min-height: 0; }
+  .pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 
   .pane-header {
     padding: 28px 40px 18px;
@@ -254,9 +254,12 @@
 
   .log-scroll {
     flex: 1;
+    min-width: 0;
     overflow-y: auto;
     padding: 28px 28px 40px 40px;
   }
+
+  .entry li, .entry p { overflow-wrap: anywhere; }
 
   /* outline rail */
   .outline {
