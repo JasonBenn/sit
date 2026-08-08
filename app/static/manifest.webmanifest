@@ -1,7 +1,7 @@
 {
-  "name": "Morning Sit",
+  "name": "Sit",
   "short_name": "Sit",
-  "start_url": "/morning",
+  "start_url": "/sit",
   "scope": "/",
   "display": "standalone",
   "background_color": "#FAF7F1",

@@ -41,7 +41,7 @@ app.include_router(triggers.router)
 app.include_router(morning.router)
 
 
-@app.get("/morning")
+@app.get("/sit")
 def morning_page():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "morning.html"))
 
