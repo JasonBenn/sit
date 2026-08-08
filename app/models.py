@@ -70,6 +70,26 @@ class DeviceToken(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
 
 
+class MorningSession(SQLModel, table=True):
+    __tablename__ = "morning_sessions"
+    id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    user_id: UUID = Field(foreign_key="users.id")
+    journal_heading: Optional[str] = Field(default=None, sa_column=Column(Text))
+    journal_written_at: Optional[datetime] = Field(default=None, sa_column=sa.Column(sa.DateTime(timezone=True), nullable=True))
+    sit_id: Optional[UUID] = Field(default=None, foreign_key="sits.id")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
+
+
+class MorningMessage(SQLModel, table=True):
+    __tablename__ = "morning_messages"
+    id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    session_id: UUID = Field(foreign_key="morning_sessions.id", index=True)
+    role: str  # user | assistant | tool
+    content: str = Field(sa_column=Column(Text))
+    tool_label: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
+
+
 class ChatMessage(SQLModel, table=True):
     __tablename__ = "chat_messages"
     id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)

@@ -1,0 +1,515 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sit — Morning Dashboard</title>
+<style>
+  :root {
+    --ink: #2A2723;
+    --ink-soft: #55503F;
+    --ink-faded: #877F72;
+    --paper: #FAF7F1;
+    --paper-raised: #F3EEE3;
+    --hairline: #E4DDCE;
+    --hairline-strong: #CFC6B2;
+    --serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Outfit', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    font-weight: 300;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    max-width: 1280px;
+    height: 100vh;
+    margin: 0 auto;
+  }
+
+  .divider { background: var(--hairline-strong); }
+
+  /* ————— left: conversation ————— */
+
+  .pane { display: flex; flex-direction: column; min-height: 0; }
+
+  .pane-header {
+    padding: 28px 40px 18px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .pane-header h1 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  .pane-header .sub {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+  }
+
+  .session-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .session-nav .pager {
+    font-size: 13px;
+    color: var(--ink-faded);
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .session-nav button {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+
+  .chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .msg { max-width: 92%; }
+
+  .msg .who {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    margin-bottom: 6px;
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: var(--paper-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 14px 18px;
+  }
+
+  .msg.assistant { align-self: flex-start; }
+
+  .msg p + p { margin-top: 10px; }
+
+  /* tool call chips */
+  .tool {
+    align-self: flex-start;
+    border-left: 2px solid var(--hairline-strong);
+    padding: 6px 0 6px 16px;
+    max-width: 92%;
+  }
+
+  .tool .tool-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+  }
+
+  .tool .tool-body {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-top: 3px;
+  }
+
+  /* sit duration bar, pinned under the header */
+  .sit-block {
+    border-bottom: 1px solid var(--hairline);
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .sit-block .sit-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    margin-right: 4px;
+  }
+
+  .sit-block .durations { display: flex; gap: 8px; }
+
+  .sit-block .play {
+    margin-left: auto;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-faded);
+    background: none;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .chip {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .chip.selected {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* composer */
+  .composer {
+    border-top: 1px solid var(--hairline);
+    padding: 18px 40px 24px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+  }
+
+  .composer textarea {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--ink);
+    background: none;
+    border: none;
+    outline: none;
+    resize: none;
+    line-height: 1.5;
+    padding: 6px 0;
+  }
+
+  .composer textarea::placeholder { color: var(--ink-faded); }
+
+  .composer .send {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 9px 18px;
+    cursor: pointer;
+  }
+
+  /* ————— right: wake-up log ————— */
+
+  .log-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 40px 40px;
+  }
+
+  .entry { padding: 22px 0; border-bottom: 1px solid var(--hairline); }
+  .entry:first-child { padding-top: 4px; }
+
+  .entry .date {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-faded);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .entry .fresh {
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 1px 8px;
+    font-size: 10px;
+  }
+
+  .entry h2 {
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 500;
+    line-height: 1.25;
+    margin-bottom: 10px;
+    text-wrap: balance;
+  }
+
+  .entry ul { list-style: none; }
+
+  .entry li {
+    font-size: 15px;
+    color: var(--ink-soft);
+    padding-left: 18px;
+    position: relative;
+    margin-bottom: 7px;
+  }
+
+  .entry li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--ink-faded);
+  }
+
+  .entry li strong { font-weight: 500; color: var(--ink); }
+
+  /* ————— timer overlay ————— */
+
+  .timer-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  .timer-overlay.on { display: flex; }
+
+  .timer-overlay .countdown {
+    font-family: var(--serif);
+    font-size: 190px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .timer-overlay .intention {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--ink-soft);
+    max-width: 560px;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .timer-overlay .hint {
+    position: fixed;
+    bottom: 36px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-faded);
+  }
+</style>
+
+<div class="app">
+
+  <!-- ——— LEFT: conversation ——— -->
+  <section class="pane">
+    <header class="pane-header">
+      <h1>Friday, August 7</h1>
+      <div class="session-nav">
+        <button title="Previous session">‹</button>
+        <span class="pager">session 12 of 12</span>
+        <button title="Next session">›</button>
+        <button>New session</button>
+      </div>
+    </header>
+
+    <div class="sit-block">
+      <span class="sit-label">Sat for</span>
+      <div class="durations">
+        <button class="chip">20</button>
+        <button class="chip selected">30</button>
+        <button class="chip">45</button>
+        <button class="chip">60</button>
+      </div>
+      <button class="play" id="play" title="Optional: count down, chime at the end">▶ timer</button>
+    </div>
+
+    <div class="chat-scroll">
+
+      <div class="msg assistant">
+        <div class="who">Sit</div>
+        <p>Good morning. Two days ago you ended on an edge: staying present with conceptual content — “writing on water,” letting concepts appear vividly and leave no trace — instead of always resolving thoughts down to sensation.</p>
+        <p>What’s alive this morning?</p>
+      </div>
+
+      <div class="msg user">
+        <p>Slept well. There’s some hum of excitement about the day that I can feel pulling at me already. I want to keep working with the radiant face of the view — can excitement itself be transparent? I keep treating it as a threat to presence rather than an expression of it.</p>
+      </div>
+
+      <div class="tool">
+        <div class="tool-label">Asked Rigdzin notebook</div>
+        <div class="tool-body">“How should a practitioner relate to excitement or eagerness during practice — is it an obstacle to rest, or can it be included as radiance?”</div>
+      </div>
+
+      <div class="msg assistant">
+        <div class="who">Sit</div>
+        <p>The notebook points at the same instruction from a new angle: excitement is “movement arising within stillness” — not the opposite of rest but its display. The fault isn’t the arising, it’s the chasing. “Neither suppress nor pursue: left to itself, movement is self-liberating.”</p>
+        <p>A frame for this sit: when excitement rises, don’t guard against it and don’t ride it. Let it be weather.</p>
+      </div>
+
+      <div class="msg user">
+        <p>That frame worked better than I expected. Excitement rose maybe a dozen times, and twice it genuinely liberated on its own — it crested and dissolved and left a kind of shimmer rather than a hangover. The other times I caught myself already three thoughts deep into planning the day. The tell is a leaning-forward feeling in the chest before any content shows up. Overall one of the more balanced sits recently. Feels complete.</p>
+      </div>
+
+      <div class="tool">
+        <div class="tool-label">Wrote journal entry → Wake up.md &nbsp;·&nbsp; logged 30-min sit</div>
+        <div class="tool-body">30-min sit: excitement as weather, the leaning-forward tell</div>
+      </div>
+
+      <div class="msg assistant">
+        <div class="who">Sit</div>
+        <p>Logged. The leaning-forward tell is a good find — a physical signature you can catch pre-content, like the narrativizer’s iron band. See you tomorrow.</p>
+      </div>
+
+    </div>
+
+    <div class="composer">
+      <textarea rows="2" placeholder="Check in…"></textarea>
+      <button class="send">Send</button>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ——— RIGHT: wake-up log ——— -->
+  <section class="pane">
+    <header class="pane-header">
+      <h1>Wake up log</h1>
+      <span class="sub">Logs / Wake up.md</span>
+    </header>
+
+    <div class="log-scroll">
+
+      <article class="entry">
+        <div class="date">August 7, 2026 <span class="fresh">just written</span></div>
+        <h2>30-min sit: excitement as weather, the leaning-forward tell</h2>
+        <ul>
+          <li>Intention: include excitement as radiance rather than guarding against it. Rigdzin frame: “neither suppress nor pursue — left to itself, movement is self-liberating.”</li>
+          <li>Excitement rose ~a dozen times; twice it genuinely self-liberated — crested, dissolved, left shimmer rather than hangover.</li>
+          <li><strong>Found the tell:</strong> a leaning-forward feeling in the chest that precedes any conceptual content. A physical signature to catch pre-content, like the narrativizer’s iron band.</li>
+          <li>Failure mode: three thoughts deep into day-planning before noticing. Not fought — just returned.</li>
+          <li>Next: keep watching for the pre-content lean. Balanced, complete sit.</li>
+        </ul>
+      </article>
+
+      <article class="entry">
+        <div class="date">March 25, 2026</div>
+        <h2>30-min sit: equanimity, centerlessness, and the radiance question</h2>
+        <ul>
+          <li>Intention going in: the checking mind <em>is</em> the center. Rest in wordless knowing of presence — sacred time of not having to perform.</li>
+          <li>First 20 minutes “quite magical” — centerless space, body receded. Stayed present through special states rather than getting captured.</li>
+          <li><strong>Favorite cloud: the narrativizer.</strong> Found its physical signature — a band of iron on the top right of the head. Curiosity about the sensation pulled me back to presence.</li>
+          <li>Queried the Rigdzin notebook: don’t dissolve thoughts into sensation — see the <em>event of thinking</em> as radiance. “Writing on water.”</li>
+          <li>The empty face of the View is where I’m comfortable. The radiant face is the next edge.</li>
+        </ul>
+      </article>
+
+      <article class="entry">
+        <div class="date">March 24, 2026</div>
+        <h2>Two sits: ordinary mind, staying in the “oh”</h2>
+        <ul>
+          <li>First sit (30 min): mostly “normal consciousness.” Flat compared to Mar 19 — and “this should be more” is itself the gaining idea.</li>
+          <li>Productive ordinariness vs. lazy spacing out: <strong>intimacy, not impressiveness.</strong> Fog vs. lucid knowing.</li>
+          <li>Second sit (10 min): staying in the “oh” was the right cue. “The one place where I don’t have to perform perfection.”</li>
+          <li>Then the performer crept back in <em>through the relief</em> — turning non-performance into the new standard.</li>
+        </ul>
+      </article>
+
+      <article class="entry">
+        <div class="date">March 19, 2026</div>
+        <h2>30-min sit: stomach fear, compassion, aliveness</h2>
+        <ul>
+          <li>Twisting pain in the stomach — the <em>story</em> inflated it far beyond the sensation. What broke through was a swelling of self-compassion.</li>
+          <li>Clean snapshot of agent construction: raw aliveness → discomfort → reach for a model → performance. Compassion short-circuited the chain.</li>
+          <li>“Sitting is just about what makes me feel alive.”</li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+</div>
+
+<!-- ——— full-screen timer (demo: press Begin sit) ——— -->
+<div class="timer-overlay" id="overlay">
+  <div class="countdown" id="countdown">30:00</div>
+  <div class="intention">Neither suppress nor pursue — let excitement be weather.</div>
+  <div class="hint">tap anywhere to end</div>
+</div>
+
+<script>
+  // Demo interactions only — real logic comes with the build.
+  const overlay = document.getElementById('overlay');
+  const countdown = document.getElementById('countdown');
+  const chips = document.querySelectorAll('.chip');
+  let minutes = 30, remaining = 0, tick = null;
+
+  chips.forEach(c => c.addEventListener('click', () => {
+    chips.forEach(x => x.classList.remove('selected'));
+    c.classList.add('selected');
+    minutes = parseInt(c.textContent, 10);
+  }));
+
+  document.getElementById('play').addEventListener('click', () => {
+    remaining = minutes * 60;
+    render();
+    overlay.classList.add('on');
+    tick = setInterval(() => {
+      remaining = Math.max(0, remaining - 1);
+      render();
+      if (remaining === 0) { clearInterval(tick); chime(); }
+    }, 1000);
+  });
+
+  // Simple bell — only if the window still has focus.
+  function chime() {
+    if (!document.hasFocus()) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.frequency.value = 528;
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 4);
+  }
+
+  overlay.addEventListener('click', () => {
+    clearInterval(tick);
+    overlay.classList.remove('on');
+  });
+
+  function render() {
+    const m = Math.floor(remaining / 60), s = remaining % 60;
+    countdown.textContent = `${m}:${String(s).padStart(2, '0')}`;
+  }
+</script>

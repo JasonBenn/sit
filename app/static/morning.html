@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sit — Morning Dashboard</title>
+<style>
+  :root {
+    --ink: #2A2723;
+    --ink-soft: #55503F;
+    --ink-faded: #877F72;
+    --paper: #FAF7F1;
+    --paper-raised: #F3EEE3;
+    --hairline: #E4DDCE;
+    --hairline-strong: #CFC6B2;
+    --serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Outfit', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    font-weight: 300;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    max-width: 1280px;
+    height: 100vh;
+    margin: 0 auto;
+  }
+
+  .divider { background: var(--hairline-strong); }
+
+  /* ————— left: conversation ————— */
+
+  .pane { display: flex; flex-direction: column; min-height: 0; }
+
+  .pane-header {
+    padding: 28px 40px 18px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .pane-header h1 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  .pane-header .sub {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+  }
+
+  .session-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .session-nav .pager {
+    font-size: 13px;
+    color: var(--ink-faded);
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .session-nav button {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+
+  button:disabled { opacity: 0.35; cursor: default; }
+
+  .chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .msg { max-width: 92%; }
+
+  .msg .who {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    margin-bottom: 6px;
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: var(--paper-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 14px 18px;
+  }
+
+  .msg.assistant { align-self: flex-start; }
+
+  .msg p + p { margin-top: 10px; }
+
+  .msg .pending { color: var(--ink-faded); letter-spacing: 0.2em; }
+
+  .notice {
+    align-self: flex-start;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-faded);
+  }
+
+  /* tool call chips */
+  .tool {
+    align-self: flex-start;
+    border-left: 2px solid var(--hairline-strong);
+    padding: 6px 0 6px 16px;
+    max-width: 92%;
+  }
+
+  .tool .tool-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+  }
+
+  .tool .tool-body {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-top: 3px;
+  }
+
+  /* sit duration bar, pinned under the header */
+  .sit-block {
+    border-bottom: 1px solid var(--hairline);
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .sit-block .sit-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    margin-right: 4px;
+  }
+
+  .sit-block .durations { display: flex; gap: 8px; }
+
+  .sit-block .play {
+    margin-left: auto;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-faded);
+    background: none;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .chip {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .chip.selected {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* composer */
+  .composer {
+    border-top: 1px solid var(--hairline);
+    padding: 18px 40px 24px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+  }
+
+  .composer textarea {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--ink);
+    background: none;
+    border: none;
+    outline: none;
+    resize: none;
+    line-height: 1.5;
+    padding: 6px 0;
+  }
+
+  .composer textarea::placeholder { color: var(--ink-faded); }
+
+  .composer .send {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 9px 18px;
+    cursor: pointer;
+  }
+
+  /* ————— right: wake-up log ————— */
+
+  .log-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 40px 40px;
+  }
+
+  .entry { padding: 22px 0; border-bottom: 1px solid var(--hairline); }
+  .entry:first-child { padding-top: 4px; }
+
+  .entry .date {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-faded);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .entry .fresh {
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 1px 8px;
+    font-size: 10px;
+  }
+
+  .entry h2 {
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 500;
+    line-height: 1.25;
+    margin-bottom: 10px;
+    text-wrap: balance;
+  }
+
+  .entry ul { list-style: none; }
+
+  .entry li {
+    font-size: 15px;
+    color: var(--ink-soft);
+    padding-left: 18px;
+    position: relative;
+    margin-bottom: 7px;
+  }
+
+  .entry li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--ink-faded);
+  }
+
+  .entry p {
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin-bottom: 7px;
+  }
+
+  .entry li strong, .entry p strong { font-weight: 500; color: var(--ink); }
+
+  .log-scroll .notice { display: block; padding-top: 4px; }
+
+  /* ————— timer overlay ————— */
+
+  .timer-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  .timer-overlay.on { display: flex; }
+
+  .timer-overlay .countdown {
+    font-family: var(--serif);
+    font-size: 190px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .timer-overlay .intention {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--ink-soft);
+    max-width: 560px;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .timer-overlay .intention:empty { display: none; }
+
+  .timer-overlay .hint {
+    position: fixed;
+    bottom: 36px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-faded);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ——— LEFT: conversation ——— -->
+  <section class="pane">
+    <header class="pane-header">
+      <h1 id="today"></h1>
+      <div class="session-nav">
+        <button id="prev" title="Previous session">‹</button>
+        <span class="pager" id="pager"></span>
+        <button id="next" title="Next session">›</button>
+        <button id="new-session">New session</button>
+      </div>
+    </header>
+
+    <div class="sit-block">
+      <span class="sit-label">Sat for</span>
+      <div class="durations" id="durations">
+        <button class="chip">20</button>
+        <button class="chip selected">30</button>
+        <button class="chip">45</button>
+        <button class="chip">60</button>
+      </div>
+      <button class="play" id="play" title="Optional: count down, chime at the end">▶ timer</button>
+    </div>
+
+    <div class="chat-scroll" id="chat"></div>
+
+    <div class="composer">
+      <textarea id="input" rows="2" placeholder="Check in…"></textarea>
+      <button class="send" id="send">Send</button>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ——— RIGHT: wake-up log ——— -->
+  <section class="pane">
+    <header class="pane-header">
+      <h1>Wake up log</h1>
+      <span class="sub">Logs / Wake up.md</span>
+    </header>
+
+    <div class="log-scroll" id="journal"></div>
+  </section>
+</div>
+
+<div class="timer-overlay" id="overlay">
+  <div class="countdown" id="countdown">30:00</div>
+  <div class="intention" id="intention"></div>
+  <div class="hint">tap anywhere to end</div>
+</div>
+
+<script>
+  const chat = document.getElementById('chat');
+  const journalPane = document.getElementById('journal');
+  const pager = document.getElementById('pager');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const newBtn = document.getElementById('new-session');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
+  const overlay = document.getElementById('overlay');
+  const countdown = document.getElementById('countdown');
+  const intention = document.getElementById('intention');
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  let sitMinutes = 30;
+  let sessions = [];
+  let index = -1;
+  let messages = [];
+  let busy = false;
+
+  async function api(path, options) {
+    const res = await fetch(path, options);
+    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+    return res.json();
+  }
+
+  function postJSON(path, body) {
+    return api(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  }
+
+  /* ————— rendering ————— */
+
+  function paragraphs(parent, text) {
+    const blocks = String(text || '').split(/\n\s*\n/);
+    for (const block of blocks) {
+      const trimmed = block.trim();
+      if (!trimmed) continue;
+      const p = document.createElement('p');
+      p.textContent = trimmed;
+      parent.appendChild(p);
+    }
+  }
+
+  function messageNode(msg) {
+    if (msg.role === 'tool') {
+      const el = document.createElement('div');
+      el.className = 'tool';
+      const label = document.createElement('div');
+      label.className = 'tool-label';
+      label.textContent = msg.tool_label || 'Tool';
+      const body = document.createElement('div');
+      body.className = 'tool-body';
+      body.textContent = msg.content || '';
+      el.append(label, body);
+      return el;
+    }
+
+    const el = document.createElement('div');
+    el.className = 'msg ' + (msg.role === 'user' ? 'user' : 'assistant');
+    if (msg.role !== 'user') {
+      const who = document.createElement('div');
+      who.className = 'who';
+      who.textContent = 'Sit';
+      el.appendChild(who);
+    }
+    paragraphs(el, msg.content);
+    return el;
+  }
+
+  function pendingNode() {
+    const el = document.createElement('div');
+    el.className = 'msg assistant';
+    const who = document.createElement('div');
+    who.className = 'who';
+    who.textContent = 'Sit';
+    const dots = document.createElement('p');
+    dots.className = 'pending';
+    dots.textContent = '…';
+    el.append(who, dots);
+    return el;
+  }
+
+  function noticeNode(text) {
+    const el = document.createElement('div');
+    el.className = 'notice';
+    el.textContent = text;
+    return el;
+  }
+
+  function scrollChat() {
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function renderChat(extra) {
+    chat.replaceChildren();
+    for (const msg of messages) chat.appendChild(messageNode(msg));
+    if (extra) chat.appendChild(extra);
+    scrollChat();
+  }
+
+  function renderPager() {
+    pager.textContent = sessions.length
+      ? 'session ' + (index + 1) + ' of ' + sessions.length
+      : 'no sessions';
+    prevBtn.disabled = busy || index <= 0;
+    nextBtn.disabled = busy || index < 0 || index >= sessions.length - 1;
+    newBtn.disabled = busy;
+  }
+
+  function setBusy(state) {
+    busy = state;
+    input.disabled = state;
+    sendBtn.disabled = state;
+    renderPager();
+  }
+
+  /* ————— journal ————— */
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function inlineMarkdown(text) {
+    return escapeHtml(text)
+      .replace(/\[\[([^\]]+)\]\]/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/_([^_]+)_/g, '<em>$1</em>')
+      .replace(/^\s*#{1,6}\s+/, '');
+  }
+
+  function todayLabel() {
+    return new Date().toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    });
+  }
+
+  function entryNode(entry) {
+    const article = document.createElement('article');
+    article.className = 'entry';
+
+    const date = document.createElement('div');
+    date.className = 'date';
+    date.append(document.createTextNode(entry.date || ''));
+    if (entry.date === todayLabel()) {
+      const pill = document.createElement('span');
+      pill.className = 'fresh';
+      pill.textContent = 'just written';
+      date.appendChild(pill);
+    }
+    article.appendChild(date);
+
+    const h2 = document.createElement('h2');
+    h2.textContent = entry.title || '';
+    article.appendChild(h2);
+
+    let list = null;
+    for (const raw of String(entry.body || '').split('\n')) {
+      const line = raw.trim();
+      if (!line) { list = null; continue; }
+      const bullet = line.match(/^[-*]\s+(.*)$/);
+      if (bullet) {
+        if (!list) {
+          list = document.createElement('ul');
+          article.appendChild(list);
+        }
+        const li = document.createElement('li');
+        li.innerHTML = inlineMarkdown(bullet[1]);
+        list.appendChild(li);
+      } else {
+        list = null;
+        const p = document.createElement('p');
+        p.innerHTML = inlineMarkdown(line);
+        article.appendChild(p);
+      }
+    }
+    return article;
+  }
+
+  async function loadJournal() {
+    journalPane.replaceChildren();
+    try {
+      const data = await api('/api/morning/journal?limit=10');
+      const entries = data.entries || [];
+      if (!entries.length) {
+        journalPane.appendChild(noticeNode('No entries yet.'));
+        return;
+      }
+      for (const entry of entries) journalPane.appendChild(entryNode(entry));
+    } catch (err) {
+      journalPane.appendChild(noticeNode('Could not load the log — ' + err.message));
+    }
+  }
+
+  /* ————— sessions ————— */
+
+  async function openSession(i) {
+    index = i;
+    renderPager();
+    renderChat(pendingNode());
+    try {
+      const data = await api('/api/morning/sessions/' + encodeURIComponent(sessions[i].id) + '/messages');
+      messages = data.messages || [];
+      renderChat();
+    } catch (err) {
+      messages = [];
+      renderChat(noticeNode('Could not load this session — ' + err.message));
+    }
+  }
+
+  async function startSession() {
+    setBusy(true);
+    renderChat(pendingNode());
+    try {
+      const data = await postJSON('/api/morning/sessions', { timezone });
+      sessions.push(data.session);
+      index = sessions.length - 1;
+      messages = data.messages || [];
+      renderChat();
+    } catch (err) {
+      messages = [];
+      renderChat(noticeNode('Could not start a session — ' + err.message));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text || busy || index < 0) return;
+    input.value = '';
+    messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
+    setBusy(true);
+    renderChat(pendingNode());
+    try {
+      const data = await postJSON(
+        '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/chat',
+        { message: text, sit_minutes: sitMinutes, timezone }
+      );
+      messages = messages.concat(data.messages || []);
+      renderChat();
+      if (data.journal_written) {
+        sessions[index].journal_written_at = new Date().toISOString();
+        loadJournal();
+      }
+    } catch (err) {
+      renderChat(noticeNode('Message failed — ' + err.message));
+    } finally {
+      setBusy(false);
+      input.focus();
+    }
+  }
+
+  async function init() {
+    document.getElementById('today').textContent = new Date().toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric'
+    });
+    renderPager();
+    renderChat(pendingNode());
+
+    try {
+      const data = await api('/api/morning/sessions');
+      sessions = data.sessions || [];
+    } catch (err) {
+      renderChat(noticeNode('Could not reach the server — ' + err.message));
+      renderPager();
+      loadJournal();
+      return;
+    }
+
+    const latest = sessions[sessions.length - 1];
+    if (!latest || latest.journal_written_at) {
+      await startSession();
+    } else {
+      await openSession(sessions.length - 1);
+    }
+    loadJournal();
+  }
+
+  /* ————— events ————— */
+
+  prevBtn.addEventListener('click', () => { if (index > 0) openSession(index - 1); });
+  nextBtn.addEventListener('click', () => { if (index < sessions.length - 1) openSession(index + 1); });
+  newBtn.addEventListener('click', startSession);
+  sendBtn.addEventListener('click', send);
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  document.getElementById('durations').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    for (const c of document.querySelectorAll('.chip')) c.classList.remove('selected');
+    chip.classList.add('selected');
+    sitMinutes = parseInt(chip.textContent, 10);
+  });
+
+  /* ————— timer ————— */
+
+  let remaining = 0, tick = null;
+
+  function renderCountdown() {
+    const m = Math.floor(remaining / 60), s = remaining % 60;
+    countdown.textContent = `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function lastAssistantLine() {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role !== 'assistant') continue;
+      const blocks = String(messages[i].content || '').split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+      return blocks.length ? blocks[blocks.length - 1] : '';
+    }
+    return '';
+  }
+
+  document.getElementById('play').addEventListener('click', () => {
+    clearInterval(tick);
+    remaining = sitMinutes * 60;
+    renderCountdown();
+    intention.textContent = lastAssistantLine();
+    overlay.classList.add('on');
+    tick = setInterval(() => {
+      remaining = Math.max(0, remaining - 1);
+      renderCountdown();
+      if (remaining === 0) { clearInterval(tick); chime(); }
+    }, 1000);
+  });
+
+  function chime() {
+    if (!document.hasFocus()) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.frequency.value = 528;
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 4);
+  }
+
+  overlay.addEventListener('click', () => {
+    clearInterval(tick);
+    overlay.classList.remove('on');
+  });
+
+  init();
+</script>
+</body>
+</html>

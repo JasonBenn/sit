@@ -15,8 +15,10 @@ if sentry_dsn:
         profiles_sample_rate=1.0,
     )
 
+from fastapi.responses import FileResponse
+
 from app.db import init_db
-from app.routers import prompt_responses, auth, users, explore, chat, triggers
+from app.routers import prompt_responses, auth, users, explore, chat, triggers, morning
 
 app = FastAPI(title="Sit API", description="Meditation tracking backend")
 
@@ -35,6 +37,12 @@ app.include_router(users.router)
 app.include_router(explore.router)
 app.include_router(chat.router)
 app.include_router(triggers.router)
+app.include_router(morning.router)
+
+
+@app.get("/morning")
+def morning_page():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "morning.html"))
 
 
 @app.get("/health")
