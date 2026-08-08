@@ -16,6 +16,7 @@ if sentry_dsn:
     )
 
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.db import init_db
 from app.routers import prompt_responses, auth, users, explore, chat, triggers, morning
@@ -43,6 +44,9 @@ app.include_router(morning.router)
 @app.get("/morning")
 def morning_page():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "morning.html"))
+
+
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
 
 
 @app.get("/health")
