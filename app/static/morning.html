@@ -346,17 +346,20 @@
   .entry li {
     font-size: 15px;
     color: var(--ink-soft);
-    padding-left: 18px;
+    padding-left: 26px;
     position: relative;
     margin-bottom: 7px;
   }
 
-  .entry li::before {
-    content: '–';
+  .entry li .marker {
     position: absolute;
     left: 0;
     color: var(--ink-faded);
+    font-variant-numeric: tabular-nums;
   }
+
+  .entry li.done { color: var(--ink-faded); }
+  .entry li.done .item-text { text-decoration: line-through; }
 
   .entry p {
     font-size: 15px;
@@ -642,17 +645,31 @@
     let list = null;
     for (const raw of String(entry.body || '').split('\n')) {
       if (!raw.trim()) { list = null; continue; }
-      const bullet = raw.match(/^(\s*)[-*]\s+(.*)$/);
-      if (bullet) {
+      const item = raw.match(/^(\s*)([-*]|\d+[.)])\s+(.*)$/);
+      if (item) {
         if (!list) {
           list = document.createElement('ul');
           article.appendChild(list);
         }
-        const tabs = (bullet[1].match(/\t/g) || []).length;
-        const depth = tabs || Math.floor(bullet[1].length / 2);
+        const tabs = (item[1].match(/\t/g) || []).length;
+        const depth = tabs || Math.floor(item[1].length / 2);
+        let marker = /^\d/.test(item[2]) ? item[2] : '–';
+        let text = item[3];
         const li = document.createElement('li');
-        if (depth) li.style.marginLeft = (depth * 20) + 'px';
-        li.innerHTML = inlineMarkdown(bullet[2]);
+        const box = text.match(/^\[( |x|X)\]\s*(.*)$/);
+        if (box) {
+          marker = box[1].trim() ? '☑' : '☐';
+          text = box[2];
+          if (box[1].trim()) li.className = 'done';
+        }
+        if (depth) li.style.marginLeft = (depth * 22) + 'px';
+        const markerEl = document.createElement('span');
+        markerEl.className = 'marker';
+        markerEl.textContent = marker;
+        const textEl = document.createElement('span');
+        textEl.className = 'item-text';
+        textEl.innerHTML = inlineMarkdown(text);
+        li.append(markerEl, textEl);
         list.appendChild(li);
       } else {
         list = null;
