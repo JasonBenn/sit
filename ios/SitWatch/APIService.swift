@@ -189,6 +189,7 @@ class APIService {
         }
 
         addField("responded_at", String(respondedAt))
+        addField("timezone", TimeZone.current.identifier)
 
         if let flowId {
             addField("flow_id", flowId)

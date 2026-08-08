@@ -134,6 +134,7 @@ class APIService {
         }
 
         addField("responded_at", String(respondedAt))
+        addField("timezone", TimeZone.current.identifier)
         addField("flow_id", flowId)
 
         let stepsData = try JSONSerialization.data(withJSONObject: steps)
