@@ -338,5 +338,5 @@ def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_ses
 
 
 @router.get("/journal")
-def get_journal(limit: int = 10):
+def get_journal(limit: Optional[int] = None):
     return {"entries": journal.read_entries(limit=limit)}

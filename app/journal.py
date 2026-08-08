@@ -29,7 +29,7 @@ def _format_date(raw: str) -> str:
         return raw  # e.g. [[2026-W07]]
 
 
-def read_entries(limit: int = 10) -> list[dict]:
+def read_entries(limit: int | None = None) -> list[dict]:
     entries = []
     current = None
     for line in _read_lines():
@@ -37,16 +37,17 @@ def read_entries(limit: int = 10) -> list[dict]:
         if m:
             if current:
                 entries.append(current)
-                if len(entries) >= limit:
+                if limit and len(entries) >= limit:
                     return entries
             current = {
                 "date": _format_date(m.group("date")),
+                "raw_date": m.group("date"),
                 "title": m.group("title"),
                 "body": "",
             }
         elif current is not None:
             current["body"] += line + "\n"
-    if current and len(entries) < limit:
+    if current and not (limit and len(entries) >= limit):
         entries.append(current)
     return entries
 

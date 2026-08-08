@@ -246,11 +246,45 @@
 
   /* ————— right: wake-up log ————— */
 
+  .log-wrap {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
   .log-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 28px 40px 40px;
+    padding: 28px 28px 40px 40px;
   }
+
+  /* outline rail */
+  .outline {
+    width: 208px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 22px 18px 40px 16px;
+    border-left: 1px solid var(--hairline);
+    scrollbar-width: thin;
+  }
+
+  .outline a {
+    display: block;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink-faded);
+    text-decoration: none;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+
+  .outline a .odate {
+    font-variant-numeric: tabular-nums;
+    margin-right: 5px;
+  }
+
+  .outline a:hover { color: var(--ink-soft); }
+  .outline a.active { color: var(--ink); }
 
   .entry { padding: 22px 0; border-bottom: 1px solid var(--hairline); }
   .entry:first-child { padding-top: 4px; }
@@ -401,7 +435,10 @@
       <span class="sub">Logs / Wake up.md</span>
     </header>
 
-    <div class="log-scroll" id="journal"></div>
+    <div class="log-wrap">
+      <div class="log-scroll" id="journal"></div>
+      <nav class="outline" id="outline"></nav>
+    </div>
   </section>
 </div>
 
@@ -414,6 +451,7 @@
 <script>
   const chat = document.getElementById('chat');
   const journalPane = document.getElementById('journal');
+  const outlinePane = document.getElementById('outline');
   const pager = document.getElementById('pager');
   const prevBtn = document.getElementById('prev');
   const nextBtn = document.getElementById('next');
@@ -578,37 +616,78 @@
 
     let list = null;
     for (const raw of String(entry.body || '').split('\n')) {
-      const line = raw.trim();
-      if (!line) { list = null; continue; }
-      const bullet = line.match(/^[-*]\s+(.*)$/);
+      if (!raw.trim()) { list = null; continue; }
+      const bullet = raw.match(/^(\s*)[-*]\s+(.*)$/);
       if (bullet) {
         if (!list) {
           list = document.createElement('ul');
           article.appendChild(list);
         }
+        const tabs = (bullet[1].match(/\t/g) || []).length;
+        const depth = tabs || Math.floor(bullet[1].length / 2);
         const li = document.createElement('li');
-        li.innerHTML = inlineMarkdown(bullet[1]);
+        if (depth) li.style.marginLeft = (depth * 20) + 'px';
+        li.innerHTML = inlineMarkdown(bullet[2]);
         list.appendChild(li);
       } else {
         list = null;
         const p = document.createElement('p');
-        p.innerHTML = inlineMarkdown(line);
+        p.innerHTML = inlineMarkdown(raw.trim());
         article.appendChild(p);
       }
     }
     return article;
   }
 
+  function outlineItem(entry, i) {
+    const a = document.createElement('a');
+    const date = document.createElement('span');
+    date.className = 'odate';
+    date.textContent = entry.raw_date || '';
+    a.append(date, document.createTextNode(entry.title || ''));
+    a.addEventListener('click', () => {
+      document.getElementById('entry-' + i)?.scrollIntoView({ block: 'start' });
+    });
+    return a;
+  }
+
+  function trackOutline() {
+    const entries = [...journalPane.querySelectorAll('.entry')];
+    const links = [...outlinePane.querySelectorAll('a')];
+    let ticking = false;
+    function update() {
+      ticking = false;
+      const top = journalPane.getBoundingClientRect().top + 90;
+      let active = 0;
+      for (let i = 0; i < entries.length; i++) {
+        if (entries[i].getBoundingClientRect().top <= top) active = i; else break;
+      }
+      links.forEach((a, i) => a.classList.toggle('active', i === active));
+      links[active]?.scrollIntoView({ block: 'nearest' });
+    }
+    journalPane.addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    });
+    update();
+  }
+
   async function loadJournal() {
     journalPane.replaceChildren();
+    outlinePane.replaceChildren();
     try {
-      const data = await api('/api/morning/journal?limit=10');
+      const data = await api('/api/morning/journal');
       const entries = data.entries || [];
       if (!entries.length) {
         journalPane.appendChild(noticeNode('No entries yet.'));
         return;
       }
-      for (const entry of entries) journalPane.appendChild(entryNode(entry));
+      entries.forEach((entry, i) => {
+        const node = entryNode(entry);
+        node.id = 'entry-' + i;
+        journalPane.appendChild(node);
+        outlinePane.appendChild(outlineItem(entry, i));
+      });
+      trackOutline();
     } catch (err) {
       journalPane.appendChild(noticeNode('Could not load the log — ' + err.message));
     }
