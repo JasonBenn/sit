@@ -207,6 +207,25 @@
     border-color: var(--ink);
   }
 
+  .chip-custom {
+    width: 58px;
+    text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .chip-custom::-webkit-outer-spin-button,
+  .chip-custom::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .chip-custom::placeholder { color: var(--ink-faded); }
+
+  .chip-custom.selected {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
   /* composer */
   .composer {
     border-top: 1px solid var(--hairline);
@@ -438,10 +457,12 @@
     <div class="sit-block">
       <span class="sit-label">Sat for</span>
       <div class="durations" id="durations">
+        <button class="chip">5</button>
+        <button class="chip">10</button>
         <button class="chip">20</button>
         <button class="chip selected">30</button>
-        <button class="chip">45</button>
-        <button class="chip">60</button>
+        <button class="chip">40</button>
+        <input class="chip chip-custom" id="custom-min" type="number" min="1" max="600" placeholder="…">
       </div>
       <button class="play" id="play" title="Optional: count down, chime at the end">▶ timer</button>
     </div>
@@ -866,12 +887,27 @@
 
   setOutlineVisible(localStorage.getItem('outlineVisible') !== '0');
 
+  const customMin = document.getElementById('custom-min');
+
   document.getElementById('durations').addEventListener('click', e => {
-    const chip = e.target.closest('.chip');
+    const chip = e.target.closest('button.chip');
     if (!chip) return;
     for (const c of document.querySelectorAll('.chip')) c.classList.remove('selected');
     chip.classList.add('selected');
+    customMin.value = '';
     sitMinutes = parseInt(chip.textContent, 10);
+  });
+
+  customMin.addEventListener('input', () => {
+    const v = parseInt(customMin.value, 10);
+    for (const c of document.querySelectorAll('.chip')) c.classList.remove('selected');
+    if (v > 0) {
+      customMin.classList.add('selected');
+      sitMinutes = v;
+    } else {
+      document.querySelectorAll('button.chip')[3].classList.add('selected');
+      sitMinutes = 30;
+    }
   });
 
   /* ————— timer ————— */
