@@ -340,3 +340,78 @@ def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_ses
 @router.get("/journal")
 def get_journal(limit: Optional[int] = None):
     return {"entries": journal.read_entries(limit=limit)}
+
+
+class ToggleSitRequest(BaseModel):
+    date: str  # YYYY-MM-DD, local
+    sit_minutes: int = 30
+    timezone: str = "America/Los_Angeles"
+
+
+def _local_day_bounds(date_str: str, tz: ZoneInfo) -> tuple[datetime, datetime]:
+    day_start = datetime.fromisoformat(date_str).replace(tzinfo=tz)
+    return day_start, day_start + timedelta(days=1)
+
+
+@router.get("/sits")
+def list_sits(
+    start: str,
+    end: str,
+    timezone: str = "America/Los_Angeles",
+    session: Session = Depends(get_session),
+):
+    """Minutes sat per local date within [start, end], for the calendar widget."""
+    user = get_user(session)
+    user_tz = ZoneInfo(timezone)
+    range_start, _ = _local_day_bounds(start, user_tz)
+    _, range_end = _local_day_bounds(end, user_tz)
+    sits = session.exec(
+        select(Sit).where(
+            Sit.user_id == user.id,
+            Sit.started_at >= range_start,
+            Sit.started_at < range_end,
+        )
+    ).all()
+    days: dict[str, int] = {}
+    for s in sits:
+        started = s.started_at if s.started_at.tzinfo else s.started_at.replace(tzinfo=tz.utc)
+        d = started.astimezone(user_tz).date().isoformat()
+        days[d] = days.get(d, 0) + round(s.duration_seconds / 60)
+    return {"days": days}
+
+
+@router.post("/sits/toggle")
+def toggle_sit(body: ToggleSitRequest, session: Session = Depends(get_session)):
+    """Backfill helper: tap a day to declare/undeclare a sit. A day with any sits
+    is cleared; an empty day gets one sit of the given length, nominally 8am."""
+    user = get_user(session)
+    user_tz = ZoneInfo(body.timezone)
+    day_start, day_end = _local_day_bounds(body.date, user_tz)
+    sits = session.exec(
+        select(Sit).where(
+            Sit.user_id == user.id,
+            Sit.started_at >= day_start,
+            Sit.started_at < day_end,
+        )
+    ).all()
+    if sits:
+        sit_ids = [s.id for s in sits]
+        for m in session.exec(
+            select(MorningSession).where(MorningSession.sit_id.in_(sit_ids))
+        ).all():
+            m.sit_id = None
+            session.add(m)
+        for s in sits:
+            session.delete(s)
+        session.commit()
+        return {"date": body.date, "minutes": 0}
+
+    sit = Sit(
+        user_id=user.id,
+        duration_seconds=float(body.sit_minutes * 60),
+        started_at=day_start.replace(hour=8).astimezone(tz.utc),
+        timezone=body.timezone,
+    )
+    session.add(sit)
+    session.commit()
+    return {"date": body.date, "minutes": body.sit_minutes}

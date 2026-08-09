@@ -226,6 +226,96 @@
     border-color: var(--ink);
   }
 
+  /* sit history calendar */
+  .sit-block { position: relative; }
+
+  .play.history-btn { margin-left: 10px; }
+
+  .history-panel {
+    position: absolute;
+    top: calc(100% + 1px);
+    right: 40px;
+    z-index: 5;
+    background: var(--paper);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 16px 18px 12px;
+    width: 292px;
+  }
+
+  .cal-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .cal-head .cal-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .cal-head button {
+    font-size: 15px;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    padding: 0 8px;
+    cursor: pointer;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .cal-grid .dow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faded);
+    text-align: center;
+    padding: 3px 0 5px;
+  }
+
+  .cal-grid .day {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+    text-align: center;
+    line-height: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: var(--sans);
+    font-weight: 300;
+  }
+
+  .cal-grid .day:hover { background: var(--paper-raised); }
+
+  .cal-grid .day.sat {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .cal-grid .day.today { box-shadow: inset 0 0 0 1px var(--hairline-strong); }
+
+  .cal-grid .day.future {
+    color: var(--hairline-strong);
+    pointer-events: none;
+  }
+
+  .cal-hint {
+    font-size: 11px;
+    color: var(--ink-faded);
+    margin-top: 10px;
+    text-align: center;
+  }
+
   /* composer */
   .composer {
     border-top: 1px solid var(--hairline);
@@ -465,6 +555,17 @@
         <input class="chip chip-custom" id="custom-min" type="number" min="1" max="600" placeholder="…">
       </div>
       <button class="play" id="play" title="Optional: count down, chime at the end">▶ timer</button>
+      <button class="play history-btn" id="history-btn" title="Backfill sit history">history</button>
+
+      <div class="history-panel" id="history-panel" hidden>
+        <div class="cal-head">
+          <button id="cal-prev" title="Previous month">‹</button>
+          <span class="cal-title" id="cal-title"></span>
+          <button id="cal-next" title="Next month">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-hint">tap a day to toggle a sit — uses the selected duration</div>
+      </div>
     </div>
 
     <div class="chat-scroll" id="chat"></div>
@@ -908,6 +1009,95 @@
       document.querySelectorAll('button.chip')[3].classList.add('selected');
       sitMinutes = 30;
     }
+  });
+
+  /* ————— sit history calendar ————— */
+
+  const historyBtn = document.getElementById('history-btn');
+  const historyPanel = document.getElementById('history-panel');
+  const calTitle = document.getElementById('cal-title');
+  const calGrid = document.getElementById('cal-grid');
+
+  let calYear, calMonth;   // currently displayed month
+
+  function localISO(y, m, d) {
+    return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  async function loadCalendar() {
+    const last = new Date(calYear, calMonth + 1, 0).getDate();
+    calTitle.textContent = new Date(calYear, calMonth, 1)
+      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    let days = {};
+    try {
+      const data = await api('/api/morning/sits?start=' + localISO(calYear, calMonth, 1)
+        + '&end=' + localISO(calYear, calMonth, last)
+        + '&timezone=' + encodeURIComponent(timezone));
+      days = data.days || {};
+    } catch (err) { /* render empty month; toggling will surface errors */ }
+
+    calGrid.replaceChildren();
+    for (const dow of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) {
+      const el = document.createElement('div');
+      el.className = 'dow';
+      el.textContent = dow;
+      calGrid.appendChild(el);
+    }
+    const firstDow = new Date(calYear, calMonth, 1).getDay();
+    for (let i = 0; i < firstDow; i++) calGrid.appendChild(document.createElement('div'));
+
+    const now = new Date();
+    const todayISO = localISO(now.getFullYear(), now.getMonth(), now.getDate());
+    for (let d = 1; d <= last; d++) {
+      const iso = localISO(calYear, calMonth, d);
+      const cell = document.createElement('button');
+      cell.className = 'day';
+      cell.textContent = d;
+      const minutes = days[iso] || 0;
+      if (minutes) {
+        cell.classList.add('sat');
+        cell.title = minutes + ' min';
+      }
+      if (iso === todayISO) cell.classList.add('today');
+      if (iso > todayISO) cell.classList.add('future');
+      cell.addEventListener('click', async () => {
+        cell.disabled = true;
+        try {
+          const res = await postJSON('/api/morning/sits/toggle',
+            { date: iso, sit_minutes: sitMinutes, timezone });
+          cell.classList.toggle('sat', res.minutes > 0);
+          cell.title = res.minutes ? res.minutes + ' min' : '';
+        } catch (err) {
+          cell.textContent = '!';
+        } finally {
+          cell.disabled = false;
+        }
+      });
+      calGrid.appendChild(cell);
+    }
+  }
+
+  historyBtn.addEventListener('click', () => {
+    if (historyPanel.hidden) {
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
+      historyPanel.hidden = false;
+      loadCalendar();
+    } else {
+      historyPanel.hidden = true;
+    }
+  });
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+    loadCalendar();
+  });
+
+  document.getElementById('cal-next').addEventListener('click', () => {
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+    loadCalendar();
   });
 
   /* ————— timer ————— */
