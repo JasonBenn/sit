@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Sit</title>
 <link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
@@ -525,6 +525,61 @@
     text-transform: uppercase;
     letter-spacing: 0.16em;
     color: var(--ink-faded);
+  }
+
+  /* ————— mobile: stack panes, chat first ————— */
+
+  @media (max-width: 900px) {
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: auto;
+    }
+
+    .divider { display: none; }
+
+    .pane:first-child {
+      height: 100dvh;
+      border-bottom: 1px solid var(--hairline-strong);
+    }
+
+    .pane-header {
+      padding: 16px 20px 12px;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+    }
+
+    .pane-header h1 { font-size: 24px; }
+
+    .sit-block {
+      padding: 12px 20px;
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+
+    .chip { padding: 8px 13px; }
+
+    .chip-custom { font-size: 16px; } /* <16px inputs trigger iOS zoom-on-focus */
+
+    .history-panel {
+      left: 20px;
+      right: 20px;
+      width: auto;
+    }
+
+    .chat-scroll { padding: 20px; gap: 18px; }
+
+    .composer {
+      padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+    }
+
+    /* log pane scrolls with the page below the chat screen */
+    .log-wrap { display: block; }
+    .log-scroll { overflow: visible; padding: 4px 20px 40px; }
+    .outline, .outline-toggle { display: none; }
+
+    .timer-overlay .countdown { font-size: min(150px, 26vw); }
+    .timer-overlay .intention { font-size: 20px; padding: 0 24px; }
   }
 </style>
 </head>
