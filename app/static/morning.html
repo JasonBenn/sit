@@ -568,11 +568,11 @@
     }
 
     .pane { flex: 1; }
-    .app.show-log .pane:first-child { display: none; }
-    .app:not(.show-log) .pane:last-child { display: none; }
+    .app.show-log .pane:first-of-type { display: none; }
+    .app:not(.show-log) .pane:last-of-type { display: none; }
 
     /* the tab bar already names the log; its header is redundant */
-    .pane:last-child .pane-header { display: none; }
+    .pane:last-of-type .pane-header { display: none; }
 
     .pane-header {
       padding: 16px 20px 12px;
