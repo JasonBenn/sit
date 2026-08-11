@@ -527,21 +527,52 @@
     color: var(--ink-faded);
   }
 
-  /* ————— mobile: stack panes, chat first ————— */
+  /* ————— mobile: one pane at a time, tabs to switch ————— */
+
+  .mobile-tabs { display: none; }
 
   @media (max-width: 900px) {
     .app {
       display: flex;
       flex-direction: column;
-      height: auto;
+      height: 100dvh;
     }
 
     .divider { display: none; }
 
-    .pane:first-child {
-      height: 100dvh;
-      border-bottom: 1px solid var(--hairline-strong);
+    .mobile-tabs {
+      display: flex;
+      flex-shrink: 0;
+      padding-top: env(safe-area-inset-top);
+      border-bottom: 1px solid var(--hairline);
     }
+
+    .mobile-tabs button {
+      flex: 1;
+      font-family: var(--sans);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-faded);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      padding: 13px 0 11px;
+      cursor: pointer;
+    }
+
+    .mobile-tabs button.active {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+
+    .pane { flex: 1; }
+    .app.show-log .pane:first-child { display: none; }
+    .app:not(.show-log) .pane:last-child { display: none; }
+
+    /* the tab bar already names the log; its header is redundant */
+    .pane:last-child .pane-header { display: none; }
 
     .pane-header {
       padding: 16px 20px 12px;
@@ -573,9 +604,7 @@
       padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
     }
 
-    /* log pane scrolls with the page below the chat screen */
-    .log-wrap { display: block; }
-    .log-scroll { overflow: visible; padding: 4px 20px 40px; }
+    .log-scroll { padding: 20px 20px 40px; }
     .outline, .outline-toggle { display: none; }
 
     .timer-overlay .countdown { font-size: min(150px, 26vw); }
@@ -586,6 +615,11 @@
 <body>
 
 <div class="app">
+
+  <nav class="mobile-tabs">
+    <button class="active" data-view="chat">Check in</button>
+    <button data-view="log">Wake up log</button>
+  </nav>
 
   <!-- ——— LEFT: conversation ——— -->
   <section class="pane">
@@ -1027,6 +1061,16 @@
       send();
     }
   });
+
+  const app = document.querySelector('.app');
+  const mobileTabs = document.querySelectorAll('.mobile-tabs button');
+
+  for (const btn of mobileTabs) {
+    btn.addEventListener('click', () => {
+      app.classList.toggle('show-log', btn.dataset.view === 'log');
+      for (const b of mobileTabs) b.classList.toggle('active', b === btn);
+    });
+  }
 
   const logWrap = document.querySelector('.log-wrap');
   const outlineToggle = document.getElementById('outline-toggle');
