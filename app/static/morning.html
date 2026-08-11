@@ -605,7 +605,21 @@
     }
 
     .log-scroll { padding: 20px 20px 40px; }
-    .outline, .outline-toggle { display: none; }
+
+    /* the outline becomes a right tray over the log — swipe left to open, right to close */
+    .outline-toggle { display: none; }
+    .log-wrap { position: relative; overflow: hidden; }
+    .log-wrap.outline-hidden .outline { display: block; }
+    .outline {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: min(78vw, 300px);
+      background: var(--paper);
+      box-shadow: -10px 0 22px rgba(0, 0, 0, 0.07);
+      transform: translateX(102%);
+      transition: transform 0.22s ease;
+    }
+    .log-wrap.outline-open .outline { transform: translateX(0); }
 
     .timer-overlay .countdown { font-size: min(150px, 26vw); }
     .timer-overlay .intention { font-size: 20px; padding: 0 24px; }
@@ -904,6 +918,7 @@
         journalPane.scrollTop += target.getBoundingClientRect().top
           - journalPane.getBoundingClientRect().top - 12;
       }
+      logWrap.classList.remove('outline-open');  // tray overlays the log on mobile
     });
     return a;
   }
@@ -1086,6 +1101,23 @@
   });
 
   setOutlineVisible(localStorage.getItem('outlineVisible') !== '0');
+
+  /* mobile: swipe left anywhere on the log to open the outline tray, right to close */
+  const logPane = document.querySelector('section.pane:last-of-type');
+  let touchStart = null;
+
+  logPane.addEventListener('touchstart', e => {
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+
+  logPane.addEventListener('touchend', e => {
+    if (!touchStart) return;
+    const dx = e.changedTouches[0].clientX - touchStart.x;
+    const dy = e.changedTouches[0].clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    logWrap.classList.toggle('outline-open', dx < 0);
+  }, { passive: true });
 
   const customMin = document.getElementById('custom-min');
 
