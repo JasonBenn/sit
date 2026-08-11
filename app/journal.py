@@ -57,10 +57,18 @@ def make_heading(title: str, today: date) -> str:
 
 
 def write_entry(heading: str, body: str) -> None:
-    """Insert a new entry at the top, right after the file's description line."""
+    """Insert a new entry in date order (the file is newest-first): normally right
+    after the description line, but a backdated entry lands below newer-dated ones."""
+    new_date = HEADING_RE.match(heading).group("date")
     lines = _read_lines()
+    insert_at = len(lines)
+    for i, line in enumerate(lines[1:], start=1):
+        m = HEADING_RE.match(line)
+        if m and m.group("date") <= new_date:
+            insert_at = i
+            break
     entry = [heading] + body.strip().splitlines()
-    lines[1:1] = entry
+    lines[insert_at:insert_at] = entry
     _write_lines(lines)
 
 

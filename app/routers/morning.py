@@ -6,7 +6,7 @@ No auth: this router is only reachable over Tailscale (the public vhost 404s it)
 import json
 import os
 import subprocess
-from datetime import datetime, timedelta, timezone as tz
+from datetime import date, datetime, timedelta, timezone as tz
 from typing import Optional
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -66,6 +66,12 @@ conversation and the continuation — and it will overwrite the current entry in
 GREETING_INSTRUCTION = """(The user just opened the morning dashboard to begin a session. \
 Greet them: in one or two sentences, pick up the thread from their most recent entry — the \
 edge or question it ended on — then ask what's alive this morning. Nothing else.)"""
+
+CLOSING_INSTRUCTION = """(The user never returned to this session; it is being closed out \
+automatically. Write its journal entry now with write_journal_entry — even unresolved, the \
+question or observation is worth keeping. Capture what was alive and where the thread left \
+off; don't claim a sit or an outcome that isn't in the conversation, and skip the \
+"N-min sit:" title format. Then reply with one short closing line.)"""
 
 TOOLS = [
     {
@@ -173,10 +179,11 @@ def ask_notebooklm(question: str) -> str:
 def write_journal(
     morning: MorningSession, user: User, title: str, body: str,
     sit_minutes: int, user_tz: ZoneInfo, session: Session,
+    entry_date: Optional[date] = None, log_sit: bool = True,
 ) -> str:
     """Write or overwrite the session's entry; log the sit on first write.
     Returns the tool_label for the UI chip."""
-    heading = journal.make_heading(title, datetime.now(user_tz).date())
+    heading = journal.make_heading(title, entry_date or datetime.now(user_tz).date())
     if morning.journal_heading:
         journal.update_entry(morning.journal_heading, heading, body)
         morning.journal_heading = heading
@@ -185,6 +192,11 @@ def write_journal(
 
     journal.write_entry(heading, body)
     now = datetime.now(tz.utc)
+    morning.journal_heading = heading
+    morning.journal_written_at = now
+    if not log_sit:
+        session.add(morning)
+        return "Wrote journal entry → Wake up.md"
     sit = Sit(
         user_id=user.id,
         duration_seconds=float(sit_minutes * 60),
@@ -193,8 +205,6 @@ def write_journal(
     )
     session.add(sit)
     session.flush()
-    morning.journal_heading = heading
-    morning.journal_written_at = now
     morning.sit_id = sit.id
     session.add(morning)
     return f"Wrote journal entry → Wake up.md · logged {sit_minutes}-min sit"
@@ -202,10 +212,12 @@ def write_journal(
 
 def run_agent_turn(
     morning: MorningSession, user: User, sit_minutes: int,
-    user_tz: ZoneInfo, session: Session, greeting: bool = False,
+    user_tz: ZoneInfo, session: Session, greeting: bool = False, closing: bool = False,
 ) -> tuple[list[MorningMessage], bool]:
     """Run the model (with tool loop) over the session's stored messages and persist
-    everything new. Returns (new messages, whether a journal entry was written)."""
+    everything new. Returns (new messages, whether a journal entry was written).
+    closing mode (abandoned thread): the entry is dated to the session's day and no
+    sit is logged — we don't know one happened."""
     db_messages = session.exec(
         select(MorningMessage)
         .where(MorningMessage.session_id == morning.id)
@@ -214,6 +226,8 @@ def run_agent_turn(
     api_messages = build_api_messages(db_messages)
     if greeting:
         api_messages.append({"role": "user", "content": GREETING_INSTRUCTION})
+    if closing:
+        api_messages.append({"role": "user", "content": CLOSING_INSTRUCTION})
 
     system_prompt = build_system_prompt(morning, user_tz)
     client = anthropic.Anthropic()
@@ -245,9 +259,16 @@ def run_agent_turn(
                 result_text = ask_notebooklm(question)
             else:
                 title = block.input["title"]
+                if closing:
+                    created = morning.created_at if morning.created_at.tzinfo \
+                        else morning.created_at.replace(tzinfo=tz.utc)
+                    entry_date = created.astimezone(user_tz).date()
+                else:
+                    entry_date = None
                 label = write_journal(
                     morning, user, title, block.input["body"],
                     sit_minutes, user_tz, session,
+                    entry_date=entry_date, log_sit=not closing,
                 )
                 tool_msg = MorningMessage(
                     session_id=morning.id, role="tool",
@@ -335,6 +356,42 @@ def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_ses
         "messages": [serialize_message(m) for m in new_messages],
         "journal_written": journal_written,
     }
+
+
+STALE_AFTER = timedelta(hours=24)
+
+
+@router.post("/close-stale")
+def close_stale(body: NewSessionRequest, session: Session = Depends(get_session)):
+    """Close out abandoned threads: any session where the user said something, no
+    journal entry was written, and nothing has happened for 24h gets its entry
+    written for it (unresolved is fine — the question is still worth noting)."""
+    user = get_user(session)
+    cutoff = datetime.now(tz.utc) - STALE_AFTER
+    closed = []
+    candidates = session.exec(
+        select(MorningSession).where(
+            MorningSession.user_id == user.id,
+            MorningSession.journal_written_at == None,  # noqa: E711
+        )
+    ).all()
+    for morning in candidates:
+        messages = session.exec(
+            select(MorningMessage).where(MorningMessage.session_id == morning.id)
+        ).all()
+        if not any(m.role == "user" for m in messages):
+            continue  # greeting-only session; nothing worth journaling
+        last = max(m.created_at for m in messages)
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=tz.utc)
+        if last > cutoff:
+            continue
+        _, journal_written = run_agent_turn(
+            morning, user, sit_minutes=0, user_tz=ZoneInfo(body.timezone),
+            session=session, closing=True,
+        )
+        closed.append({"session_id": str(morning.id), "journal_written": journal_written})
+    return {"closed": closed}
 
 
 @router.get("/journal")
