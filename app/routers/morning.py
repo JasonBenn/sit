@@ -400,10 +400,35 @@ def add_sit(session_id: UUID, body: AddSitRequest, session: Session = Depends(ge
     the conversation, splitting pre-sit chat from post-sit reflections. No model turn."""
     user = get_user(session)
     morning = session.get(MorningSession, session_id)
+    now = datetime.now(tz.utc)
+
+    # A backfilled sit today (date known, time nominal) is a placeholder for this
+    # moment: the exact-time sit replaces it rather than double-counting the day.
+    # Sits that already have real times stay — a second sit in a day is legitimate.
+    user_tz = ZoneInfo(body.timezone)
+    day_start, day_end = _local_day_bounds(now.astimezone(user_tz).date().isoformat(), user_tz)
+    placeholders = session.exec(
+        select(Sit).where(
+            Sit.user_id == user.id,
+            Sit.time_known == False,  # noqa: E712
+            Sit.started_at >= day_start,
+            Sit.started_at < day_end,
+        )
+    ).all()
+    if placeholders:
+        ids = [s.id for s in placeholders]
+        for m in session.exec(
+            select(MorningSession).where(MorningSession.sit_id.in_(ids))
+        ).all():
+            m.sit_id = None
+            session.add(m)
+        for s in placeholders:
+            session.delete(s)
+
     sit = Sit(
         user_id=user.id,
         duration_seconds=float(body.sit_minutes * 60),
-        started_at=datetime.now(tz.utc),
+        started_at=now,
         timezone=body.timezone,
     )
     session.add(sit)
@@ -527,6 +552,7 @@ def toggle_sit(body: ToggleSitRequest, session: Session = Depends(get_session)):
         duration_seconds=float(body.sit_minutes * 60),
         started_at=day_start.replace(hour=8).astimezone(tz.utc),
         timezone=body.timezone,
+        time_known=False,
     )
     session.add(sit)
     session.commit()

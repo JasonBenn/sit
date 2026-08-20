@@ -41,6 +41,8 @@ class Sit(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="users.id")
     duration_seconds: float
     started_at: datetime = Field(sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
+    # False for calendar backfills: the date is real, the 8am start time is nominal.
+    time_known: bool = Field(default=True, sa_column=sa.Column(sa.Boolean, nullable=False, server_default=sa.true()))
     timezone: Optional[str] = Field(default=None, sa_column=sa.Column(sa.String, nullable=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
 
