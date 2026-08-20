@@ -13,11 +13,12 @@ from zoneinfo import ZoneInfo
 
 import anthropic
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app import journal
-from app.db import get_session
+from app.db import engine, get_session
 from app.models import MorningMessage, MorningSession, Sit, User
 
 router = APIRouter(prefix="/api/morning", tags=["morning"])
@@ -210,12 +211,17 @@ def write_journal(
     return f"Wrote journal entry → Wake up.md · logged {sit_minutes}-min sit"
 
 
-def run_agent_turn(
+def agent_turn_events(
     morning: MorningSession, user: User, sit_minutes: int,
     user_tz: ZoneInfo, session: Session, greeting: bool = False, closing: bool = False,
-) -> tuple[list[MorningMessage], bool]:
-    """Run the model (with tool loop) over the session's stored messages and persist
-    everything new. Returns (new messages, whether a journal entry was written).
+):
+    """Run the model (with tool loop) over the session's stored messages, persist
+    everything new, and yield progress events as they happen:
+      {"type": "text", "delta": str}          — assistant tokens
+      {"type": "tool_pending", "name": str}   — model started emitting a tool call
+      {"type": "tool", ...}                   — tool about to run (label + input known)
+      {"type": "tool_done", "message": dict}  — tool ran; persisted chip message
+      {"type": "done", "messages": [...], "journal_written": bool}  — always last
     closing mode (abandoned thread): the entry is dated to the session's day and no
     sit is logged — we don't know one happened."""
     db_messages = session.exec(
@@ -235,13 +241,27 @@ def run_agent_turn(
     journal_written = False
 
     for _ in range(6):
-        response = client.messages.create(
+        with client.messages.stream(
             model=MODEL,
             max_tokens=2000,
             system=system_prompt,
             messages=api_messages,
             tools=TOOLS,
-        )
+        ) as stream:
+            for event in stream:
+                if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                    yield {"type": "text", "delta": event.delta.text}
+                elif event.type == "content_block_start" \
+                        and event.content_block.type == "tool_use":
+                    yield {"type": "tool_pending", "name": event.content_block.name}
+            response = stream.get_final_message()
+
+        text = "".join(block.text for block in response.content if hasattr(block, "text"))
+        if text.strip():
+            assistant_msg = MorningMessage(session_id=morning.id, role="assistant", content=text)
+            session.add(assistant_msg)
+            new_messages.append(assistant_msg)
+
         if response.stop_reason != "tool_use":
             break
 
@@ -252,6 +272,7 @@ def run_agent_turn(
                 continue
             if block.name == "ask_notebooklm":
                 question = block.input["question"]
+                yield {"type": "tool", "tool_label": "Asking Rigdzin notebook…", "content": question}
                 tool_msg = MorningMessage(
                     session_id=morning.id, role="tool",
                     content=question, tool_label="Asked Rigdzin notebook",
@@ -281,6 +302,7 @@ def run_agent_turn(
                 system_prompt = build_system_prompt(morning, user_tz)
             session.add(tool_msg)
             new_messages.append(tool_msg)
+            yield {"type": "tool_done", "message": serialize_message(tool_msg)}
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": block.id,
@@ -288,14 +310,21 @@ def run_agent_turn(
             })
         api_messages.append({"role": "user", "content": tool_results})
 
-    text = "".join(block.text for block in response.content if hasattr(block, "text"))
-    assistant_msg = MorningMessage(session_id=morning.id, role="assistant", content=text)
-    session.add(assistant_msg)
-    new_messages.append(assistant_msg)
     session.commit()
     for m in new_messages:
         session.refresh(m)
-    return new_messages, journal_written
+    yield {
+        "type": "done",
+        "messages": [serialize_message(m) for m in new_messages],
+        "journal_written": journal_written,
+    }
+
+
+def run_agent_turn(*args, **kwargs) -> tuple[list[dict], bool]:
+    """Non-streaming wrapper: drain the event stream, return the final result."""
+    for event in agent_turn_events(*args, **kwargs):
+        pass
+    return event["messages"], event["journal_written"]
 
 
 @router.get("/sessions")
@@ -327,7 +356,7 @@ def create_session(body: NewSessionRequest, session: Session = Depends(get_sessi
     )
     return {
         "session": serialize_session(morning, len(new_messages)),
-        "messages": [serialize_message(m) for m in new_messages],
+        "messages": new_messages,
     }
 
 
@@ -343,19 +372,31 @@ def get_messages(session_id: UUID, session: Session = Depends(get_session)):
 
 @router.post("/sessions/{session_id}/chat")
 def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_session)):
-    user = get_user(session)
+    """Server-sent events: text deltas and tool calls as they happen, then a final
+    "done" event with the persisted messages."""
     morning = session.get(MorningSession, session_id)
     user_msg = MorningMessage(session_id=morning.id, role="user", content=body.message)
     session.add(user_msg)
-    session.flush()
-    new_messages, journal_written = run_agent_turn(
-        morning, user, sit_minutes=body.sit_minutes,
-        user_tz=ZoneInfo(body.timezone), session=session,
+    session.commit()
+
+    def sse():
+        # The request-scoped session is torn down before a StreamingResponse body
+        # runs, so the generator opens its own.
+        with Session(engine) as stream_session:
+            for event in agent_turn_events(
+                morning=stream_session.get(MorningSession, session_id),
+                user=get_user(stream_session),
+                sit_minutes=body.sit_minutes,
+                user_tz=ZoneInfo(body.timezone),
+                session=stream_session,
+            ):
+                yield "data: " + json.dumps(event) + "\n\n"
+
+    return StreamingResponse(
+        sse(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-    return {
-        "messages": [serialize_message(m) for m in new_messages],
-        "journal_written": journal_written,
-    }
 
 
 STALE_AFTER = timedelta(hours=24)

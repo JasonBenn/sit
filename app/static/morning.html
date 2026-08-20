@@ -127,6 +127,14 @@
 
   .msg p + p { margin-top: 10px; }
 
+  .msg a, .tool a, .entry a {
+    color: var(--ink-soft);
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+
   .msg .pending { color: var(--ink-faded); letter-spacing: 0.2em; }
 
   .notice {
@@ -325,6 +333,7 @@
     align-items: flex-end;
   }
 
+  /* textarea (1 line) and button are both 36px tall, so flex-end lines them up */
   .composer textarea {
     flex: 1;
     font-family: var(--sans);
@@ -345,6 +354,7 @@
 
   .composer .send {
     font-size: 13px;
+    line-height: 16px;
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--ink-soft);
@@ -643,7 +653,7 @@
         <button id="prev" title="Previous session">‹</button>
         <span class="pager" id="pager"></span>
         <button id="next" title="Next session">›</button>
-        <button id="new-session">New session</button>
+        <button id="new-session">New</button>
       </div>
     </header>
 
@@ -674,7 +684,7 @@
     <div class="chat-scroll" id="chat"></div>
 
     <div class="composer">
-      <textarea id="input" rows="2" placeholder="Check in…"></textarea>
+      <textarea id="input" rows="1" placeholder="Check in…"></textarea>
       <button class="send" id="send">Send</button>
     </div>
   </section>
@@ -739,13 +749,34 @@
 
   /* ————— rendering ————— */
 
+  const URL_RE = /https?:\/\/[^\s<>()"']+[^\s<>()"'.,;:!?]/g;
+
+  function linkNode(url, label) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.textContent = label || url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    return a;
+  }
+
+  function appendLinkified(parent, text) {
+    let last = 0;
+    for (const m of text.matchAll(URL_RE)) {
+      if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+      parent.appendChild(linkNode(m[0]));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+  }
+
   function paragraphs(parent, text) {
     const blocks = String(text || '').split(/\n\s*\n/);
     for (const block of blocks) {
       const trimmed = block.trim();
       if (!trimmed) continue;
       const p = document.createElement('p');
-      p.textContent = trimmed;
+      appendLinkified(p, trimmed);
       parent.appendChild(p);
     }
   }
@@ -759,7 +790,7 @@
       label.textContent = msg.tool_label || 'Tool';
       const body = document.createElement('div');
       body.className = 'tool-body';
-      body.textContent = msg.content || '';
+      appendLinkified(body, msg.content || '');
       el.append(label, body);
       return el;
     }
@@ -809,8 +840,8 @@
 
   function renderPager() {
     pager.textContent = sessions.length
-      ? 'session ' + (index + 1) + ' of ' + sessions.length
-      : 'no sessions';
+      ? (index + 1) + '/' + sessions.length
+      : '—';
     prevBtn.disabled = busy || index <= 0;
     nextBtn.disabled = busy || index < 0 || index >= sessions.length - 1;
     newBtn.disabled = busy;
@@ -832,14 +863,23 @@
   }
 
   function inlineMarkdown(text) {
+    // Anchors are stashed as \x00N\x00 tokens so the emphasis regexes below
+    // can't mangle characters inside URLs (underscores, asterisks).
+    const anchors = [];
+    const stash = (url, label) => {
+      anchors.push('<a href="' + url + '" target="_blank" rel="noopener">' + label + '</a>');
+      return '\x00' + (anchors.length - 1) + '\x00';
+    };
     return escapeHtml(text)
       .replace(/\[\[([^\]]+)\]\]/g, '$1')
-      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => stash(url, label))
+      .replace(URL_RE, url => stash(url, url))
       .replace(/`([^`]+)`/g, '$1')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/_([^_]+)_/g, '<em>$1</em>')
-      .replace(/^\s*#{1,6}\s+/, '');
+      .replace(/^\s*#{1,6}\s+/, '')
+      .replace(/\x00(\d+)\x00/g, (_, i) => anchors[i]);
   }
 
   function todayLabel() {
@@ -1004,6 +1044,18 @@
     }
   }
 
+  const TOOL_PENDING_LABELS = {
+    ask_notebooklm: 'Asking Rigdzin notebook…',
+    write_journal_entry: 'Writing journal entry…',
+  };
+
+  function updateToolChip(chip, label, content) {
+    chip.querySelector('.tool-label').textContent = label;
+    const body = chip.querySelector('.tool-body');
+    body.replaceChildren();
+    appendLinkified(body, content || '');
+  }
+
   async function send() {
     const text = input.value.trim();
     if (!text || busy || index < 0) return;
@@ -1011,20 +1063,91 @@
     autosize();
     messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
     setBusy(true);
-    renderChat(pendingNode());
+    const pending = pendingNode();
+    renderChat(pending);
+
+    // Streamed turn: text deltas fill an in-progress bubble; tool events add chips.
+    let streamMsg = null, streamWho = null, streamText = '';
+    const toolChips = [];
+    let execIdx = 0;
+    let done = null;
+
+    function handleEvent(ev) {
+      pending.remove();
+      if (ev.type === 'text') {
+        if (!streamMsg) {
+          streamMsg = document.createElement('div');
+          streamMsg.className = 'msg assistant';
+          streamWho = document.createElement('div');
+          streamWho.className = 'who';
+          streamWho.textContent = 'Sit';
+          streamMsg.appendChild(streamWho);
+          streamText = '';
+          chat.appendChild(streamMsg);
+        }
+        streamText += ev.delta;
+        streamMsg.replaceChildren(streamWho);
+        paragraphs(streamMsg, streamText);
+      } else if (ev.type === 'tool_pending') {
+        streamMsg = null;  // any following text starts a fresh bubble
+        const chip = messageNode({
+          role: 'tool',
+          tool_label: TOOL_PENDING_LABELS[ev.name] || ev.name,
+          content: '',
+        });
+        toolChips.push(chip);
+        chat.appendChild(chip);
+      } else if (ev.type === 'tool') {
+        if (toolChips[execIdx]) updateToolChip(toolChips[execIdx], ev.tool_label, ev.content);
+      } else if (ev.type === 'tool_done') {
+        const chip = toolChips[execIdx];
+        if (chip) updateToolChip(chip, ev.message.tool_label, ev.message.content);
+        else chat.appendChild(messageNode(ev.message));
+        execIdx++;
+      } else if (ev.type === 'done') {
+        done = ev;
+      }
+      scrollChat();
+    }
+
     try {
-      const data = await postJSON(
+      const res = await fetch(
         '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/chat',
-        { message: text, sit_minutes: sitMinutes, timezone }
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, sit_minutes: sitMinutes, timezone }),
+        }
       );
-      messages = messages.concat(data.messages || []);
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { value, done: eof } = await reader.read();
+        if (eof) break;
+        buf += decoder.decode(value, { stream: true });
+        const chunks = buf.split('\n\n');
+        buf = chunks.pop();
+        for (const chunk of chunks) {
+          for (const line of chunk.split('\n')) {
+            if (line.startsWith('data: ')) handleEvent(JSON.parse(line.slice(6)));
+          }
+        }
+      }
+      if (!done) throw new Error('the reply was cut off');
+
+      messages = messages.concat(done.messages || []);
       renderChat();
-      if (data.journal_written) {
+      if (done.journal_written) {
         sessions[index].journal_written_at = new Date().toISOString();
         loadJournal();
       }
     } catch (err) {
-      renderChat(noticeNode('Message failed — ' + err.message));
+      pending.remove();
+      chat.appendChild(noticeNode('Message failed — ' + err.message));
+      scrollChat();
     } finally {
       setBusy(false);
       input.focus();
@@ -1032,9 +1155,10 @@
   }
 
   async function init() {
-    document.getElementById('today').textContent = new Date().toLocaleDateString('en-US', {
-      weekday: 'long', month: 'long', day: 'numeric'
-    });
+    const now = new Date();
+    document.getElementById('today').textContent =
+      now.toLocaleDateString('en-US', { weekday: 'short' })
+      + ' ' + (now.getMonth() + 1) + '/' + now.getDate();
     renderPager();
     renderChat(pendingNode());
 
