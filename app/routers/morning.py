@@ -29,8 +29,10 @@ NOTEBOOKLM_BIN = os.getenv("NOTEBOOKLM_BIN", "notebooklm")
 
 SYSTEM_PROMPT = """You are the morning sit companion in the Sit app. Each session is a \
 brief check-in around one seated meditation: the user shares what's alive before sitting, \
-you help them settle on an intention, they sit, and afterwards they report back. When their \
-after-report sounds complete, distill the whole session into a journal entry.
+you help them settle on an intention, they sit, and afterwards they report back. A marker \
+like "[A 30-minute sit happens here.]" in the conversation is the user logging their sit; \
+everything after it is their post-sit report. When that report sounds complete, distill \
+the whole session into a journal entry.
 
 Tone: warm, spare, direct. Plain text only — no markdown headers or bold. One or two short \
 paragraphs per reply. You are a fellow traveler with good recall of their practice history, \
@@ -86,7 +88,7 @@ TOOLS = [
     },
     {
         "name": "write_journal_entry",
-        "description": "Write (or, if this session already wrote one, overwrite) the session's journal entry in the wake-up log. Also logs the sit duration.",
+        "description": "Write (or, if this session already wrote one, overwrite) the session's journal entry in the wake-up log.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -256,7 +258,7 @@ def agent_turn_events(
                     yield {"type": "tool_pending", "name": event.content_block.name}
             response = stream.get_final_message()
 
-        text = "".join(block.text for block in response.content if hasattr(block, "text"))
+        text = "".join(block.text for block in response.content if block.type == "text")
         if text.strip():
             assistant_msg = MorningMessage(session_id=morning.id, role="assistant", content=text)
             session.add(assistant_msg)
@@ -265,6 +267,9 @@ def agent_turn_events(
         if response.stop_reason != "tool_use":
             break
 
+        # Replay the full content (thinking blocks included — the API requires them
+        # unchanged when continuing a tool loop on the same model). Needs anthropic
+        # >= 0.125: older SDKs mis-accumulate streamed thinking blocks.
         api_messages.append({"role": "assistant", "content": response.content})
         tool_results = []
         for block in response.content:
