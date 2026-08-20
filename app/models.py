@@ -84,7 +84,7 @@ class MorningMessage(SQLModel, table=True):
     __tablename__ = "morning_messages"
     id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     session_id: UUID = Field(foreign_key="morning_sessions.id", index=True)
-    role: str  # user | assistant | tool
+    role: str  # user | assistant | tool | sit
     content: str = Field(sa_column=Column(Text))
     tool_label: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))

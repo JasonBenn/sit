@@ -103,7 +103,6 @@ TOOLS = [
 
 class ChatRequest(BaseModel):
     message: str
-    sit_minutes: int = 30
     timezone: str = "America/Los_Angeles"
 
 
@@ -157,6 +156,9 @@ def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
         if m.role == "tool":
             content = f"[{m.tool_label}: {m.content}]"
             role = "assistant"
+        elif m.role == "sit":
+            content = f"[A {m.content}-minute sit happens here.]"
+            role = "assistant"
         else:
             content, role = m.content, m.role
         if api and api[-1]["role"] == role:
@@ -180,12 +182,11 @@ def ask_notebooklm(question: str) -> str:
 
 
 def write_journal(
-    morning: MorningSession, user: User, title: str, body: str,
-    sit_minutes: int, user_tz: ZoneInfo, session: Session,
-    entry_date: Optional[date] = None, log_sit: bool = True,
+    morning: MorningSession, title: str, body: str,
+    user_tz: ZoneInfo, session: Session, entry_date: Optional[date] = None,
 ) -> str:
-    """Write or overwrite the session's entry; log the sit on first write.
-    Returns the tool_label for the UI chip."""
+    """Write or overwrite the session's entry. Returns the tool_label for the UI chip.
+    Sits are logged separately, by the explicit add-sit button."""
     heading = journal.make_heading(title, entry_date or datetime.now(user_tz).date())
     if morning.journal_heading:
         journal.update_entry(morning.journal_heading, heading, body)
@@ -194,27 +195,14 @@ def write_journal(
         return "Updated journal entry → Wake up.md"
 
     journal.write_entry(heading, body)
-    now = datetime.now(tz.utc)
     morning.journal_heading = heading
-    morning.journal_written_at = now
-    if not log_sit:
-        session.add(morning)
-        return "Wrote journal entry → Wake up.md"
-    sit = Sit(
-        user_id=user.id,
-        duration_seconds=float(sit_minutes * 60),
-        started_at=now - timedelta(minutes=sit_minutes),
-        timezone=str(user_tz),
-    )
-    session.add(sit)
-    session.flush()
-    morning.sit_id = sit.id
+    morning.journal_written_at = datetime.now(tz.utc)
     session.add(morning)
-    return f"Wrote journal entry → Wake up.md · logged {sit_minutes}-min sit"
+    return "Wrote journal entry → Wake up.md"
 
 
 def agent_turn_events(
-    morning: MorningSession, user: User, sit_minutes: int,
+    morning: MorningSession, user: User,
     user_tz: ZoneInfo, session: Session, greeting: bool = False, closing: bool = False,
 ):
     """Run the model (with tool loop) over the session's stored messages, persist
@@ -224,8 +212,7 @@ def agent_turn_events(
       {"type": "tool", ...}                   — tool about to run (label + input known)
       {"type": "tool_done", "message": dict}  — tool ran; persisted chip message
       {"type": "done", "messages": [...], "journal_written": bool}  — always last
-    closing mode (abandoned thread): the entry is dated to the session's day and no
-    sit is logged — we don't know one happened."""
+    closing mode (abandoned thread): the entry is dated to the session's day."""
     db_messages = session.exec(
         select(MorningMessage)
         .where(MorningMessage.session_id == morning.id)
@@ -292,9 +279,8 @@ def agent_turn_events(
                 else:
                     entry_date = None
                 label = write_journal(
-                    morning, user, title, block.input["body"],
-                    sit_minutes, user_tz, session,
-                    entry_date=entry_date, log_sit=not closing,
+                    morning, title, block.input["body"],
+                    user_tz, session, entry_date=entry_date,
                 )
                 tool_msg = MorningMessage(
                     session_id=morning.id, role="tool",
@@ -356,7 +342,7 @@ def create_session(body: NewSessionRequest, session: Session = Depends(get_sessi
     session.add(morning)
     session.flush()
     new_messages, _ = run_agent_turn(
-        morning, user, sit_minutes=30, user_tz=ZoneInfo(body.timezone),
+        morning, user, user_tz=ZoneInfo(body.timezone),
         session=session, greeting=True,
     )
     return {
@@ -391,7 +377,6 @@ def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_ses
             for event in agent_turn_events(
                 morning=stream_session.get(MorningSession, session_id),
                 user=get_user(stream_session),
-                sit_minutes=body.sit_minutes,
                 user_tz=ZoneInfo(body.timezone),
                 session=stream_session,
             ):
@@ -402,6 +387,34 @@ def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_ses
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+class AddSitRequest(BaseModel):
+    sit_minutes: int
+    timezone: str = "America/Los_Angeles"
+
+
+@router.post("/sessions/{session_id}/sits")
+def add_sit(session_id: UUID, body: AddSitRequest, session: Session = Depends(get_session)):
+    """The user declares a sit is happening: log it and pin a sit marker message into
+    the conversation, splitting pre-sit chat from post-sit reflections. No model turn."""
+    user = get_user(session)
+    morning = session.get(MorningSession, session_id)
+    sit = Sit(
+        user_id=user.id,
+        duration_seconds=float(body.sit_minutes * 60),
+        started_at=datetime.now(tz.utc),
+        timezone=body.timezone,
+    )
+    session.add(sit)
+    session.flush()
+    morning.sit_id = sit.id
+    session.add(morning)
+    msg = MorningMessage(session_id=morning.id, role="sit", content=str(body.sit_minutes))
+    session.add(msg)
+    session.commit()
+    session.refresh(msg)
+    return {"message": serialize_message(msg)}
 
 
 STALE_AFTER = timedelta(hours=24)
@@ -433,7 +446,7 @@ def close_stale(body: NewSessionRequest, session: Session = Depends(get_session)
         if last > cutoff:
             continue
         _, journal_written = run_agent_turn(
-            morning, user, sit_minutes=0, user_tz=ZoneInfo(body.timezone),
+            morning, user, user_tz=ZoneInfo(body.timezone),
             session=session, closing=True,
         )
         closed.append({"session_id": str(morning.id), "journal_written": journal_written})

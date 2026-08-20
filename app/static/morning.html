@@ -49,6 +49,7 @@
   .pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 
   .pane-header {
+    position: relative;   /* anchors the history calendar popover */
     padding: 28px 40px 18px;
     border-bottom: 1px solid var(--hairline);
     display: flex;
@@ -166,16 +167,16 @@
     margin-top: 3px;
   }
 
-  /* sit duration bar, pinned under the header */
-  .sit-block {
-    border-bottom: 1px solid var(--hairline);
-    padding: 14px 40px;
+  /* sit row: duration chips + add-sit, above the composer */
+  .sit-row {
+    border-top: 1px solid var(--hairline);
+    padding: 12px 40px 0;
     display: flex;
     align-items: center;
     gap: 16px;
   }
 
-  .sit-block .sit-label {
+  .sit-row .sit-label {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.14em;
@@ -183,17 +184,49 @@
     margin-right: 4px;
   }
 
-  .sit-block .durations { display: flex; gap: 8px; }
+  .sit-row .durations { display: flex; gap: 8px; }
 
-  .sit-block .play {
+  .sit-row .add-sit {
     margin-left: auto;
     font-family: var(--sans);
     font-size: 14px;
-    color: var(--ink-faded);
+    color: var(--ink-soft);
     background: none;
-    border: 1px solid var(--hairline);
+    border: 1px solid var(--hairline-strong);
     border-radius: 2px;
     padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  /* sit marker: the widget pinned into the conversation when a sit is logged */
+  .sit-marker {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 4px 0;
+  }
+
+  .sit-marker::before, .sit-marker::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--hairline-strong);
+  }
+
+  .sit-marker .sit-mins {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .sit-marker .sit-timer {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 5px 12px;
     cursor: pointer;
   }
 
@@ -235,10 +268,6 @@
   }
 
   /* sit history calendar */
-  .sit-block { position: relative; }
-
-  .play.history-btn { margin-left: 10px; }
-
   .history-panel {
     position: absolute;
     top: calc(100% + 1px);
@@ -310,7 +339,16 @@
     color: var(--paper);
   }
 
-  .cal-grid .day.today { box-shadow: inset 0 0 0 1px var(--hairline-strong); }
+  /* e-ink legible: today is a thick ring; a sat today keeps the fill and
+     gains an inner paper ring so it reads distinctly from other sat days */
+  .cal-grid .day.today {
+    box-shadow: inset 0 0 0 2px var(--ink);
+    font-weight: 500;
+  }
+
+  .cal-grid .day.sat.today {
+    box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 4px var(--paper);
+  }
 
   .cal-grid .day.future {
     color: var(--hairline-strong);
@@ -324,10 +362,9 @@
     text-align: center;
   }
 
-  /* composer */
+  /* composer (the sit row above it carries the separating border) */
   .composer {
-    border-top: 1px solid var(--hairline);
-    padding: 18px 40px 24px;
+    padding: 14px 40px 24px;
     display: flex;
     gap: 14px;
     align-items: flex-end;
@@ -592,8 +629,8 @@
 
     .pane-header h1 { font-size: 24px; }
 
-    .sit-block {
-      padding: 12px 20px;
+    .sit-row {
+      padding: 10px 20px 0;
       flex-wrap: wrap;
       row-gap: 8px;
     }
@@ -654,21 +691,8 @@
         <span class="pager" id="pager"></span>
         <button id="next" title="Next session">›</button>
         <button id="new-session">New</button>
+        <button id="history-btn" title="Sit history — tap a day to backfill">history</button>
       </div>
-    </header>
-
-    <div class="sit-block">
-      <span class="sit-label">Sat for</span>
-      <div class="durations" id="durations">
-        <button class="chip">5</button>
-        <button class="chip">10</button>
-        <button class="chip">20</button>
-        <button class="chip selected">30</button>
-        <button class="chip">40</button>
-        <input class="chip chip-custom" id="custom-min" type="number" min="1" max="600" placeholder="…">
-      </div>
-      <button class="play" id="play" title="Optional: count down, chime at the end">▶ timer</button>
-      <button class="play history-btn" id="history-btn" title="Backfill sit history">history</button>
 
       <div class="history-panel" id="history-panel" hidden>
         <div class="cal-head">
@@ -679,9 +703,22 @@
         <div class="cal-grid" id="cal-grid"></div>
         <div class="cal-hint">tap a day to toggle a sit — uses the selected duration</div>
       </div>
-    </div>
+    </header>
 
     <div class="chat-scroll" id="chat"></div>
+
+    <div class="sit-row">
+      <span class="sit-label">Sat for</span>
+      <div class="durations" id="durations">
+        <button class="chip">5</button>
+        <button class="chip">10</button>
+        <button class="chip">20</button>
+        <button class="chip selected">30</button>
+        <button class="chip">40</button>
+        <input class="chip chip-custom" id="custom-min" type="number" min="1" max="600" placeholder="…">
+      </div>
+      <button class="add-sit" id="add-sit" title="Log this sit into the conversation">+ Add sit</button>
+    </div>
 
     <div class="composer">
       <textarea id="input" rows="1" placeholder="Check in…"></textarea>
@@ -721,6 +758,7 @@
   const newBtn = document.getElementById('new-session');
   const input = document.getElementById('input');
   const sendBtn = document.getElementById('send');
+  const addSitBtn = document.getElementById('add-sit');
   const overlay = document.getElementById('overlay');
   const countdown = document.getElementById('countdown');
   const intention = document.getElementById('intention');
@@ -782,6 +820,21 @@
   }
 
   function messageNode(msg) {
+    if (msg.role === 'sit') {
+      const el = document.createElement('div');
+      el.className = 'sit-marker';
+      const mins = document.createElement('span');
+      mins.className = 'sit-mins';
+      mins.textContent = msg.content + '-minute sit';
+      const btn = document.createElement('button');
+      btn.className = 'sit-timer';
+      btn.textContent = '▶ timer';
+      btn.title = 'Optional: count down, chime at the end';
+      btn.addEventListener('click', () => startTimer(parseInt(msg.content, 10), msg));
+      el.append(mins, btn);
+      return el;
+    }
+
     if (msg.role === 'tool') {
       const el = document.createElement('div');
       el.className = 'tool';
@@ -851,6 +904,7 @@
     busy = state;
     input.disabled = state;
     sendBtn.disabled = state;
+    addSitBtn.disabled = state;
     renderPager();
   }
 
@@ -1116,7 +1170,7 @@
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, sit_minutes: sitMinutes, timezone }),
+          body: JSON.stringify({ message: text, timezone }),
         }
       );
       if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
@@ -1355,6 +1409,25 @@
     loadCalendar();
   });
 
+  /* ————— add sit: pin a sit marker into the conversation, no model turn ————— */
+
+  addSitBtn.addEventListener('click', async () => {
+    if (busy || index < 0) return;
+    addSitBtn.disabled = true;
+    try {
+      const data = await postJSON(
+        '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/sits',
+        { sit_minutes: sitMinutes, timezone });
+      messages.push(data.message);
+      renderChat();
+    } catch (err) {
+      chat.appendChild(noticeNode('Could not log the sit — ' + err.message));
+      scrollChat();
+    } finally {
+      addSitBtn.disabled = false;
+    }
+  });
+
   /* ————— timer ————— */
 
   let remaining = 0, tick = null;
@@ -1364,8 +1437,11 @@
     countdown.textContent = `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  function lastAssistantLine() {
-    for (let i = messages.length - 1; i >= 0; i--) {
+  /* the intention shown on the overlay: the last thing Sit said before this sit */
+  function lastAssistantLineBefore(sitMsg) {
+    let end = messages.indexOf(sitMsg);
+    if (end < 0) end = messages.length;
+    for (let i = end - 1; i >= 0; i--) {
       if (messages[i].role !== 'assistant') continue;
       const blocks = String(messages[i].content || '').split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
       return blocks.length ? blocks[blocks.length - 1] : '';
@@ -1373,18 +1449,18 @@
     return '';
   }
 
-  document.getElementById('play').addEventListener('click', () => {
+  function startTimer(minutes, sitMsg) {
     clearInterval(tick);
-    remaining = sitMinutes * 60;
+    remaining = minutes * 60;
     renderCountdown();
-    intention.textContent = lastAssistantLine();
+    intention.textContent = lastAssistantLineBefore(sitMsg);
     overlay.classList.add('on');
     tick = setInterval(() => {
       remaining = Math.max(0, remaining - 1);
       renderCountdown();
       if (remaining === 0) { clearInterval(tick); chime(); }
     }, 1000);
-  });
+  }
 
   function chime() {
     if (!document.hasFocus()) return;
