@@ -23,7 +23,7 @@ from app.models import MorningMessage, MorningSession, Sit, User
 
 router = APIRouter(prefix="/api/morning", tags=["morning"])
 
-MODEL = "claude-sonnet-5"
+MODEL = "claude-fable-5"
 MORNING_USERNAME = os.getenv("MORNING_USERNAME", "jasoncbenn")
 NOTEBOOKLM_BIN = os.getenv("NOTEBOOKLM_BIN", "notebooklm")
 
@@ -230,12 +230,17 @@ def agent_turn_events(
     journal_written = False
 
     for _ in range(6):
-        with client.messages.stream(
+        # Fable: thinking is always on and counts toward max_tokens; fallbacks
+        # reroute a safety refusal to Opus server-side so a turn never comes
+        # back empty (extra_body: the 0.125 SDK has no typed fallbacks param).
+        with client.beta.messages.stream(
             model=MODEL,
-            max_tokens=2000,
+            max_tokens=8000,
             system=system_prompt,
             messages=api_messages,
             tools=TOOLS,
+            betas=["server-side-fallback-2026-07-01"],
+            extra_body={"fallbacks": "default"},
         ) as stream:
             for event in stream:
                 if event.type == "content_block_delta" and event.delta.type == "text_delta":
