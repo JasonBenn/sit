@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Sit</title>
 <link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
@@ -177,7 +177,8 @@
     padding: 12px 40px 0;
     display: flex;
     align-items: center;
-    gap: 16px;
+    flex-wrap: wrap;      /* never overflow the pane — add-sit drops to its own line */
+    gap: 10px 12px;
   }
 
   .sit-row .sit-label {
@@ -188,7 +189,7 @@
     margin-right: 4px;
   }
 
-  .sit-row .durations { display: flex; gap: 8px; }
+  .sit-row .durations { display: flex; flex-wrap: wrap; gap: 8px; }
 
   .sit-row .add-sit {
     margin-left: auto;
@@ -198,7 +199,8 @@
     background: none;
     border: 1px solid var(--hairline-strong);
     border-radius: 2px;
-    padding: 8px 14px;
+    height: 40px;
+    padding: 0 16px;
     cursor: pointer;
   }
 
@@ -234,6 +236,8 @@
     cursor: pointer;
   }
 
+  /* every control in the row is exactly 40px tall — buttons and the number
+     input compute height differently from padding, so fix it outright */
   .chip {
     font-family: var(--sans);
     font-size: 15px;
@@ -242,7 +246,8 @@
     background: none;
     border: 1px solid var(--hairline-strong);
     border-radius: 2px;
-    padding: 8px 16px;
+    height: 40px;
+    padding: 0 15px;
     cursor: pointer;
   }
 
@@ -253,7 +258,8 @@
   }
 
   .chip-custom {
-    width: 58px;
+    width: 54px;
+    padding: 0;
     text-align: center;
     outline: none;
     -moz-appearance: textfield;
@@ -633,13 +639,9 @@
 
     .pane-header h1 { font-size: 24px; }
 
-    .sit-row {
-      padding: 10px 20px 0;
-      flex-wrap: wrap;
-      row-gap: 8px;
-    }
+    .sit-row { padding: 10px 20px 0; }
 
-    .chip { padding: 8px 13px; }
+    .chip { padding: 0 12px; }
 
     .chip-custom { font-size: 16px; } /* <16px inputs trigger iOS zoom-on-focus */
 
@@ -1269,6 +1271,22 @@
     });
   }
 
+  /* Keyboard-aware height: interactive-widget=resizes-content (in the viewport
+     meta) makes modern Chrome shrink the layout when the keyboard opens; this
+     is the fallback for browsers that ignore it. Panes keep their own scroll —
+     the page itself never scrolls. */
+  const vv = window.visualViewport;
+  if (vv) {
+    const fit = () => {
+      if (vv.scale > 1.02) return;   // pinch zoom: leave the layout alone
+      app.style.height = vv.height + 'px';
+      app.style.transform = vv.offsetTop ? 'translateY(' + vv.offsetTop + 'px)' : '';
+      if (document.activeElement === input) scrollChat();
+    };
+    vv.addEventListener('resize', fit);
+    vv.addEventListener('scroll', fit);
+  }
+
   const logWrap = document.querySelector('.log-wrap');
   const outlineToggle = document.getElementById('outline-toggle');
 
@@ -1441,7 +1459,7 @@
     countdown.textContent = `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  /* the intention shown on the overlay: the last thing Sit said before this sit */
+  /* fallback intention if the generated one fails: the last thing Sit said before this sit */
   function lastAssistantLineBefore(sitMsg) {
     let end = messages.indexOf(sitMsg);
     if (end < 0) end = messages.length;
@@ -1453,11 +1471,49 @@
     return '';
   }
 
+  /* stream a generated one-line intention into the overlay */
+  let intentionAbort = null;
+
+  async function streamIntention(sitMsg) {
+    if (intentionAbort) intentionAbort.abort();
+    const ctrl = new AbortController();
+    intentionAbort = ctrl;
+    intention.textContent = '';
+    try {
+      const res = await fetch(
+        '/api/morning/sessions/' + encodeURIComponent(sessions[index].id)
+          + '/intention?timezone=' + encodeURIComponent(timezone)
+          + '&before=' + encodeURIComponent(sitMsg.id),
+        { signal: ctrl.signal }
+      );
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { value, done: eof } = await reader.read();
+        if (eof) break;
+        buf += decoder.decode(value, { stream: true });
+        const chunks = buf.split('\n\n');
+        buf = chunks.pop();
+        for (const chunk of chunks) {
+          for (const line of chunk.split('\n')) {
+            if (!line.startsWith('data: ')) continue;
+            const ev = JSON.parse(line.slice(6));
+            if (ev.type === 'text') intention.textContent += ev.delta;
+          }
+        }
+      }
+    } catch (err) {
+      if (!ctrl.signal.aborted) intention.textContent = lastAssistantLineBefore(sitMsg);
+    }
+  }
+
   function startTimer(minutes, sitMsg) {
     clearInterval(tick);
     remaining = minutes * 60;
     renderCountdown();
-    intention.textContent = lastAssistantLineBefore(sitMsg);
+    streamIntention(sitMsg);
     overlay.classList.add('on');
     tick = setInterval(() => {
       remaining = Math.max(0, remaining - 1);
