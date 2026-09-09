@@ -1536,6 +1536,7 @@
 
   overlay.addEventListener('click', () => {
     clearInterval(tick);
+    if (intentionAbort) intentionAbort.abort();
     overlay.classList.remove('on');
   });
 
