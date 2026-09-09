@@ -537,6 +537,21 @@
 
   .log-scroll .notice { display: block; padding-top: 4px; }
 
+  .load-more {
+    display: block;
+    margin: 20px auto 0;
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
   /* ————— timer overlay ————— */
 
   .timer-overlay {
@@ -1050,11 +1065,13 @@
     update();
   }
 
+  let journalLimit = 30;  // initial render cap (the full log is ~500KB); "show all" lifts it
+
   async function loadJournal() {
     journalPane.replaceChildren();
     outlinePane.replaceChildren();
     try {
-      const data = await api('/api/morning/journal');
+      const data = await api('/api/morning/journal' + (journalLimit ? '?limit=' + journalLimit : ''));
       const entries = data.entries || [];
       if (!entries.length) {
         journalPane.appendChild(noticeNode('No entries yet.'));
@@ -1066,6 +1083,13 @@
         journalPane.appendChild(node);
         outlinePane.appendChild(outlineItem(entry, i));
       });
+      if (journalLimit && entries.length >= journalLimit) {
+        const more = document.createElement('button');
+        more.className = 'load-more';
+        more.textContent = 'Show all entries';
+        more.addEventListener('click', () => { journalLimit = null; loadJournal(); });
+        journalPane.appendChild(more);
+      }
       trackOutline();
     } catch (err) {
       journalPane.appendChild(noticeNode('Could not load the log — ' + err.message));
@@ -1090,12 +1114,24 @@
 
   async function startSession() {
     setBusy(true);
-    renderChat(pendingNode());
+    const pending = pendingNode();
+    renderChat(pending);
+    const turn = turnRenderer(pending);
     try {
-      const data = await postJSON('/api/morning/sessions', { timezone });
-      sessions.push(data.session);
-      index = sessions.length - 1;
-      messages = data.messages || [];
+      // The server sends a "session" event first, then the greeting streams
+      // like any chat turn.
+      await streamTurn('/api/morning/sessions', { timezone }, ev => {
+        if (ev.type === 'session') {
+          sessions.push(ev.session);
+          index = sessions.length - 1;
+          renderPager();
+        } else {
+          turn.handleEvent(ev);
+        }
+      });
+      const done = turn.done();
+      if (!done) throw new Error('the reply was cut off');
+      messages = done.messages || [];
       renderChat();
     } catch (err) {
       messages = [];
@@ -1117,17 +1153,9 @@
     appendLinkified(body, content || '');
   }
 
-  async function send() {
-    const text = input.value.trim();
-    if (!text || busy || index < 0) return;
-    input.value = '';
-    autosize();
-    messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
-    setBusy(true);
-    const pending = pendingNode();
-    renderChat(pending);
-
-    // Streamed turn: text deltas fill an in-progress bubble; tool events add chips.
+  /* Renders one streamed agent turn: text deltas fill an in-progress bubble;
+     tool events add and update chips; the final "done" event is kept for the caller. */
+  function turnRenderer(pending) {
     let streamMsg = null, streamWho = null, streamText = '';
     const toolChips = [];
     let execIdx = 0;
@@ -1171,32 +1199,51 @@
       scrollChat();
     }
 
-    try {
-      const res = await fetch(
-        '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/chat',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, timezone }),
-        }
-      );
-      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+    return { handleEvent, done: () => done };
+  }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-      while (true) {
-        const { value, done: eof } = await reader.read();
-        if (eof) break;
-        buf += decoder.decode(value, { stream: true });
-        const chunks = buf.split('\n\n');
-        buf = chunks.pop();
-        for (const chunk of chunks) {
-          for (const line of chunk.split('\n')) {
-            if (line.startsWith('data: ')) handleEvent(JSON.parse(line.slice(6)));
-          }
+  /* POST, then parse the SSE body, calling handleEvent per event. */
+  async function streamTurn(path, body, handleEvent) {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { value, done: eof } = await reader.read();
+      if (eof) break;
+      buf += decoder.decode(value, { stream: true });
+      const chunks = buf.split('\n\n');
+      buf = chunks.pop();
+      for (const chunk of chunks) {
+        for (const line of chunk.split('\n')) {
+          if (line.startsWith('data: ')) handleEvent(JSON.parse(line.slice(6)));
         }
       }
+    }
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text || busy || index < 0) return;
+    input.value = '';
+    autosize();
+    messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
+    setBusy(true);
+    const pending = pendingNode();
+    renderChat(pending);
+    const turn = turnRenderer(pending);
+
+    try {
+      await streamTurn(
+        '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/chat',
+        { message: text, timezone }, turn.handleEvent);
+      const done = turn.done();
       if (!done) throw new Error('the reply was cut off');
 
       messages = messages.concat(done.messages || []);
@@ -1222,6 +1269,7 @@
       + ' ' + (now.getMonth() + 1) + '/' + now.getDate();
     renderPager();
     renderChat(pendingNode());
+    loadJournal();  // in parallel — the log pane never waits on the model
 
     try {
       const data = await api('/api/morning/sessions');
@@ -1229,7 +1277,6 @@
     } catch (err) {
       renderChat(noticeNode('Could not reach the server — ' + err.message));
       renderPager();
-      loadJournal();
       return;
     }
 
@@ -1239,7 +1286,6 @@
     } else {
       await openSession(sessions.length - 1);
     }
-    loadJournal();
   }
 
   /* ————— events ————— */

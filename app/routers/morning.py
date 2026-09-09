@@ -134,12 +134,11 @@ def serialize_message(m: MorningMessage) -> dict:
     }
 
 
-def serialize_session(s: MorningSession, message_count: int) -> dict:
+def serialize_session(s: MorningSession) -> dict:
     return {
         "id": str(s.id),
         "created_at": s.created_at.isoformat(),
         "journal_written_at": s.journal_written_at.isoformat() if s.journal_written_at else None,
-        "message_count": message_count,
     }
 
 
@@ -341,29 +340,41 @@ def list_sessions(session: Session = Depends(get_session)):
         .where(MorningSession.user_id == user.id)
         .order_by(MorningSession.created_at)
     ).all()
-    counts = {
-        s.id: len(session.exec(
-            select(MorningMessage.id).where(MorningMessage.session_id == s.id)
-        ).all())
-        for s in sessions
-    }
-    return {"sessions": [serialize_session(s, counts[s.id]) for s in sessions]}
+    return {"sessions": [serialize_session(s) for s in sessions]}
 
 
 @router.post("/sessions")
 def create_session(body: NewSessionRequest, session: Session = Depends(get_session)):
+    """Server-sent events, same shape as /chat, preceded by a "session" event —
+    so the greeting streams instead of arriving whole after the full model turn."""
     user = get_user(session)
     morning = MorningSession(user_id=user.id)
     session.add(morning)
-    session.flush()
-    new_messages, _ = run_agent_turn(
-        morning, user, user_tz=ZoneInfo(body.timezone),
-        session=session, greeting=True,
+    session.commit()
+    morning_id = morning.id
+
+    def sse():
+        # The request-scoped session is torn down before a StreamingResponse body
+        # runs, so the generator opens its own.
+        with Session(engine) as stream_session:
+            morning = stream_session.get(MorningSession, morning_id)
+            yield "data: " + json.dumps(
+                {"type": "session", "session": serialize_session(morning)}
+            ) + "\n\n"
+            for event in agent_turn_events(
+                morning=morning,
+                user=get_user(stream_session),
+                user_tz=ZoneInfo(body.timezone),
+                session=stream_session,
+                greeting=True,
+            ):
+                yield "data: " + json.dumps(event) + "\n\n"
+
+    return StreamingResponse(
+        sse(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-    return {
-        "session": serialize_session(morning, len(new_messages)),
-        "messages": new_messages,
-    }
 
 
 @router.get("/sessions/{session_id}/messages")
