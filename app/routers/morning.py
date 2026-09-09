@@ -76,10 +76,11 @@ question or observation is worth keeping. Capture what was alive and where the t
 off; don't claim a sit or an outcome that isn't in the conversation, and skip the \
 "N-min sit:" title format. Then reply with one short closing line.)"""
 
-INTENTION_INSTRUCTION = """(The user just opened the sit timer. In one short line — at most \
-15 words, plain text, no preamble, no quotes — distill this session's intention for the sit. \
-If no intention was settled, offer the simplest grounding phrase from what's alive this \
-morning.)"""
+INTENTION_INSTRUCTION = """(The user just opened the sit timer. Distill this session's \
+intention for the sit — plain text, no preamble, no quotes. If the sit has distinct phases, \
+give each phase its own line, separated by a newline — at most 15 words per line, at most \
+three lines; otherwise a single short line. If no intention was settled, offer the simplest \
+grounding phrase from what's alive this morning.)"""
 
 # Fast first token matters here: the user is looking at the timer screen waiting
 # to settle. Fable's always-on thinking would hold the line back for seconds.
