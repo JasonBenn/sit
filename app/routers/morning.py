@@ -76,6 +76,15 @@ question or observation is worth keeping. Capture what was alive and where the t
 off; don't claim a sit or an outcome that isn't in the conversation, and skip the \
 "N-min sit:" title format. Then reply with one short closing line.)"""
 
+INTENTION_INSTRUCTION = """(The user just opened the sit timer. In one short line — at most \
+15 words, plain text, no preamble, no quotes — distill this session's intention for the sit. \
+If no intention was settled, offer the simplest grounding phrase from what's alive this \
+morning.)"""
+
+# Fast first token matters here: the user is looking at the timer screen waiting
+# to settle. Fable's always-on thinking would hold the line back for seconds.
+INTENTION_MODEL = "claude-sonnet-5"
+
 TOOLS = [
     {
         "name": "ask_notebooklm",
@@ -386,6 +395,47 @@ def chat(session_id: UUID, body: ChatRequest, session: Session = Depends(get_ses
                 session=stream_session,
             ):
                 yield "data: " + json.dumps(event) + "\n\n"
+
+    return StreamingResponse(
+        sse(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.get("/sessions/{session_id}/intention")
+def intention(
+    session_id: UUID,
+    before: Optional[UUID] = None,
+    timezone: str = "America/Los_Angeles",
+):
+    """Stream a one-line intention for the timer overlay, distilled from the
+    conversation up to the sit marker (`before`) — so reopening the timer after
+    post-sit chat still reflects what the sit was actually about."""
+    def sse():
+        with Session(engine) as stream_session:
+            morning = stream_session.get(MorningSession, session_id)
+            db_messages = stream_session.exec(
+                select(MorningMessage)
+                .where(MorningMessage.session_id == session_id)
+                .order_by(MorningMessage.created_at)
+            ).all()
+            if before is not None:
+                idx = next((i for i, m in enumerate(db_messages) if m.id == before), None)
+                if idx is not None:
+                    db_messages = db_messages[:idx]
+            api_messages = build_api_messages(db_messages)
+            api_messages.append({"role": "user", "content": INTENTION_INSTRUCTION})
+            client = anthropic.Anthropic()
+            with client.messages.stream(
+                model=INTENTION_MODEL,
+                max_tokens=100,
+                system=build_system_prompt(morning, ZoneInfo(timezone)),
+                messages=api_messages,
+            ) as stream:
+                for text in stream.text_stream:
+                    yield "data: " + json.dumps({"type": "text", "delta": text}) + "\n\n"
+        yield 'data: {"type": "done"}\n\n'
 
     return StreamingResponse(
         sse(),
