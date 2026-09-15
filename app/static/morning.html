@@ -2030,7 +2030,7 @@
   async function startProposal(msg, btn) {
     if (busy || index < 0) return;
     btn.disabled = true;
-    ensureAudio();            // while the tap is still the current gesture
+    playSilence();            // while the tap is still the current gesture
     ensureMediaElements();
     const params = msg.data || {};
     try {
@@ -2118,25 +2118,67 @@
     }
   }
 
-  /* One AudioContext, created on the start tap (iOS won't make one later). */
-  let audioCtx = null;
+  /* ————— keep-alive and bells —————
+     iOS stops running our JS behind the lock screen unless the page is playing
+     media, so a near-silent loop starts inside the start tap and runs for the
+     whole program. The bells ride on that same element as a track swap: it
+     already holds playback permission from the gesture, so it rings while the
+     phone is locked — which an AudioContext beep could not. */
 
-  function ensureAudio() {
-    if (!audioCtx) audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+  function wavUrl(rate, samples) {
+    const buf = new ArrayBuffer(44 + samples.length * 2);
+    const v = new DataView(buf);
+    const str = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+    str(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); str(8, 'WAVE');
+    str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, samples.length * 2, true);
+    for (let i = 0; i < samples.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 32767, true);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+
+  /* pure digital silence can get the audio session suspended; a -60dB hiss keeps it alive */
+  const silenceUrl = (() => {
+    const rate = 8000, samples = new Float32Array(rate * 10);
+    for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * 0.001;
+    return wavUrl(rate, samples);
+  })();
+
+  function bellUrl(secs) {
+    const rate = 22050, samples = new Float32Array(rate * secs);
+    for (let i = 0; i < samples.length; i++) {
+      const t = i / rate;
+      samples[i] = Math.sin(2 * Math.PI * 528 * t) * 0.4 * Math.pow(0.001 / 0.4, t / secs);
+    }
+    return wavUrl(rate, samples);
+  }
+
+  const BELL_URL = { soft: bellUrl(1.2), long: bellUrl(4) };
+
+  const keepAlive = new Audio();
+  keepAlive.addEventListener('ended', playSilence);   // a bell hands it back
+
+  function playSilence() {
+    keepAlive.loop = true;
+    keepAlive.src = silenceUrl;
+    keepAlive.play().catch(() => {});
   }
 
   function bell(kind) {
-    if (kind === 'none' || !audioCtx) return;
-    if (document.visibilityState !== 'visible') return;
-    const decay = kind === 'long' ? 4 : 1.2;
-    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-    osc.frequency.value = 528;
-    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + decay);
+    if (kind === 'none') return;
+    keepAlive.loop = false;
+    keepAlive.src = BELL_URL[kind] || BELL_URL.soft;
+    keepAlive.play().catch(() => {});
+  }
+
+  /* names the step on the lock screen; the no-op handlers stop its transport
+     controls from pausing the keep-alive out from under us */
+  function setNowPlaying(title) {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({ title });
+    for (const action of ['play', 'pause']) {
+      try { navigator.mediaSession.setActionHandler(action, () => {}); } catch (err) { /* unsupported */ }
+    }
   }
 
   /* The runner plays a flat playlist; each entry remembers which component it
@@ -2205,7 +2247,6 @@
   /* One audio and one video element for the whole program, woken on the start
      tap: iOS only lets a media element start from inside a user gesture, so a
      fresh element on step 4 would never play. Untested — nothing seeded uses it. */
-  const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
   let mediaEls = null;
 
   function ensureMediaElements() {
@@ -2215,7 +2256,7 @@
     for (const el of [audio, video]) {
       el.controls = true;
       el.playsInline = true;
-      el.src = SILENT_WAV;   // Safari plays an audio-only source in a video element
+      el.src = silenceUrl;   // Safari plays an audio-only source in a video element
       const started = el.play();
       if (started) started.then(() => el.pause(), () => {});
     }
@@ -2258,6 +2299,7 @@
     const named = item.component.kind === 'warmup' || (item.component.steps || []).length > 1;
     runnerTitle.textContent = named ? (item.step.title || '') : '';
     runnerText.textContent = item.step.text || '';
+    setNowPlaying(item.step.title || item.component.name || 'Sit');
     paintIntention();
     renderHint();
   }
@@ -2345,7 +2387,7 @@
       open: true, playlist, i: 0, paused: false, pausedAt: null, pausedMs: 0,
       finished: false,
     });
-    ensureAudio();
+    playSilence();       // inside the start tap: iOS grants playback only here
     ensureMediaElements();
     takeWakeLock();
     streamIntention(sitMsg);   // prefetch: ready by the time the sit step arrives
@@ -2361,14 +2403,14 @@
     runner.open = false;
     if (intentionAbort) intentionAbort.abort();
     if (runner.wakeLock) { runner.wakeLock.release(); runner.wakeLock = null; }
-    if (mediaEls) {
-      // the shared elements outlive the overlay, so silence them on the way out
-      for (const el of [mediaEls.audio, mediaEls.video]) {
-        el.pause();
-        el.removeAttribute('src');
-        el.load();
-      }
+    // the shared elements outlive the overlay, so silence them on the way out
+    for (const el of [keepAlive, mediaEls && mediaEls.audio, mediaEls && mediaEls.video]) {
+      if (!el) continue;
+      el.pause();
+      el.removeAttribute('src');
+      el.load();
     }
+    if ('mediaSession' in navigator) navigator.mediaSession.metadata = null;
     runnerToc.classList.remove('open');
     overlay.classList.remove('on');
   }
@@ -2395,7 +2437,9 @@
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && runner.open) takeWakeLock();
+    if (document.visibilityState !== 'visible' || !runner.open) return;
+    takeWakeLock();
+    tickRunner();   // catch up on every boundary crossed while we were away
   });
 
   init();
