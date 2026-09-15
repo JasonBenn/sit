@@ -17,28 +17,28 @@
     "slug": "three-who-loved-you",
     "name": "Three people who loved you",
     "summary": "Calls to mind three people who have shown you care, dwells with each, then turns the feeling outward. Reach for it when lonely, grieving, or feeling unloved.",
-    "source": "Audio - in-person retreat 12 Nov/07. Love - Guided sit.mp3",
+    "source": "Jhourney - in-person retreat 12 Nov/07. Love - Guided sit.mp3",
     "duration_s": 1860
   },
   {
     "slug": "forgive-then-thank",
     "name": "Forgiveness into gratitude",
     "summary": "Self-forgiveness phrases, then forward-looking gratitude, then relaxation on the out-breath and enjoyment on the in-breath, ending in ten minutes of silence. Reach for it when carrying guilt, regret, or resentment.",
-    "source": "Audio - in-person retreat 12 Nov/25. Forgiveness, Gratitude, Relaxation & Enjoyment.mp3",
+    "source": "Jhourney - in-person retreat 12 Nov/25. Forgiveness, Gratitude, Relaxation & Enjoyment.mp3",
     "duration_s": 2100
   },
   {
     "slug": "levels-of-ease",
     "name": "Five levels of letting go",
     "summary": "Whole-body awareness through five escalating intentions: relax, release, allow, watch, rest. Reach for it when you are trying too hard and cannot make yourself relax.",
-    "source": "Audio - in-person retreat 12 Nov/19. Levels of ease.mp3",
+    "source": "Jhourney - in-person retreat 12 Nov/19. Levels of ease.mp3",
     "duration_s": 1005
   },
   {
     "slug": "qualities-of-experience",
     "name": "Curiosity by quality",
     "summary": "Tunes curiosity onto ten felt dimensions in turn: valence, energy, temperature, weight, density, shape, texture, color, flavor, melody. Reach for it when numb, dissociated, or stuck in your head.",
-    "source": "Audio - in-person retreat 12 Nov/13. Ways of being curious.mp3",
+    "source": "Jhourney - in-person retreat 12 Nov/13. Ways of being curious.mp3",
     "duration_s": 695
   },
   {
@@ -73,7 +73,7 @@
     "slug": "fearless-openness",
     "name": "Shavari's instructions",
     "summary": "Sets the posture as an expression of fearlessness, opens awareness through hearing and sight, then finds and dissolves any felt center until awareness has no middle and no edge. Reach for it when anxious and contracted and you want spaciousness rather than effort.",
-    "source": "Charity 2025-01-03/Shavari's Instructions - 25min(Weggis23).mp3",
+    "source": "Rigdzin Charity 2025-01-03/Shavari's Instructions - 25min(Weggis23).mp3",
     "duration_s": 1545
   },
   {
@@ -81,14 +81,56 @@
     "name": "Tilopa's six nails",
     "summary": "Opens non-dual awareness, then rests on six instructions: don't recall, don't anticipate, don't think, don't examine, don't control, just rest. Reach for it when you are over-efforting and need permission to stop trying.",
     "source": "Rigdzin-Intro/Med： non meditation - 6 nails (Sat 3) [f33195f304f54af7a177f38a90a890d9].mp3",
-    "duration_s": 1658
+    "steps": [
+      {
+        "title": "Settle and set the intention",
+        "text": "Nine rounds of alternate-nostril breath, then the intention and the field of support. Skippable once you know it.",
+        "clip": {
+          "start": "00:00:00",
+          "end": "00:07:07"
+        }
+      },
+      {
+        "title": "One taste",
+        "text": "Sound, then sight, then everything, arising inside one boundless field of awareness.",
+        "clip": {
+          "start": "00:07:07",
+          "end": "00:15:58"
+        }
+      },
+      {
+        "title": "Sealing",
+        "text": "Affirm each event as the same taste the moment it forms, then seal the hopes and fears running underneath.",
+        "clip": {
+          "start": "00:15:58",
+          "end": "00:22:36"
+        }
+      },
+      {
+        "title": "The six nails",
+        "text": "Don't recall, don't anticipate, don't think, don't examine, don't control, just rest.",
+        "clip": {
+          "start": "00:22:36",
+          "end": "00:26:26"
+        }
+      },
+      {
+        "title": "Rest in the natural state",
+        "clip": {
+          "start": "00:26:26"
+        }
+      }
+    ]
   },
   {
     "slug": "how-a-thought-gets-built",
     "name": "Information processing",
     "summary": "Watches open awareness collapse into a solid \"thing\" step by step, then runs the sequence backwards. Reach for it mid-rumination, when you want to see how a story got built rather than be told to let it go.",
     "source": "Rigdzin - Advanced/603m ⭐️ info processing.mp3",
-    "clip": {"start": "00:00:43", "end": "00:16:20"},
+    "clip": {
+      "start": "00:00:43",
+      "end": "00:16:20"
+    },
     "duration_s": 937
   },
   {
@@ -96,14 +138,73 @@
     "name": "Six ways of using difficulty",
     "summary": "Deliberately brings up a demanding thought, an intense emotion, a difficult person, grief, sickness, and finally dying, and meets each one as something that sharpens clarity rather than clouding it. Reach for it on a genuinely hard morning: illness, conflict, loss, or dread.",
     "source": "Rigdzin - Advanced/504m mixing with difficult circumstances.mp3",
-    "duration_s": 1570
+    "steps": [
+      {
+        "title": "Establishing the view",
+        "text": "Rest as awakened awareness until every event that arises reads as its radiance rather than a distraction from it.",
+        "clip": {
+          "start": "00:00:00",
+          "end": "00:08:18"
+        }
+      },
+      {
+        "title": "A demanding thought",
+        "text": "Take up a problem or a global crisis and see the hardest thinking as radiance, brighter for being hard.",
+        "clip": {
+          "start": "00:08:18",
+          "end": "00:11:13"
+        }
+      },
+      {
+        "title": "An intense emotion",
+        "text": "Recall a time you were badly triggered, evoke it, and stay in the ground while it burns.",
+        "clip": {
+          "start": "00:11:13",
+          "end": "00:14:10"
+        }
+      },
+      {
+        "title": "A difficult person",
+        "text": "Gods and demons: one person who felt wholly good or wholly unsafe, met as the display of awareness.",
+        "clip": {
+          "start": "00:14:10",
+          "end": "00:17:13"
+        }
+      },
+      {
+        "title": "Grief and suffering",
+        "text": "A time of real loss, felt on purpose, turning into an invitation to compassion.",
+        "clip": {
+          "start": "00:17:13",
+          "end": "00:19:53"
+        }
+      },
+      {
+        "title": "Sickness",
+        "text": "A time you were deeply ill, as a doorway into the shared humanity of sickness and age.",
+        "clip": {
+          "start": "00:19:53",
+          "end": "00:22:00"
+        }
+      },
+      {
+        "title": "Dying",
+        "text": "Approach your own death and the dissolution of earth, water, fire and air, staying in the view throughout.",
+        "clip": {
+          "start": "00:22:00"
+        }
+      }
+    ]
   },
   {
     "slug": "seasons-and-dying",
     "name": "Impermanence",
     "summary": "Moves through the seasons of a landscape, then the seasons of your own life, then a traditional dissolution of the elements at death, resting in what does not die. Reach for it when grieving, facing mortality, or numb to how short things are.",
     "source": "Rigdzin - Intermeditate/308m imperm death.mp3",
-    "clip": {"start": "00:03:45", "end": "00:22:00"},
+    "clip": {
+      "start": "00:03:45",
+      "end": "00:22:00"
+    },
     "duration_s": 1095
   },
   {
@@ -111,7 +212,10 @@
     "name": "Counting within the breath",
     "summary": "Counts one to nine and back down inside a single long breath, holding the whole-body space, the breath, and the seen and heard numerals together, then shortens the breath to six and to three. Reach for it when low on energy and scattered, and a single anchor is too thin to hold you.",
     "source": "Burbea - Jhanas/2 Counting Within the Breath (Guided Meditation) - (Practising the Jhānas) [BzI0olLseZI].mp3",
-    "clip": {"start": "00:03:24", "end": "00:30:46"},
+    "clip": {
+      "start": "00:03:24",
+      "end": "00:30:46"
+    },
     "duration_s": 1642
   },
   {
@@ -119,7 +223,10 @@
     "name": "The energy body",
     "summary": "Builds the felt sense of the whole body as one integrated, homogeneous space, then breathes the long whole-body breath through it, letting pleasure and steadiness gather. Reach for it when you want samadhi to come from comfort and whole-body feel rather than from narrow effort.",
     "source": "Burbea - Jhanas/3 The Energy Body and the Whole-body breath (Instructions and Guided Meditation) - (Practising the... [1iNaS0tNcJM].mp3",
-    "clip": {"start": "00:12:54", "end": "00:43:04"},
+    "clip": {
+      "start": "00:12:54",
+      "end": "00:43:04"
+    },
     "duration_s": 1810
   }
 ]
