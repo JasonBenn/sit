@@ -1,0 +1,125 @@
+[
+  {
+    "slug": "smile-menu",
+    "name": "A menu of smiles",
+    "summary": "Nine different ways of smiling, tried one at a time, so you can find the one that actually lands. Reach for it on a flat or joyless morning when \"just smile\" has never worked for you.",
+    "source": "/Users/jasonbenn/code/meditation-clipper/clips/Exploring_Different_Smiles_for_Enjoyment.mp3",
+    "duration_s": 289
+  },
+  {
+    "slug": "metta-mantras",
+    "name": "Find the phrase that lands",
+    "summary": "A stream of loving-kindness phrases to try on until two or three genuinely resonate, rather than one fixed mantra. Reach for it when you are being hard on yourself.",
+    "source": "/Users/jasonbenn/code/meditation-clipper/clips/Guided_Metta_Mantras_Exploration.mp3",
+    "duration_s": 567
+  },
+  {
+    "slug": "three-who-loved-you",
+    "name": "Three people who loved you",
+    "summary": "Calls to mind three people who have shown you care, dwells with each, then turns the feeling outward. Reach for it when lonely, grieving, or feeling unloved.",
+    "source": "Audio - in-person retreat 12 Nov/07. Love - Guided sit.mp3",
+    "duration_s": 1860
+  },
+  {
+    "slug": "forgive-then-thank",
+    "name": "Forgiveness into gratitude",
+    "summary": "Self-forgiveness phrases, then forward-looking gratitude, then relaxation on the out-breath and enjoyment on the in-breath, ending in ten minutes of silence. Reach for it when carrying guilt, regret, or resentment.",
+    "source": "Audio - in-person retreat 12 Nov/25. Forgiveness, Gratitude, Relaxation & Enjoyment.mp3",
+    "duration_s": 2100
+  },
+  {
+    "slug": "levels-of-ease",
+    "name": "Five levels of letting go",
+    "summary": "Whole-body awareness through five escalating intentions: relax, release, allow, watch, rest. Reach for it when you are trying too hard and cannot make yourself relax.",
+    "source": "Audio - in-person retreat 12 Nov/19. Levels of ease.mp3",
+    "duration_s": 1005
+  },
+  {
+    "slug": "qualities-of-experience",
+    "name": "Curiosity by quality",
+    "summary": "Tunes curiosity onto ten felt dimensions in turn: valence, energy, temperature, weight, density, shape, texture, color, flavor, melody. Reach for it when numb, dissociated, or stuck in your head.",
+    "source": "Audio - in-person retreat 12 Nov/13. Ways of being curious.mp3",
+    "duration_s": 695
+  },
+  {
+    "slug": "emptiness-of-thought",
+    "name": "Where is a thought?",
+    "summary": "Three investigations of thought itself rather than its content: where it happens, how it comes and goes, and whether it has size, shape, or color. Reach for it when the mind is busy and looping and watching thoughts go by is not working.",
+    "source": "Ridgzin - Recordings/Emptiness of Thought - 20min(Stages23).mp3",
+    "duration_s": 1095
+  },
+  {
+    "slug": "hot-emotion",
+    "name": "Meeting a difficult emotion",
+    "summary": "Evokes a specific hard feeling, looks for it in the body and finds only raw energy, then looks for the self feeling it and finds no one. Reach for it when arriving angry, ashamed, jealous, or afraid about something specific.",
+    "source": "Ridgzin - Recordings/Negative Emotions - 10min(Stages23).mp3",
+    "duration_s": 700
+  },
+  {
+    "slug": "gate-of-ears",
+    "name": "Sound as the doorway",
+    "summary": "Tunes into the already-360-degree field of hearing and takes the view that sounds arise inside awareness rather than outside you. Reach for it when noise is pulling at you, or when you are reactive and quick to judge.",
+    "source": "Ridgzin - Recordings/Gate of Ears - 10min(Ru23).mp3",
+    "duration_s": 615
+  },
+  {
+    "slug": "tonglen",
+    "name": "Breathing in what is hard",
+    "summary": "Builds a radiant diamond in the heart, then breathes in suffering and breathes out relief for yourself, someone you love, a stranger, a difficult person, and everyone. Reach for it when grieving, guilty, resentful toward one particular person, or cut off from people.",
+    "source": "Ridgzin - Recordings/Tonglen(with Music) - 25min (pbh.PlanetEarth).mp3",
+    "duration_s": 1470
+  },
+  {
+    "slug": "fearless-openness",
+    "name": "Shavari's instructions",
+    "summary": "Sets the posture as an expression of fearlessness, opens awareness through hearing and sight, then finds and dissolves any felt center until awareness has no middle and no edge. Reach for it when anxious and contracted and you want spaciousness rather than effort.",
+    "source": "Charity 2025-01-03/Shavari's Instructions - 25min(Weggis23).mp3",
+    "duration_s": 1545
+  },
+  {
+    "slug": "six-nails",
+    "name": "Tilopa's six nails",
+    "summary": "Opens non-dual awareness, then rests on six instructions: don't recall, don't anticipate, don't think, don't examine, don't control, just rest. Reach for it when you are over-efforting and need permission to stop trying.",
+    "source": "Rigdzin-Intro/Med： non meditation - 6 nails (Sat 3) [f33195f304f54af7a177f38a90a890d9].mp3",
+    "duration_s": 1658
+  },
+  {
+    "slug": "how-a-thought-gets-built",
+    "name": "Information processing",
+    "summary": "Watches open awareness collapse into a solid \"thing\" step by step, then runs the sequence backwards. Reach for it mid-rumination, when you want to see how a story got built rather than be told to let it go.",
+    "source": "Rigdzin - Advanced/603m ⭐️ info processing.mp3",
+    "clip": {"start": "00:00:43", "end": "00:16:20"},
+    "duration_s": 937
+  },
+  {
+    "slug": "hard-day",
+    "name": "Six ways of using difficulty",
+    "summary": "Deliberately brings up a demanding thought, an intense emotion, a difficult person, grief, sickness, and finally dying, and meets each one as something that sharpens clarity rather than clouding it. Reach for it on a genuinely hard morning: illness, conflict, loss, or dread.",
+    "source": "Rigdzin - Advanced/504m mixing with difficult circumstances.mp3",
+    "duration_s": 1570
+  },
+  {
+    "slug": "seasons-and-dying",
+    "name": "Impermanence",
+    "summary": "Moves through the seasons of a landscape, then the seasons of your own life, then a traditional dissolution of the elements at death, resting in what does not die. Reach for it when grieving, facing mortality, or numb to how short things are.",
+    "source": "Rigdzin - Intermeditate/308m imperm death.mp3",
+    "clip": {"start": "00:03:45", "end": "00:22:00"},
+    "duration_s": 1095
+  },
+  {
+    "slug": "counting-within-the-breath",
+    "name": "Counting within the breath",
+    "summary": "Counts one to nine and back down inside a single long breath, holding the whole-body space, the breath, and the seen and heard numerals together, then shortens the breath to six and to three. Reach for it when low on energy and scattered, and a single anchor is too thin to hold you.",
+    "source": "Burbea - Jhanas/2 Counting Within the Breath (Guided Meditation) - (Practising the Jhānas) [BzI0olLseZI].mp3",
+    "clip": {"start": "00:03:24", "end": "00:30:46"},
+    "duration_s": 1642
+  },
+  {
+    "slug": "energy-body",
+    "name": "The energy body",
+    "summary": "Builds the felt sense of the whole body as one integrated, homogeneous space, then breathes the long whole-body breath through it, letting pleasure and steadiness gather. Reach for it when you want samadhi to come from comfort and whole-body feel rather than from narrow effort.",
+    "source": "Burbea - Jhanas/3 The Energy Body and the Whole-body breath (Instructions and Guided Meditation) - (Practising the... [1iNaS0tNcJM].mp3",
+    "clip": {"start": "00:12:54", "end": "00:43:04"},
+    "duration_s": 1810
+  }
+]
