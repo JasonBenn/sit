@@ -41,6 +41,9 @@ class Sit(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="users.id")
     duration_seconds: float
     started_at: datetime = Field(sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
+    # The whole routine as played, fills resolved. duration_seconds stays the
+    # seated minutes only; warm-up time is derivable from here.
+    program_json: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     # False for calendar backfills: the date is real, the 8am start time is nominal.
     time_known: bool = Field(default=True, sa_column=sa.Column(sa.Boolean, nullable=False, server_default=sa.true()))
     timezone: Optional[str] = Field(default=None, sa_column=sa.Column(sa.String, nullable=True))
@@ -89,6 +92,22 @@ class MorningMessage(SQLModel, table=True):
     role: str  # user | assistant | tool | sit
     content: str = Field(sa_column=Column(Text))
     tool_label: Optional[str] = None
+    # Structured payload for the messages that need one: a sit marker carries its
+    # program, a "Proposed routine" chip carries the params to start.
+    data: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
+
+
+class Component(SQLModel, table=True):
+    """A practice the runner can play: a warm-up, or the sit itself."""
+    __tablename__ = "components"
+    id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    slug: str = Field(unique=True, index=True)
+    kind: str  # warmup | guided | unguided
+    name: str
+    summary: str = Field(sa_column=Column(Text))
+    steps_json: list = Field(sa_column=Column(JSONB))
+    source: str = "seed"  # seed | llm | user
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
 
 

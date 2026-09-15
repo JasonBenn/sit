@@ -15,10 +15,12 @@ if sentry_dsn:
         profiles_sample_rate=1.0,
     )
 
+from sqlmodel import Session
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.db import init_db
+from app.db import engine, init_db
+from app import library
 from app.routers import prompt_responses, auth, users, explore, chat, triggers, morning
 
 app = FastAPI(title="Sit API", description="Meditation tracking backend")
@@ -57,6 +59,8 @@ def health_check():
 @app.on_event("startup")
 def on_startup():
     init_db()
+    with Session(engine) as session:
+        library.ensure_seeds(session)
 
 
 if __name__ == "__main__":

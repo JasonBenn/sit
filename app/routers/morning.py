@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from app import journal
+from app import journal, library
 from app.db import engine, get_session
 from app.models import MorningMessage, MorningSession, Sit, User
 
@@ -28,11 +28,16 @@ MORNING_USERNAME = os.getenv("MORNING_USERNAME", "jasoncbenn")
 NOTEBOOKLM_BIN = os.getenv("NOTEBOOKLM_BIN", "notebooklm")
 
 SYSTEM_PROMPT = """You are the morning sit companion in the Sit app. Each session is a \
-brief check-in around one seated meditation: the user shares what's alive before sitting, \
-you help them settle on an intention, they sit, and afterwards they report back. A marker \
-like "[A 30-minute sit happens here.]" in the conversation is the user logging their sit; \
-everything after it is their post-sit report. When that report sounds complete, distill \
-the whole session into a journal entry.
+brief check-in around one morning practice, and it has an arc: first, how the user is \
+actually feeling — body, energy, mood, what's alive; second, what they want to focus on \
+this morning; third, help them translate that into a good routine — a warm-up if the body \
+or mind needs one, the kind of sit (guided or unguided), its length, and an intention — \
+chosen from the practice library below and offered with propose_program. Then they do it, \
+and afterwards they report back. Don't rush the first two beats to get to the third; the \
+routine should follow from what they said, not lead it. A marker like "[A 30-minute sit \
+happens here, after: Spinal Energy Series, abbreviated (9 min).]" is the user logging the \
+routine; everything after it is their post-sit report. When that report sounds complete, \
+distill the whole session into a journal entry.
 
 Tone: warm, spare, direct. Plain text only — no markdown headers or bold. One or two short \
 paragraphs per reply. You are a fellow traveler with good recall of their practice history, \
@@ -42,6 +47,13 @@ Tools:
 - ask_notebooklm queries "Rigdzin", a notebook of the user's dharma teachings. Use it when \
 the check-in raises a question the tradition speaks to. Ask one well-formed question; weave \
 the answer into your reply in your own words.
+- propose_program offers a routine as a card with a start button: warm-ups (by slug), \
+the sit component (by slug), and minutes. Use it once the feeling and the focus are clear; \
+one proposal, adjusted if they push back, rather than a menu of options. Include the \
+intention in the note.
+- create_component adds a practice to the library when the user describes one that isn't \
+there yet — a stretch sequence, a breathing exercise, a guided sit — with a summary that \
+says when to reach for it, so future mornings can suggest it.
 - write_journal_entry writes the session's journal entry to the user's wake-up log. Call it \
 when the post-sit report feels complete (the user signals completion by tone — summing up, \
 "feels complete", a settled report). Title: short and specific, like "30-min sit: excitement \
@@ -108,6 +120,55 @@ TOOLS = [
             "required": ["title", "body"],
         },
     },
+    {
+        "name": "create_component",
+        "description": "Add a practice to the library — a warm-up, or a guided/unguided sit. It becomes available to propose_program immediately, and stays available on later mornings.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "kind": {"type": "string", "enum": ["warmup", "guided", "unguided"]},
+                "name": {"type": "string", "description": "Shown in the menu and the sit marker, e.g. 'Spinal Energy Series, abbreviated'"},
+                "summary": {"type": "string", "description": "One or two sentences: what it is and when to reach for it. This is what you'll read later."},
+                "steps": {
+                    "type": "array",
+                    "description": "Ordered steps. duration_s null means manual advance in a warm-up, and the chosen sit length in a sit.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "text": {"type": "string"},
+                            "media": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {"type": "string", "enum": ["image", "audio", "video"]},
+                                    "src": {"type": "string"},
+                                },
+                                "required": ["type", "src"],
+                            },
+                            "duration_s": {"type": ["integer", "null"]},
+                            "bell": {"type": "string", "enum": ["soft", "long", "none"]},
+                        },
+                        "required": ["title"],
+                    },
+                },
+            },
+            "required": ["kind", "name", "summary", "steps"],
+        },
+    },
+    {
+        "name": "propose_program",
+        "description": "Offer the user a routine for this morning: warm-ups, then the sit. Shows as a card with a start button — use it instead of describing the routine in prose. Slugs are the bracketed handles in the Practice library section.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "warmup_slugs": {"type": "array", "items": {"type": "string"}, "description": "Warm-up slugs from the library, in order. Empty for a bare sit."},
+                "sit_slug": {"type": "string", "description": "Slug of the sit component, e.g. 'unguided-sit'"},
+                "sit_minutes": {"type": "integer"},
+                "note": {"type": "string", "description": "One short clause on why this one, shown on the card."},
+            },
+            "required": ["sit_minutes"],
+        },
+    },
 ]
 
 
@@ -130,6 +191,7 @@ def serialize_message(m: MorningMessage) -> dict:
         "role": m.role,
         "content": m.content,
         "tool_label": m.tool_label,
+        "data": m.data,
         "created_at": m.created_at.isoformat(),
     }
 
@@ -142,7 +204,7 @@ def serialize_session(s: MorningSession) -> dict:
     }
 
 
-def build_system_prompt(morning: MorningSession, user_tz: ZoneInfo) -> str:
+def build_system_prompt(morning: MorningSession, user_tz: ZoneInfo, session: Session) -> str:
     entries = journal.read_entries(limit=3)
     rendered = "\n\n".join(f"### {e['date']} {e['title']}\n{e['body'].strip()}" for e in entries)
     prompt = SYSTEM_PROMPT.format(
@@ -154,7 +216,7 @@ def build_system_prompt(morning: MorningSession, user_tz: ZoneInfo) -> str:
             heading=morning.journal_heading,
             body=journal.read_entry(morning.journal_heading),
         )
-    return prompt
+    return prompt + "\n\n" + library.component_index_text(session)
 
 
 def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
@@ -166,7 +228,9 @@ def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
             content = f"[{m.tool_label}: {m.content}]"
             role = "assistant"
         elif m.role == "sit":
-            content = f"[A {m.content}-minute sit happens here.]"
+            summary = library.program_summary(m.data["program"]) if m.data else ""
+            tail = f", {summary}" if summary else ""
+            content = f"[A {m.content}-minute sit happens here{tail}.]"
             role = "assistant"
         else:
             content, role = m.content, m.role
@@ -233,7 +297,7 @@ def agent_turn_events(
     if closing:
         api_messages.append({"role": "user", "content": CLOSING_INSTRUCTION})
 
-    system_prompt = build_system_prompt(morning, user_tz)
+    system_prompt = build_system_prompt(morning, user_tz, session)
     client = anthropic.Anthropic()
     new_messages: list[MorningMessage] = []
     journal_written = False
@@ -284,6 +348,45 @@ def agent_turn_events(
                     content=question, tool_label="Asked Rigdzin notebook",
                 )
                 result_text = ask_notebooklm(question)
+            elif block.name == "create_component":
+                name = block.input["name"]
+                yield {"type": "tool", "tool_label": "Adding to library…", "content": name}
+                component = library.create_component(
+                    session, kind=block.input["kind"], name=name,
+                    summary=block.input["summary"], steps=block.input["steps"],
+                    source="llm",
+                )
+                tool_msg = MorningMessage(
+                    session_id=morning.id, role="tool",
+                    content=component.summary, tool_label=f"Added to library: {component.name}",
+                )
+                result_text = f"Added to the library as \"{component.slug}\"."
+                # The index in the system prompt is now stale; rebuild it so the
+                # model can propose the new component in this same turn.
+                system_prompt = build_system_prompt(morning, user_tz, session)
+            elif block.name == "propose_program":
+                sit_minutes = block.input["sit_minutes"]
+                # Unknown slugs raise here, before anything is persisted.
+                program = library.build_program(
+                    session,
+                    block.input.get("warmup_slugs", []),
+                    block.input.get("sit_slug", "unguided-sit"),
+                    sit_minutes,
+                )
+                line = library.program_line(program, block.input.get("note", ""))
+                yield {"type": "tool", "tool_label": "Proposing routine…", "content": line}
+                tool_msg = MorningMessage(
+                    session_id=morning.id, role="tool",
+                    content=line, tool_label="Proposed routine",
+                    data={
+                        "warmup_slugs": block.input.get("warmup_slugs", []),
+                        "sit_slug": block.input.get("sit_slug", "unguided-sit"),
+                        "sit_minutes": sit_minutes,
+                        "note": block.input.get("note", ""),
+                    },
+                )
+                result_text = ("Proposal shown to the user as a card with a start button. "
+                               "Don't repeat it in prose — say at most one short line.")
             else:
                 title = block.input["title"]
                 if closing:
@@ -304,7 +407,7 @@ def agent_turn_events(
                 journal_written = True
                 # Entry now exists on disk; keep the system prompt consistent
                 # for any further loop iterations.
-                system_prompt = build_system_prompt(morning, user_tz)
+                system_prompt = build_system_prompt(morning, user_tz, session)
             session.add(tool_msg)
             new_messages.append(tool_msg)
             yield {"type": "tool_done", "message": serialize_message(tool_msg)}
@@ -442,7 +545,7 @@ def intention(
             with client.messages.stream(
                 model=INTENTION_MODEL,
                 max_tokens=100,
-                system=build_system_prompt(morning, ZoneInfo(timezone)),
+                system=build_system_prompt(morning, ZoneInfo(timezone), stream_session),
                 messages=api_messages,
             ) as stream:
                 for text in stream.text_stream:
@@ -456,9 +559,36 @@ def intention(
     )
 
 
+class NewComponentRequest(BaseModel):
+    kind: str  # warmup | guided | unguided
+    name: str
+    summary: str
+    steps: list[dict]
+    slug: Optional[str] = None
+
+
+@router.get("/components")
+def list_components(session: Session = Depends(get_session)):
+    return {"components": [library.serialize_component(c) for c in library.list_components(session)]}
+
+
+@router.post("/components")
+def create_component(body: NewComponentRequest, session: Session = Depends(get_session)):
+    """Hand-authored practice; same code path the create_component tool uses."""
+    component = library.create_component(
+        session, kind=body.kind, name=body.name, summary=body.summary,
+        steps=body.steps, source="user", slug=body.slug,
+    )
+    session.commit()
+    session.refresh(component)
+    return {"component": library.serialize_component(component)}
+
+
 class AddSitRequest(BaseModel):
     sit_minutes: int
     timezone: str = "America/Los_Angeles"
+    warmup_slugs: list[str] = []
+    sit_slug: str = "unguided-sit"
 
 
 @router.post("/sessions/{session_id}/sits")
@@ -492,17 +622,26 @@ def add_sit(session_id: UUID, body: AddSitRequest, session: Session = Depends(ge
         for s in placeholders:
             session.delete(s)
 
+    # Resolved now and snapshotted on both rows: a later edit to a component
+    # never changes what this morning played.
+    program = library.build_program(
+        session, body.warmup_slugs, body.sit_slug, body.sit_minutes,
+    )
     sit = Sit(
         user_id=user.id,
         duration_seconds=float(body.sit_minutes * 60),
         started_at=now,
         timezone=body.timezone,
+        program_json=program,
     )
     session.add(sit)
     session.flush()
     morning.sit_id = sit.id
     session.add(morning)
-    msg = MorningMessage(session_id=morning.id, role="sit", content=str(body.sit_minutes))
+    msg = MorningMessage(
+        session_id=morning.id, role="sit",
+        content=str(body.sit_minutes), data={"program": program},
+    )
     session.add(msg)
     session.commit()
     session.refresh(msg)

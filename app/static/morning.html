@@ -171,8 +171,9 @@
     margin-top: 3px;
   }
 
-  /* sit row: duration chips + add-sit, above the composer */
+  /* sit row: duration chips + routine + add-sit, above the composer */
   .sit-row {
+    position: relative;   /* anchors the routine popover */
     border-top: 1px solid var(--hairline);
     padding: 12px 40px 0;
     display: flex;
@@ -190,6 +191,101 @@
   }
 
   .sit-row .durations { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* a fixed-length guided sit sets its own length — the chips step aside for it */
+  .sit-row .sit-fixed {
+    display: none;
+    align-items: center;
+    height: 40px;
+    padding: 0 15px;
+    font-size: 15px;
+    color: var(--ink-soft);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sit-row.fixed-length .durations { display: none; }
+  .sit-row.fixed-length .sit-fixed { display: flex; }
+
+  /* the label ellipsizes in an inner span — a button box won't do it itself */
+  .sit-row .routine-btn {
+    display: inline-flex;
+    align-items: center;
+    max-width: 230px;
+  }
+
+  .sit-row .routine-btn span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sit-row .routine-btn.open { border-color: var(--ink); color: var(--ink); }
+
+  /* routine popover — opens upward, the sit row sits near the bottom */
+  .routine-panel {
+    position: absolute;
+    bottom: calc(100% + 1px);
+    left: 40px;
+    z-index: 6;
+    background: var(--paper);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 14px 18px 12px;
+    width: 330px;
+    max-height: 52vh;
+    overflow-y: auto;
+  }
+
+  .rp-group + .rp-group { margin-top: 15px; }
+
+  .rp-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    margin-bottom: 6px;
+  }
+
+  .rp-opt {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 4px 0;
+    cursor: pointer;
+  }
+
+  .rp-opt input { accent-color: var(--ink); margin: 0; }
+
+  .rp-opt .rp-len {
+    margin-left: auto;
+    padding-left: 10px;
+    font-size: 11.5px;
+    color: var(--ink-faded);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* proposed routine: a tool message the model can hand you to start */
+  .tool.proposal {
+    border-left: none;
+    background: var(--paper-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 14px 18px;
+  }
+
+  .tool.proposal .tool-body {
+    font-style: normal;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  .tool.proposal .chip { margin-top: 12px; }
 
   .sit-row .add-sit {
     margin-left: auto;
@@ -552,31 +648,145 @@
     cursor: pointer;
   }
 
-  /* ————— timer overlay ————— */
+  /* ————— runner overlay: table of contents + stage + controls ————— */
 
   .timer-overlay {
     position: fixed;
-    inset: 0;
+    top: 0; left: 0; right: 0;
+    /* dvh, not inset:0 — the large viewport puts the controls behind iOS
+       Safari's toolbar, the same reason .app sizes itself this way */
+    height: 100vh;
+    height: 100dvh;
     background: var(--paper);
     display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 28px;
-    cursor: pointer;
     z-index: 10;
   }
 
-  .timer-overlay.on { display: flex; }
+  .timer-overlay.on {
+    display: grid;
+    grid-template-columns: 264px 1fr;
+  }
+
+  .runner-toc {
+    border-right: 1px solid var(--hairline);
+    overflow-y: auto;
+    padding: 30px 22px 40px;
+    scrollbar-width: thin;
+  }
+
+  .toc-comp {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faded);
+    margin: 20px 0 8px;
+  }
+
+  .toc-comp:first-child { margin-top: 0; }
+
+  .toc-step {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 300;
+    line-height: 1.4;
+    color: var(--ink-faded);
+    background: none;
+    border: none;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+
+  .toc-step.current { color: var(--ink); font-weight: 500; }
+  .toc-step.done { color: var(--hairline-strong); }
+
+  /* under 900px the TOC collapses behind this counter */
+  .toc-toggle {
+    display: none;
+    position: absolute;
+    top: calc(14px + env(safe-area-inset-top));
+    left: 16px;
+    z-index: 3;
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faded);
+    background: var(--paper);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+
+  .runner-main {
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .runner-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    justify-content: safe center;  /* a tall step scrolls instead of clipping its top */
+    gap: 22px;
+    padding: 32px 40px;
+    overflow-y: auto;
+    min-height: 0;
+    cursor: pointer;   /* tapping the stage pauses and resumes */
+  }
+
+  .runner-media:empty { display: none; }
+
+  .runner-media img {
+    display: block;
+    max-height: 40vh;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .runner-media audio, .runner-media video {
+    max-width: min(100%, 560px);
+    max-height: 40vh;
+  }
+
+  .runner-title {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .runner-title:empty { display: none; }
+
+  .runner-text {
+    font-size: 15px;
+    color: var(--ink-soft);
+    max-width: 560px;
+    text-align: center;
+  }
+
+  .runner-text:empty { display: none; }
 
   .timer-overlay .countdown {
     font-family: var(--serif);
-    font-size: 190px;
+    font-size: 96px;
     font-weight: 400;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
     line-height: 1;
   }
+
+  /* the seated step keeps the old full-bleed look */
+  .runner-main.sit-step .countdown { font-size: 190px; }
 
   .timer-overlay .intention {
     font-family: var(--serif);
@@ -592,12 +802,33 @@
   .timer-overlay .intention:empty { display: none; }
 
   .timer-overlay .hint {
-    position: fixed;
-    bottom: 36px;
+    text-align: center;
+    padding: 0 20px 10px;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.16em;
     color: var(--ink-faded);
+  }
+
+  .runner-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0 20px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .runner-controls button {
+    font-family: var(--sans);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 9px 15px;
+    cursor: pointer;
   }
 
   /* ————— mobile: one pane at a time, tabs to switch ————— */
@@ -690,7 +921,32 @@
     }
     .log-wrap.outline-open .outline { transform: translateX(0); }
 
-    .timer-overlay .countdown { font-size: min(150px, 26vw); }
+    /* leave room for add-sit on the same line */
+    .sit-row .routine-btn { max-width: 150px; }
+    .routine-panel { left: 20px; right: 20px; width: auto; }
+
+    /* the TOC becomes a sheet over the stage */
+    .timer-overlay.on { grid-template-columns: 1fr; }
+    .toc-toggle { display: block; }
+    .runner-toc {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: var(--paper);
+      border-right: none;
+      padding: calc(58px + env(safe-area-inset-top)) 20px 40px;
+    }
+    .runner-toc.open { display: block; }
+
+    .runner-stage { padding: 24px 20px; gap: 18px; }
+    /* on a phone the countdown leads — an image, a title and a paragraph above
+       it push it past the fold, and it's the one thing that must always show */
+    .runner-stage .countdown { order: -1; }
+    .runner-media img { max-height: 30vh; }
+    .runner-title { font-size: 25px; }
+    .timer-overlay .countdown { font-size: min(96px, 22vw); }
+    .runner-main.sit-step .countdown { font-size: min(150px, 26vw); }
     .timer-overlay .intention { font-size: 20px; padding: 0 24px; }
   }
 </style>
@@ -739,7 +995,20 @@
         <button class="chip">40</button>
         <input class="chip chip-custom" id="custom-min" type="number" min="1" max="600" placeholder="…">
       </div>
+      <span class="sit-fixed" id="sit-fixed"></span>
+      <button class="chip routine-btn" id="routine-btn" title="Choose the warm-up and the sit"><span>just sit</span></button>
       <button class="add-sit" id="add-sit" title="Log this sit into the conversation">+ Add sit</button>
+
+      <div class="routine-panel" id="routine-panel" hidden>
+        <div class="rp-group">
+          <div class="rp-title">Before the sit</div>
+          <div id="rp-warmups"></div>
+        </div>
+        <div class="rp-group">
+          <div class="rp-title">The sit</div>
+          <div id="rp-sits"></div>
+        </div>
+      </div>
     </div>
 
     <div class="composer">
@@ -765,9 +1034,24 @@
 </div>
 
 <div class="timer-overlay" id="overlay">
-  <div class="countdown" id="countdown">30:00</div>
-  <div class="intention" id="intention"></div>
-  <div class="hint">tap anywhere to end</div>
+  <button class="toc-toggle" id="toc-toggle">1 / 1</button>
+  <nav class="runner-toc" id="runner-toc"></nav>
+  <div class="runner-main" id="runner-main">
+    <div class="runner-stage" id="runner-stage">
+      <div class="runner-media" id="runner-media"></div>
+      <div class="runner-title" id="runner-title"></div>
+      <div class="runner-text" id="runner-text"></div>
+      <div class="countdown" id="countdown">30:00</div>
+      <div class="intention" id="intention"></div>
+    </div>
+    <div class="hint" id="runner-hint">tap the center to pause</div>
+    <div class="runner-controls">
+      <button id="rn-prev" title="Previous step">‹ prev</button>
+      <button id="rn-pause" title="Pause or resume">pause</button>
+      <button id="rn-next" title="Next step">next ›</button>
+      <button id="rn-end" title="Back to the conversation">end</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -784,14 +1068,28 @@
   const overlay = document.getElementById('overlay');
   const countdown = document.getElementById('countdown');
   const intention = document.getElementById('intention');
+  const runnerMain = document.getElementById('runner-main');
+  const runnerStage = document.getElementById('runner-stage');
+  const runnerToc = document.getElementById('runner-toc');
+  const runnerMedia = document.getElementById('runner-media');
+  const runnerTitle = document.getElementById('runner-title');
+  const runnerText = document.getElementById('runner-text');
+  const runnerHint = document.getElementById('runner-hint');
+  const tocToggle = document.getElementById('toc-toggle');
+  const pauseBtn = document.getElementById('rn-pause');
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  let sitMinutes = 30;
+  const DEFAULT_SIT_SLUG = 'unguided-sit';
+
+  let sitMinutes = 30;      // what Add sit posts
+  let chosenMinutes = 30;   // what the user picked; a fixed-length sit overrides it
   let sessions = [];
   let index = -1;
   let messages = [];
   let busy = false;
+  let components = [];                                        // the practice library
+  let routine = { warmup_slugs: [], sit_slug: DEFAULT_SIT_SLUG };
 
   async function api(path, options) {
     const res = await fetch(path, options);
@@ -841,19 +1139,62 @@
     }
   }
 
+  /* A sit marker carries its resolved program; markers logged before the
+     practice library existed become a bare unguided sit of `content` minutes. */
+  function programOf(msg) {
+    const program = msg.data && msg.data.program;
+    if (program && program.components) return program;
+    const mins = parseInt(msg.content, 10) || 0;
+    return {
+      sit_minutes: mins,
+      components: [{
+        slug: DEFAULT_SIT_SLUG, kind: 'unguided', name: 'Unguided sit',
+        steps: [{ title: 'Sit', duration_s: mins * 60, bell: 'long' }],
+      }],
+    };
+  }
+
+  /* "Spinal Energy Series, abbreviated · 20-minute sit" */
+  function programLabel(program) {
+    const parts = [];
+    for (const c of program.components || []) {
+      if (c.kind === 'warmup') parts.push(c.name);
+      else if (c.slug !== DEFAULT_SIT_SLUG) parts.push(c.name);
+    }
+    parts.push(program.sit_minutes + '-minute sit');
+    return parts.join(' · ');
+  }
+
   function messageNode(msg) {
     if (msg.role === 'sit') {
       const el = document.createElement('div');
       el.className = 'sit-marker';
       const mins = document.createElement('span');
       mins.className = 'sit-mins';
-      mins.textContent = msg.content + '-minute sit';
+      mins.textContent = programLabel(programOf(msg));
       const btn = document.createElement('button');
       btn.className = 'sit-timer';
-      btn.textContent = '▶ timer';
-      btn.title = 'Optional: count down, chime at the end';
-      btn.addEventListener('click', () => startTimer(parseInt(msg.content, 10), msg));
+      btn.textContent = '▶ start';
+      btn.title = 'Play this routine — countdowns and bells';
+      btn.addEventListener('click', () => openRunner(msg));
       el.append(mins, btn);
+      return el;
+    }
+
+    if (msg.role === 'tool' && msg.tool_label === 'Proposed routine' && msg.data) {
+      const el = document.createElement('div');
+      el.className = 'tool proposal';
+      const label = document.createElement('div');
+      label.className = 'tool-label';
+      label.textContent = msg.tool_label;
+      const body = document.createElement('div');
+      body.className = 'tool-body';
+      appendLinkified(body, msg.content || '');
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.textContent = '▶ Start';
+      btn.addEventListener('click', () => startProposal(msg, btn));
+      el.append(label, body, btn);
       return el;
     }
 
@@ -1144,6 +1485,8 @@
   const TOOL_PENDING_LABELS = {
     ask_notebooklm: 'Asking Rigdzin notebook…',
     write_journal_entry: 'Writing journal entry…',
+    propose_program: 'Proposing routine…',
+    create_component: 'Adding to library…',
   };
 
   function updateToolChip(chip, label, content) {
@@ -1189,10 +1532,16 @@
       } else if (ev.type === 'tool') {
         if (toolChips[execIdx]) updateToolChip(toolChips[execIdx], ev.tool_label, ev.content);
       } else if (ev.type === 'tool_done') {
+        // Re-render from the final message rather than patching text: only now
+        // does it carry `data`, which turns a proposal into its Start card.
         const chip = toolChips[execIdx];
-        if (chip) updateToolChip(chip, ev.message.tool_label, ev.message.content);
-        else chat.appendChild(messageNode(ev.message));
+        const node = messageNode(ev.message);
+        if (chip) { chip.replaceWith(node); toolChips[execIdx] = node; }
+        else chat.appendChild(node);
         execIdx++;
+        // the model just grew the library — a proposal in this same turn can
+        // name the new component only if the menu catches up now
+        if (String(ev.message.tool_label || '').startsWith('Added to library')) fetchComponents();
       } else if (ev.type === 'done') {
         done = ev;
       }
@@ -1269,7 +1618,8 @@
       + ' ' + (now.getMonth() + 1) + '/' + now.getDate();
     renderPager();
     renderChat(pendingNode());
-    loadJournal();  // in parallel — the log pane never waits on the model
+    loadJournal();       // in parallel — the log pane never waits on the model
+    loadComponents();    // ditto for the practice library behind the routine menu
 
     try {
       const data = await api('/api/morning/sessions');
@@ -1367,27 +1717,196 @@
   }, { passive: true });
 
   const customMin = document.getElementById('custom-min');
+  const durations = document.getElementById('durations');
 
-  document.getElementById('durations').addEventListener('click', e => {
+  function clearChips() {
+    for (const c of durations.querySelectorAll('.chip')) c.classList.remove('selected');
+  }
+
+  function setMinutes(n) {
+    chosenMinutes = n;   // survives a detour through a fixed-length guided sit
+    sitMinutes = n;
+  }
+
+  /* Set the length from code (a proposal's Start button, or leaving a
+     fixed-length sit) — lands on a chip when one matches, else the custom field. */
+  function applyMinutes(n) {
+    setMinutes(n);
+    clearChips();
+    const chip = [...durations.querySelectorAll('button.chip')]
+      .find(c => parseInt(c.textContent, 10) === n);
+    if (chip) {
+      chip.classList.add('selected');
+      customMin.value = '';
+    } else {
+      customMin.value = n;
+      customMin.classList.add('selected');
+    }
+  }
+
+  durations.addEventListener('click', e => {
     const chip = e.target.closest('button.chip');
     if (!chip) return;
-    for (const c of document.querySelectorAll('.chip')) c.classList.remove('selected');
+    clearChips();
     chip.classList.add('selected');
     customMin.value = '';
-    sitMinutes = parseInt(chip.textContent, 10);
+    setMinutes(parseInt(chip.textContent, 10));
   });
 
   customMin.addEventListener('input', () => {
     const v = parseInt(customMin.value, 10);
-    for (const c of document.querySelectorAll('.chip')) c.classList.remove('selected');
+    clearChips();
     if (v > 0) {
       customMin.classList.add('selected');
-      sitMinutes = v;
+      setMinutes(v);
     } else {
-      document.querySelectorAll('button.chip')[3].classList.add('selected');
-      sitMinutes = 30;
+      durations.querySelectorAll('button.chip')[3].classList.add('selected');
+      setMinutes(30);
     }
   });
+
+  /* ————— routine menu: which warm-up, which sit ————— */
+
+  const sitRow = document.querySelector('.sit-row');
+  const sitFixed = document.getElementById('sit-fixed');
+  const routineBtn = document.getElementById('routine-btn');
+  const routinePanel = document.getElementById('routine-panel');
+  const rpWarmups = document.getElementById('rp-warmups');
+  const rpSits = document.getElementById('rp-sits');
+
+  const componentBySlug = slug => components.find(c => c.slug === slug);
+
+  // A slug the library hasn't caught up with yet still names itself.
+  const componentName = slug => (componentBySlug(slug) || {}).name || slug;
+
+  /* below a minute the server says seconds, so say seconds */
+  function lengthLabel(seconds) {
+    return seconds < 60 ? seconds + ' s' : Math.round(seconds / 60) + ' min';
+  }
+
+  function routineLabel() {
+    const sitName = routine.sit_slug === DEFAULT_SIT_SLUG ? 'sit' : componentName(routine.sit_slug);
+    const warmups = routine.warmup_slugs.map(componentName);
+    if (warmups.length) return warmups.join(' + ') + ' → ' + sitName;
+    return sitName === 'sit' ? 'just sit' : sitName;
+  }
+
+  /* A fixed-length guided sit brings its own duration; the chips step aside,
+     and the length the user picked waits for them to come back. */
+  function syncSitLength() {
+    const sit = componentBySlug(routine.sit_slug);
+    const fixed = sit && !sit.has_fill && sit.fixed_s > 0;
+    sitRow.classList.toggle('fixed-length', !!fixed);
+    if (fixed) {
+      sitMinutes = Math.max(1, Math.round(sit.fixed_s / 60));   // the API takes minutes
+      sitFixed.textContent = lengthLabel(sit.fixed_s);
+    } else {
+      applyMinutes(chosenMinutes);
+    }
+  }
+
+  function renderRoutineBtn() {
+    const label = routineLabel();
+    routineBtn.firstElementChild.textContent = label;
+    routineBtn.title = 'Routine: ' + label;
+  }
+
+  function optionNode(group, value, name, length, summary) {
+    const label = document.createElement('label');
+    label.className = 'rp-opt';
+    if (summary) label.title = summary;
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = group;
+    radio.value = value;
+    label.append(radio, document.createTextNode(name));
+    if (length) {
+      const len = document.createElement('span');
+      len.className = 'rp-len';
+      len.textContent = length;
+      label.appendChild(len);
+    }
+    return label;
+  }
+
+  function renderRoutinePanel() {
+    rpWarmups.replaceChildren(optionNode('rp-warmup', '', 'none'));
+    for (const c of components.filter(c => c.kind === 'warmup')) {
+      rpWarmups.appendChild(optionNode(
+        'rp-warmup', c.slug, c.name, c.fixed_s ? lengthLabel(c.fixed_s) : '', c.summary));
+    }
+    rpSits.replaceChildren();
+    for (const c of components.filter(c => c.kind !== 'warmup')) {
+      rpSits.appendChild(optionNode(
+        'rp-sit', c.slug, c.name, c.has_fill ? 'any length' : lengthLabel(c.fixed_s), c.summary));
+    }
+    syncRoutineRadios();
+  }
+
+  function syncRoutineRadios() {
+    const warmup = routine.warmup_slugs[0] || '';
+    for (const r of rpWarmups.querySelectorAll('input')) r.checked = r.value === warmup;
+    for (const r of rpSits.querySelectorAll('input')) r.checked = r.value === routine.sit_slug;
+  }
+
+  /* `validate` drops slugs the library doesn't know — only the saved choice
+     needs it. A proposal's slugs go through verbatim: the model may have created
+     the component in this same turn, and the server validates them anyway. */
+  function applyRoutine(next, validate) {
+    const known = slug => !validate || !!componentBySlug(slug);
+    routine = {
+      warmup_slugs: (next.warmup_slugs || []).filter(known),
+      sit_slug: next.sit_slug && known(next.sit_slug) ? next.sit_slug : DEFAULT_SIT_SLUG,
+    };
+    // Don't persist while the library is unreachable — everything validates to
+    // the default then, which would quietly erase a real choice.
+    if (components.length) localStorage.setItem('sit.routine', JSON.stringify(routine));
+    syncRoutineRadios();
+    renderRoutineBtn();
+    syncSitLength();
+  }
+
+  routinePanel.addEventListener('change', e => {
+    if (e.target.name === 'rp-warmup') {
+      applyRoutine({ ...routine, warmup_slugs: e.target.value ? [e.target.value] : [] });
+    } else if (e.target.name === 'rp-sit') {
+      applyRoutine({ ...routine, sit_slug: e.target.value });
+    }
+  });
+
+  function setRoutinePanel(open) {
+    routinePanel.hidden = !open;
+    routineBtn.classList.toggle('open', open);
+  }
+
+  routineBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const opening = routinePanel.hidden;
+    setRoutinePanel(opening);
+    if (opening) fetchComponents();   // the model may have added one since load
+  });
+
+  document.addEventListener('click', e => {
+    if (!routinePanel.hidden && !routinePanel.contains(e.target)) setRoutinePanel(false);
+  });
+
+  async function fetchComponents() {
+    try {
+      const data = await api('/api/morning/components');
+      components = data.components || [];
+    } catch (err) {
+      /* keep whatever we have; an empty menu degrades to "just sit" */
+    }
+    renderRoutinePanel();
+  }
+
+  async function loadComponents() {
+    await fetchComponents();
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('sit.routine') || '{}'); } catch (err) { /* ignore */ }
+    applyRoutine(
+      { warmup_slugs: saved.warmup_slugs || [], sit_slug: saved.sit_slug || DEFAULT_SIT_SLUG }, true);
+  }
 
   /* ————— sit history calendar ————— */
 
@@ -1480,15 +1999,25 @@
 
   /* ————— add sit: pin a sit marker into the conversation, no model turn ————— */
 
+  async function logSit() {
+    const data = await postJSON(
+      '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/sits',
+      {
+        sit_minutes: sitMinutes,
+        timezone,
+        warmup_slugs: routine.warmup_slugs,
+        sit_slug: routine.sit_slug,
+      });
+    messages.push(data.message);
+    renderChat();
+    return data.message;
+  }
+
   addSitBtn.addEventListener('click', async () => {
     if (busy || index < 0) return;
     addSitBtn.disabled = true;
     try {
-      const data = await postJSON(
-        '/api/morning/sessions/' + encodeURIComponent(sessions[index].id) + '/sits',
-        { sit_minutes: sitMinutes, timezone });
-      messages.push(data.message);
-      renderChat();
+      await logSit();
     } catch (err) {
       chat.appendChild(noticeNode('Could not log the sit — ' + err.message));
       scrollChat();
@@ -1497,53 +2026,36 @@
     }
   });
 
-  /* ————— timer ————— */
+  /* Start on a proposal card: adopt its params, log the sit, play it. */
+  async function startProposal(msg, btn) {
+    if (busy || index < 0) return;
+    btn.disabled = true;
+    ensureAudio();            // while the tap is still the current gesture
+    ensureMediaElements();
+    const params = msg.data || {};
+    try {
+      await fetchComponents();   // so a component added this turn can be named
+      applyRoutine({
+        warmup_slugs: params.warmup_slugs || [],
+        sit_slug: params.sit_slug || DEFAULT_SIT_SLUG,
+      });
+      if (params.sit_minutes && !sitRow.classList.contains('fixed-length')) {
+        applyMinutes(params.sit_minutes);
+      }
+      openRunner(await logSit());
+    } catch (err) {
+      chat.appendChild(noticeNode('Could not start the routine — ' + err.message));
+      scrollChat();
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
-  let endAt = 0, tick = null, chimed = false;
+  /* ————— runner ————— */
 
-  function renderCountdown() {
-    const remaining = Math.max(0, Math.round((endAt - Date.now()) / 1000));
-    const m = Math.floor(remaining / 60), s = remaining % 60;
+  function renderCountdown(seconds) {
+    const m = Math.floor(seconds / 60), s = seconds % 60;
     countdown.textContent = `${m}:${String(s).padStart(2, '0')}`;
-    return remaining;
-  }
-
-  function wavUrl(rate, samples) {
-    const buf = new ArrayBuffer(44 + samples.length * 2);
-    const v = new DataView(buf);
-    const str = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
-    str(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); str(8, 'WAVE');
-    str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-    v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-    str(36, 'data'); v.setUint32(40, samples.length * 2, true);
-    for (let i = 0; i < samples.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 32767, true);
-    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-  }
-
-  /* pure digital silence can get the audio session suspended; a -60dB hiss keeps it alive */
-  const silenceUrl = (() => {
-    const rate = 8000, samples = new Float32Array(rate * 10);
-    for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * 0.001;
-    return wavUrl(rate, samples);
-  })();
-
-  const chimeUrl = (() => {
-    const rate = 22050, secs = 4, samples = new Float32Array(rate * secs);
-    for (let i = 0; i < samples.length; i++) {
-      const t = i / rate;
-      samples[i] = Math.sin(2 * Math.PI * 528 * t) * 0.4 * Math.pow(0.001 / 0.4, t / secs);
-    }
-    return wavUrl(rate, samples);
-  })();
-
-  const timerAudio = new Audio();
-
-  function syncTimer() {
-    if (renderCountdown() === 0 && !chimed) {
-      chimed = true;
-      clearInterval(tick);
-      chime();
-    }
   }
 
   /* fallback intention if the generated one fails: the last thing Sit said before this sit */
@@ -1558,14 +2070,21 @@
     return '';
   }
 
-  /* stream a generated one-line intention into the overlay */
+  /* Stream a generated intention into a buffer when the runner opens, so it's
+     ready by the time the seated step arrives; paintIntention shows it there. */
   let intentionAbort = null;
+  let intentionText = '';
+
+  function paintIntention() {
+    intention.textContent = runnerMain.classList.contains('sit-step') ? intentionText : '';
+  }
 
   async function streamIntention(sitMsg) {
     if (intentionAbort) intentionAbort.abort();
     const ctrl = new AbortController();
     intentionAbort = ctrl;
-    intention.textContent = '';
+    intentionText = '';
+    paintIntention();
     try {
       const res = await fetch(
         '/api/morning/sessions/' + encodeURIComponent(sessions[index].id)
@@ -1587,56 +2106,296 @@
           for (const line of chunk.split('\n')) {
             if (!line.startsWith('data: ')) continue;
             const ev = JSON.parse(line.slice(6));
-            if (ev.type === 'text') intention.textContent += ev.delta;
+            if (ev.type === 'text') { intentionText += ev.delta; paintIntention(); }
           }
         }
       }
     } catch (err) {
-      if (!ctrl.signal.aborted) intention.textContent = lastAssistantLineBefore(sitMsg);
-    }
-  }
-
-  function startTimer(minutes, sitMsg) {
-    clearInterval(tick);
-    chimed = false;
-    endAt = Date.now() + minutes * 60000;
-    renderCountdown();
-    streamIntention(sitMsg);
-    overlay.classList.add('on');
-    /* near-silent loop, started inside the tap gesture: iOS treats it as media
-       playback and keeps our JS running while the phone is locked */
-    timerAudio.loop = true;
-    timerAudio.src = silenceUrl;
-    timerAudio.play().catch(() => {});
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: `${minutes}-minute sit` });
-      /* no-op handlers so lock-screen controls can't pause the keep-alive */
-      for (const a of ['play', 'pause']) {
-        try { navigator.mediaSession.setActionHandler(a, () => {}); } catch (e) {}
+      if (!ctrl.signal.aborted) {
+        intentionText = lastAssistantLineBefore(sitMsg);
+        paintIntention();
       }
     }
-    tick = setInterval(syncTimer, 250);
   }
 
-  /* the audio element holds playback permission from the start gesture, so a
-     track swap plays even in the background / behind the lock screen */
-  function chime() {
-    timerAudio.loop = false;
-    timerAudio.src = chimeUrl;
-    timerAudio.play().catch(() => {});
+  /* One AudioContext, created on the start tap (iOS won't make one later). */
+  let audioCtx = null;
+
+  function ensureAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
   }
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && overlay.classList.contains('on')) syncTimer();
+  function bell(kind) {
+    if (kind === 'none' || !audioCtx) return;
+    if (document.visibilityState !== 'visible') return;
+    const decay = kind === 'long' ? 4 : 1.2;
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.frequency.value = 528;
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + decay);
+  }
+
+  /* The runner plays a flat playlist; each entry remembers which component it
+     came from, which is all the bells and the TOC need. */
+  const runner = {
+    open: false, playlist: [], i: 0,
+    stepStart: 0, pausedAt: null, pausedMs: 0, paused: false,
+    finished: false, ticker: null, wakeLock: null,
+  };
+
+  function buildPlaylist(program) {
+    const items = [];
+    (program.components || []).forEach((component, componentIdx) => {
+      (component.steps || []).forEach((step, stepIdx) => {
+        // null, zero and nonsense all mean the same thing: wait for *next*
+        const duration = step.duration_s > 0 ? step.duration_s : null;
+        items.push({ componentIdx, stepIdx, step, component, duration });
+      });
+    });
+    return items;
+  }
+
+  async function takeWakeLock() {
+    if (!navigator.wakeLock || !runner.open || runner.wakeLock) return;
+    try {
+      runner.wakeLock = await navigator.wakeLock.request('screen');
+      runner.wakeLock.addEventListener('release', () => { runner.wakeLock = null; });
+    } catch (err) { /* unsupported or denied — the countdown still runs */ }
+  }
+
+  /* The TOC is built once per program and then only restyled, so its own scroll
+     position survives every step change and can follow the current entry. */
+  let tocSteps = [];
+
+  function buildToc() {
+    runnerToc.replaceChildren();
+    tocSteps = [];
+    let lastComponent = -1;
+    runner.playlist.forEach((item, i) => {
+      if (item.componentIdx !== lastComponent) {
+        lastComponent = item.componentIdx;
+        const head = document.createElement('div');
+        head.className = 'toc-comp';
+        head.textContent = item.component.name || item.component.slug;
+        runnerToc.appendChild(head);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'toc-step';
+      btn.textContent = item.step.title || 'Step ' + (item.stepIdx + 1);
+      btn.addEventListener('click', () => goTo(i));   // jumping never bells
+      tocSteps.push(btn);
+      runnerToc.appendChild(btn);
+    });
+  }
+
+  function syncToc() {
+    tocSteps.forEach((btn, i) => {
+      btn.classList.toggle('current', i === runner.i && !runner.finished);
+      btn.classList.toggle('done', i < runner.i || runner.finished);
+    });
+    tocToggle.textContent = (runner.i + 1) + ' / ' + runner.playlist.length;
+    const current = tocSteps[runner.i];
+    if (current) current.scrollIntoView({ block: 'nearest' });
+  }
+
+  /* One audio and one video element for the whole program, woken on the start
+     tap: iOS only lets a media element start from inside a user gesture, so a
+     fresh element on step 4 would never play. Untested — nothing seeded uses it. */
+  const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+  let mediaEls = null;
+
+  function ensureMediaElements() {
+    if (mediaEls) return;
+    const audio = document.createElement('audio');
+    const video = document.createElement('video');
+    for (const el of [audio, video]) {
+      el.controls = true;
+      el.playsInline = true;
+      el.src = SILENT_WAV;   // Safari plays an audio-only source in a video element
+      const started = el.play();
+      if (started) started.then(() => el.pause(), () => {});
+    }
+    mediaEls = { audio, video };
+  }
+
+  function renderMedia(media) {
+    for (const el of runnerMedia.children) if (el.pause) el.pause();
+    runnerMedia.replaceChildren();
+    if (!media || !media.src) return;
+    if (mediaEls && (media.type === 'audio' || media.type === 'video')) {
+      const el = mediaEls[media.type];
+      el.src = media.src;
+      runnerMedia.appendChild(el);
+      const started = el.play();
+      if (started) started.catch(() => {});   // the controls are right there
+      return;
+    }
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = media.src;
+    runnerMedia.appendChild(img);
+  }
+
+  function renderHint() {
+    const item = runner.playlist[runner.i];
+    if (runner.finished) runnerHint.textContent = 'done — end to return';
+    else if (runner.paused) runnerHint.textContent = 'tap the center to resume';
+    else if (item && item.duration == null) runnerHint.textContent = 'next when ready';
+    else runnerHint.textContent = 'tap the center to pause';
+    pauseBtn.textContent = runner.paused ? 'resume' : 'pause';
+  }
+
+  function renderStep() {
+    const item = runner.playlist[runner.i];
+    if (!item) return;
+    runnerMain.classList.toggle('sit-step', item.component.kind !== 'warmup');
+    renderMedia(item.step.media);
+    // A one-step sit keeps the bare countdown; anything with parts names them.
+    const named = item.component.kind === 'warmup' || (item.component.steps || []).length > 1;
+    runnerTitle.textContent = named ? (item.step.title || '') : '';
+    runnerText.textContent = item.step.text || '';
+    paintIntention();
+    renderHint();
+  }
+
+  function goTo(i) {
+    if (i < 0 || i >= runner.playlist.length) return;
+    runner.i = i;
+    runner.finished = false;
+    runner.stepStart = Date.now();
+    runner.pausedMs = 0;
+    runner.pausedAt = runner.paused ? Date.now() : null;
+    renderStep();
+    syncToc();
+    tickRunner();
+  }
+
+  function stepElapsed() {
+    const now = runner.pausedAt === null ? Date.now() : runner.pausedAt;
+    return Math.max(0, now - runner.stepStart - runner.pausedMs);
+  }
+
+  function paintCountdown() {
+    const item = runner.playlist[runner.i];
+    if (!item) return;
+    if (runner.finished) { countdown.textContent = '0:00'; return; }
+    const total = item.duration;
+    if (total == null) { countdown.textContent = '—'; return; }
+    renderCountdown(Math.max(0, Math.ceil((total * 1000 - stepElapsed()) / 1000)));
+  }
+
+  /* Wall clock, recomputed from Date.now() — a backgrounded tab doesn't drift.
+     A tab away for minutes crosses every boundary it slept through: each step
+     starts where the last one ended, never at "now", so the overshoot carries
+     instead of being handed back as free time. The bells of a crossing collapse
+     into one — a tab that slept through nine steps shouldn't ring nine times. */
+  function tickRunner() {
+    if (!runner.playlist.length) return;
+    const fromIdx = runner.i, wasFinished = runner.finished;
+    let soft = false, long = false;
+
+    while (!runner.finished) {
+      const item = runner.playlist[runner.i];
+      const total = item.duration;
+      if (total == null) break;                 // manual advance: waits for next
+      if (stepElapsed() < total * 1000) break;
+
+      const next = runner.playlist[runner.i + 1];
+      const own = item.step.bell || 'soft';
+      if (!next || next.componentIdx !== item.componentIdx || own === 'long') long = true;
+      else if (own !== 'none') soft = true;
+
+      if (!next) { runner.finished = true; break; }
+      runner.stepStart += total * 1000 + runner.pausedMs;
+      runner.pausedMs = 0;
+      runner.i++;
+    }
+
+    if (long) bell('long');
+    else if (soft) bell('soft');
+
+    if (runner.i !== fromIdx) renderStep();
+    if (runner.i !== fromIdx || runner.finished !== wasFinished) { syncToc(); renderHint(); }
+    paintCountdown();
+  }
+
+  function togglePause() {
+    if (!runner.open || runner.finished) return;
+    if (runner.paused) {
+      runner.pausedMs += Date.now() - runner.pausedAt;
+      runner.pausedAt = null;
+      runner.paused = false;
+    } else {
+      runner.pausedAt = Date.now();
+      runner.paused = true;
+    }
+    renderHint();
+    tickRunner();
+  }
+
+  function openRunner(sitMsg) {
+    const playlist = buildPlaylist(programOf(sitMsg));
+    if (!playlist.length) return;
+    clearInterval(runner.ticker);
+    Object.assign(runner, {
+      open: true, playlist, i: 0, paused: false, pausedAt: null, pausedMs: 0,
+      finished: false,
+    });
+    ensureAudio();
+    ensureMediaElements();
+    takeWakeLock();
+    streamIntention(sitMsg);   // prefetch: ready by the time the sit step arrives
+    overlay.classList.add('on');
+    buildToc();
+    goTo(0);
+    runner.ticker = setInterval(tickRunner, 250);
+  }
+
+  function endRunner() {
+    clearInterval(runner.ticker);
+    runner.ticker = null;
+    runner.open = false;
+    if (intentionAbort) intentionAbort.abort();
+    if (runner.wakeLock) { runner.wakeLock.release(); runner.wakeLock = null; }
+    if (mediaEls) {
+      // the shared elements outlive the overlay, so silence them on the way out
+      for (const el of [mediaEls.audio, mediaEls.video]) {
+        el.pause();
+        el.removeAttribute('src');
+        el.load();
+      }
+    }
+    runnerToc.classList.remove('open');
+    overlay.classList.remove('on');
+  }
+
+  runnerStage.addEventListener('click', e => {
+    if (e.target.closest('#runner-media')) return;   // native audio/video controls
+    togglePause();
+  });
+  document.getElementById('rn-prev').addEventListener('click', () => goTo(runner.i - 1));
+  document.getElementById('rn-next').addEventListener('click', () => goTo(runner.i + 1));
+  pauseBtn.addEventListener('click', togglePause);
+  document.getElementById('rn-end').addEventListener('click', endRunner);
+  tocToggle.addEventListener('click', () => runnerToc.classList.toggle('open'));
+
+  // on mobile the TOC is a sheet: picking a step or tapping past the list closes it
+  runnerToc.addEventListener('click', () => runnerToc.classList.remove('open'));
+
+  document.addEventListener('keydown', e => {
+    if (!runner.open) return;
+    if (e.key === ' ') { e.preventDefault(); togglePause(); }
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(runner.i + 1);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(runner.i - 1);
+    else if (e.key === 'Escape') endRunner();
   });
 
-  overlay.addEventListener('click', () => {
-    clearInterval(tick);
-    timerAudio.pause();
-    timerAudio.removeAttribute('src');
-    timerAudio.load();
-    if (intentionAbort) intentionAbort.abort();
-    overlay.classList.remove('on');
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && runner.open) takeWakeLock();
   });
 
   init();
