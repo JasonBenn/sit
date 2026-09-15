@@ -50,6 +50,11 @@ def morning_page():
 
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
 
+# Large media (guided-meditation audio) lives outside the repo; scripts/ingest_guided.py fills it.
+MEDIA_DIR = os.getenv("MEDIA_DIR", "/opt/sit-media")
+if os.path.isdir(MEDIA_DIR):
+    app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+
 
 @app.get("/health")
 def health_check():
