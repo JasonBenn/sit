@@ -157,3 +157,17 @@ render pages (`pdftoppm`) or extract embedded images (`pdfimages -j`), then crop
 series drawings came from the Sadhana Guidelines PDF this way. Audio and video use the same
 `media` field; the runner renders them with native `<audio>`/`<video>` controls, autoplaying
 when the step starts.
+
+### Multi-step recordings
+
+Guided audio is ingested by `scripts/ingest_guided.py` from `scripts/guided_manifest.json`,
+which cuts each entry with ffmpeg into `<media-dir>/<slug>.mp3` and posts a one-step `guided`
+component. A long recording with clean internal boundaries becomes a **jumpable** component
+instead: give the entry a `steps` list, each with a `title`, an optional one-line `text` cue,
+and its own `clip` range (`end` may be omitted to run to the end of the source). The script
+then cuts `<slug>-01.mp3`, `<slug>-02.mp3`, … so every phase is a standalone file, and posts
+one component whose steps are those phases in order with their measured durations. Because
+the TOC jumps by step and each step loads its own file, a phase can be skipped (the
+preliminaries) or replayed without seeking inside a half-hour track. Cut the phases
+contiguously from the first line of instruction to the spoken close, and let a transition
+line belong to the phase it introduces, so jumping never drops instruction.
