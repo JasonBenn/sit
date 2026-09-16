@@ -287,6 +287,74 @@
 
   .tool.proposal .chip { margin-top: 12px; }
 
+  /* guided meditation options: one row per recording, a play chip at the right */
+  .tool.options {
+    align-self: stretch;
+    max-width: none;
+    border-left: none;
+    background: var(--paper-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 14px 18px;
+  }
+
+  .tool.options .none {
+    font-size: 15px;
+    color: var(--ink);
+    margin-top: 10px;
+  }
+
+  .tool.options .choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 0 11px;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .tool.options .choice:first-of-type { margin-top: 8px; }
+
+  /* the text column ellipsizes; the chip keeps its width whatever the title */
+  .tool.options .choice .meta { flex: 1; min-width: 0; }
+
+  .tool.options .choice .title {
+    font-size: 15px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tool.options .choice .sub {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-faded);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tool.options .choice .why {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-top: 5px;
+  }
+
+  .tool.options .choice .chip {
+    flex: none;
+    margin-top: 0;
+    white-space: nowrap;
+    min-width: 92px;
+  }
+
+  /* state is a filled chip, never colour alone — the DC-1 is grayscale */
+  .tool.options .choice .chip.playing {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
   /* notebook answer: full width, collapsed to a preview until expanded */
   .tool.notebook { align-self: stretch; max-width: none; }
 
@@ -509,6 +577,90 @@
     color: var(--ink-faded);
     margin-top: 10px;
     text-align: center;
+  }
+
+  /* guided player: a docked row between the chat and the sit row, hidden
+     until a recording is loaded. Not the runner — no bells, no countdown. */
+  .player {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--hairline);
+    padding: 10px 40px;
+  }
+
+  .player.on { display: flex; }
+
+  .player .pl-btn {
+    flex: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    height: 32px;
+    min-width: 36px;
+    padding: 0 9px;
+    cursor: pointer;
+  }
+
+  .player .pl-play { color: var(--ink); }
+  .player .pl-close { font-size: 17px; }
+
+  .player .pl-title {
+    flex: 0 1 260px;
+    min-width: 40px;
+    font-size: 14px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* the scrubber takes whatever the rest of the row leaves */
+  .player .pl-seek {
+    flex: 1 1 100px;
+    min-width: 60px;
+    height: 20px;
+    background: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .player .pl-seek::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--hairline-strong);
+  }
+
+  .player .pl-seek::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -6px;
+    border: none;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+
+  .player .pl-seek::-moz-range-track { height: 2px; background: var(--hairline-strong); }
+
+  .player .pl-seek::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+
+  .player .pl-time {
+    flex: none;
+    font-size: 12.5px;
+    color: var(--ink-faded);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   /* composer (the sit row above it carries the separating border) */
@@ -943,6 +1095,9 @@
 
     .chat-scroll { padding: 20px; gap: 18px; }
 
+    .player { padding: 9px 20px; gap: 10px; }
+    .player .pl-title { flex: 0 1 150px; }
+
     .composer {
       padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
     }
@@ -992,6 +1147,14 @@
     .runner-main.sit-step .countdown { font-size: min(150px, 26vw); }
     .timer-overlay .intention { font-size: 20px; padding: 0 24px; }
   }
+
+  /* narrow: the clock goes, the scrubber takes the row */
+  @media (max-width: 600px) {
+    .player .pl-time { display: none; }
+    .player .pl-title { flex: 0 1 110px; }
+    .player { gap: 8px; }
+    .player .pl-btn { padding: 0 7px; min-width: 32px; }
+  }
 </style>
 </head>
 <body>
@@ -1027,6 +1190,17 @@
     </header>
 
     <div class="chat-scroll" id="chat"></div>
+
+    <div class="player" id="player">
+      <button class="pl-btn pl-play" id="pl-play" title="Play or pause">▶</button>
+      <span class="pl-title" id="pl-title"></span>
+      <button class="pl-btn" id="pl-back" title="Back 15 seconds">−15</button>
+      <button class="pl-btn" id="pl-fwd" title="Forward 15 seconds">+15</button>
+      <input class="pl-seek" id="pl-seek" type="range" min="0" max="0" value="0" step="1" title="Scrub">
+      <span class="pl-time" id="pl-time">0:00 / 0:00</span>
+      <button class="pl-btn pl-close" id="pl-close" title="Unload this recording">×</button>
+      <audio id="pl-audio" preload="metadata"></audio>
+    </div>
 
     <div class="sit-row">
       <span class="sit-label">Sat for</span>
@@ -1208,6 +1382,12 @@
     return parts.join(' · ');
   }
 
+  /* "18 min" — the options card's only number */
+  function minutesLabel(seconds) {
+    if (!seconds) return '';
+    return Math.max(1, Math.round(seconds / 60)) + ' min';
+  }
+
   function messageNode(msg) {
     if (msg.role === 'sit') {
       const el = document.createElement('div');
@@ -1265,6 +1445,58 @@
       return el;
     }
 
+    if (msg.role === 'tool' && msg.tool_label === 'Guided meditation options' && msg.data) {
+      const el = document.createElement('div');
+      el.className = 'tool options';
+      el.dataset.played = msg.data.played || '';
+      const label = document.createElement('div');
+      label.className = 'tool-label';
+      label.textContent = msg.tool_label;
+      const inquiry = document.createElement('div');
+      inquiry.className = 'tool-body';
+      appendLinkified(inquiry, msg.content || '');
+      el.append(label, inquiry);
+
+      const choices = msg.data.choices || [];
+      if (!choices.length) {
+        const none = document.createElement('div');
+        none.className = 'none';
+        none.textContent = 'Nothing fits this morning.';
+        el.appendChild(none);
+        return el;
+      }
+
+      for (const choice of choices) {
+        const row = document.createElement('div');
+        row.className = 'choice';
+        row.dataset.recId = choice.id;
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = choice.title || choice.id;
+        title.title = choice.title || choice.id;
+        const sub = document.createElement('div');
+        sub.className = 'sub';
+        sub.textContent = [minutesLabel(choice.duration_s), choice.collection]
+          .filter(Boolean).join(' \u00b7 ');
+        meta.append(title, sub);
+        if (choice.why) {
+          const why = document.createElement('div');
+          why.className = 'why';
+          appendLinkified(why, choice.why);
+          meta.appendChild(why);
+        }
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = '\u25b6 play';
+        btn.addEventListener('click', () => playChoice(choice, msg, el));
+        row.append(meta, btn);
+        el.appendChild(row);
+      }
+      return el;
+    }
+
     if (msg.role === 'tool') {
       const el = document.createElement('div');
       el.className = 'tool';
@@ -1318,6 +1550,7 @@
     chat.replaceChildren();
     for (const msg of messages) chat.appendChild(messageNode(msg));
     if (extra) chat.appendChild(extra);
+    paintOptionChips();
     scrollChat();
   }
 
@@ -1337,6 +1570,176 @@
     addSitBtn.disabled = state;
     renderPager();
   }
+
+  /* ————— guided player —————
+     A docked row above the sit row, backed by one <audio> for the whole page.
+     It lives outside the chat pane, so it survives every renderChat and every
+     session switch: a recording keeps playing until it is unloaded. */
+
+  const player = {
+    el: document.getElementById('player'),
+    audio: document.getElementById('pl-audio'),
+    playBtn: document.getElementById('pl-play'),
+    titleEl: document.getElementById('pl-title'),
+    seek: document.getElementById('pl-seek'),
+    timeEl: document.getElementById('pl-time'),
+    id: null,          // the recording loaded, null when the row is hidden
+    title: '',
+    msg: null,         // the options message it came from — its data.played
+    card: null,        // and that message's card, for the chip
+    sessionId: null,   // the session the listen is filed under
+    logged: false,     // one listen per load, not per resume
+    dragging: false,   // scrubbing: don't fight the thumb with timeupdate
+  };
+
+  function fmtClock(seconds) {
+    const s = Math.max(0, Math.floor(isFinite(seconds) ? seconds : 0));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function paintPlayer() {
+    const audio = player.audio;
+    const dur = isFinite(audio.duration) ? audio.duration : 0;
+    player.playBtn.textContent = audio.paused ? '\u25b6' : '\u2759\u2759';
+    player.playBtn.title = audio.paused ? 'Play' : 'Pause';
+    if (!player.dragging) {
+      player.seek.max = dur || 0;
+      player.seek.value = Math.min(audio.currentTime, dur || audio.currentTime);
+    }
+    player.timeEl.textContent = fmtClock(audio.currentTime) + ' / ' + fmtClock(dur);
+  }
+
+  /* Every options card on screen, repainted from `played` and what's playing. */
+  function paintOptionChips() {
+    for (const card of chat.querySelectorAll('.tool.options')) {
+      const played = card.dataset.played || '';
+      for (const row of card.querySelectorAll('.choice')) {
+        const chip = row.querySelector('.chip');
+        const current = player.id === row.dataset.recId;
+        const live = current && !player.audio.paused;
+        chip.textContent = live ? 'playing'
+          : (current || row.dataset.recId === played) ? 'played' : '\u25b6 play';
+        chip.classList.toggle('playing', live);
+      }
+    }
+  }
+
+  /* Names the recording on the lock screen and wires its transport controls. */
+  function playerMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({ title: player.title, artist: 'Sit' });
+    const handlers = {
+      play: () => playPlayer(),
+      pause: () => pausePlayer(),
+      seekbackward: e => nudgePlayer(-((e && e.seekOffset) || 15)),
+      seekforward: e => nudgePlayer((e && e.seekOffset) || 15),
+      seekto: e => {
+        if (!e || e.seekTime == null) return;
+        player.audio.currentTime = e.seekTime;
+        paintPlayer();
+      },
+    };
+    for (const action of Object.keys(handlers)) {
+      try { navigator.mediaSession.setActionHandler(action, handlers[action]); }
+      catch (err) { /* unsupported action */ }
+    }
+  }
+
+  /* The play chip on an options card: the loaded one toggles, any other one
+     replaces the track. */
+  function playChoice(choice, msg, card) {
+    if (player.id === choice.id) { togglePlayer(); return; }
+    player.id = choice.id;
+    player.title = choice.title || choice.id;
+    player.msg = msg;
+    player.card = card;
+    player.logged = false;
+    player.sessionId = (index >= 0 && sessions[index]) ? sessions[index].id : null;
+    player.titleEl.textContent = player.title;
+    player.titleEl.title = player.title;
+    player.audio.src = '/media/recordings/' + encodeURIComponent(choice.id) + '.mp3';
+    player.audio.load();
+    player.el.classList.add('on');
+    paintPlayer();
+    playPlayer();
+  }
+
+  function playPlayer() {
+    if (!player.id) return;
+    playerMediaSession();
+    const id = player.id;
+    const started = player.audio.play();
+    if (!started) return;
+    started.then(() => {
+      if (player.id !== id || player.logged) return;   // one listen per load
+      player.logged = true;
+      logListen(id);
+    }, () => { /* the browser refused playback; the row still shows */ });
+  }
+
+  function pausePlayer() {
+    if (player.id) player.audio.pause();
+  }
+
+  function togglePlayer() {
+    if (player.audio.paused) playPlayer(); else pausePlayer();
+  }
+
+  function nudgePlayer(delta) {
+    if (!player.id) return;
+    const dur = isFinite(player.audio.duration) ? player.audio.duration : Infinity;
+    player.audio.currentTime = Math.max(0, Math.min(dur, player.audio.currentTime + delta));
+    paintPlayer();
+  }
+
+  function unloadTrack() {
+    player.audio.pause();
+    player.audio.removeAttribute('src');
+    player.audio.load();
+    player.id = null;
+    player.msg = null;
+    player.card = null;
+    player.title = '';
+    player.titleEl.textContent = '';
+    player.el.classList.remove('on');
+    if ('mediaSession' in navigator) navigator.mediaSession.metadata = null;
+    paintPlayer();
+    paintOptionChips();
+  }
+
+  /* One row per load. The server also stamps `played` on the session's latest
+     options message; mirror it here so the chip flips without a reload. */
+  async function logListen(recordingId) {
+    const msg = player.msg, card = player.card;
+    if (player.sessionId) {
+      await postJSON(
+        '/api/morning/sessions/' + encodeURIComponent(player.sessionId) + '/listens',
+        { recording_id: recordingId });
+    }
+    if (msg) { msg.data = msg.data || {}; msg.data.played = recordingId; }
+    if (card) card.dataset.played = recordingId;
+    paintOptionChips();
+  }
+
+  for (const ev of ['timeupdate', 'loadedmetadata', 'durationchange', 'ended']) {
+    player.audio.addEventListener(ev, paintPlayer);
+  }
+  for (const ev of ['play', 'pause', 'ended']) {
+    player.audio.addEventListener(ev, () => { paintPlayer(); paintOptionChips(); });
+  }
+
+  player.playBtn.addEventListener('click', togglePlayer);
+  document.getElementById('pl-back').addEventListener('click', () => nudgePlayer(-15));
+  document.getElementById('pl-fwd').addEventListener('click', () => nudgePlayer(15));
+  document.getElementById('pl-close').addEventListener('click', unloadTrack);
+
+  player.seek.addEventListener('input', () => {
+    player.dragging = true;
+    player.audio.currentTime = Number(player.seek.value);
+    player.timeEl.textContent =
+      fmtClock(player.audio.currentTime) + ' / ' + fmtClock(player.audio.duration);
+  });
+  player.seek.addEventListener('change', () => { player.dragging = false; paintPlayer(); });
 
   /* ————— journal ————— */
 
@@ -1586,6 +1989,7 @@
     ask_notebooklm: 'Asking Rigdzin notebook…',
     write_journal_entry: 'Writing journal entry…',
     propose_program: 'Proposing routine…',
+    find_guided_meditations: 'Searching guided meditations…',
     create_component: 'Adding to library…',
   };
 
@@ -1639,6 +2043,7 @@
         if (chip) { chip.replaceWith(node); toolChips[execIdx] = node; }
         else chat.appendChild(node);
         execIdx++;
+        paintOptionChips();   // a card arriving mid-turn, while a track plays
         // the model just grew the library — a proposal in this same turn can
         // name the new component only if the menu catches up now
         if (String(ev.message.tool_label || '').startsWith('Added to library')) fetchComponents();
@@ -2482,6 +2887,7 @@
   function openRunner(sitMsg) {
     const playlist = buildPlaylist(programOf(sitMsg));
     if (!playlist.length) return;
+    pausePlayer();       // the runner owns the audio from here
     clearInterval(runner.ticker);
     Object.assign(runner, {
       open: true, playlist, i: 0, paused: false, pausedAt: null, pausedMs: 0,
