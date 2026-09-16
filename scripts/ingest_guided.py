@@ -3,8 +3,8 @@
 
 1. Read scripts/guided_manifest.json — one entry per component (slug, name, summary,
    source audio, and either one optional `clip` or a `steps` list of jumpable phases).
-2. Resolve each source: absolute path as given, otherwise relative to the clipper's
-   Meditations/ dir. Unreadable sources are reported and skipped, not fatal.
+2. Resolve each source: absolute path as given, otherwise relative to the Drive mirror
+   of Meditations/ on nose (rclone, hourly). Missing sources are reported and skipped, not fatal.
 3. Cut with ffmpeg (-ss/-to, re-encoded to 128k mono mp3) into <media-dir>/<slug>.mp3, or
    <slug>-01.mp3, <slug>-02.mp3, … for a multi-step entry, so every phase is a standalone file.
 4. Measure each cut file's real duration with ffprobe.
@@ -21,7 +21,7 @@ import urllib.request
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST = os.path.join(REPO, "scripts", "guided_manifest.json")
-MEDITATIONS = "/Users/jasonbenn/code/meditation-clipper/Meditations"
+MEDITATIONS = "/opt/sit-media/drive/Meditations"
 
 
 def resolve_source(source, meditations):
@@ -29,8 +29,7 @@ def resolve_source(source, meditations):
 
 
 def readable(path):
-    """Google Drive paths raise PermissionError under macOS sandboxing; that is a
-    skip, not a crash, so this is the one place we catch."""
+    """A source missing from the mirror is a skip, not a crash."""
     try:
         with open(path, "rb") as f:
             f.read(1)
@@ -112,11 +111,10 @@ def main():
     p.add_argument("--only", help="comma-separated slugs to process")
     p.add_argument("--api", default="http://localhost:8005")
     p.add_argument("--media-dir", default="/opt/sit-media/guided", help="staging dir for cut audio")
-    p.add_argument("--push", help="rsync target for the staging dir, e.g. nose:/opt/sit-media/guided")
     p.add_argument("--meditations", default=MEDITATIONS, help="dir that relative sources resolve against")
     p.add_argument("--dry-run", action="store_true", help="resolve sources and report readability only")
     args = p.parse_args()
-    sys.stdout.reconfigure(line_buffering=True)  # keep our lines interleaved with ffmpeg/rsync output
+    sys.stdout.reconfigure(line_buffering=True)  # keep our lines interleaved with ffmpeg output
 
     entries = json.load(open(args.manifest))
     if args.only:
@@ -140,7 +138,6 @@ def main():
 
     os.makedirs(args.media_dir, exist_ok=True)
     slugs = existing_slugs(args.api)
-    cut_any = False
 
     for e in entries:
         slug = e["slug"]
@@ -153,7 +150,6 @@ def main():
         for base, clip in phases(e):
             dest = os.path.join(args.media_dir, f"{base}.mp3")
             cut(src, dest, clip)
-            cut_any = True
             durations.append(measure(dest))
             print(f"cut  {base}.mp3: {durations[-1]}s -> {dest}")
         if "duration_s" in e:
@@ -163,10 +159,6 @@ def main():
             continue
         component = post_component(args.api, e, durations)
         print(f"     created component {component['slug']} ({component['id']}), {len(durations)} step(s)")
-
-    if args.push and cut_any:
-        subprocess.run(["rsync", "-av", args.media_dir.rstrip("/") + "/", args.push.rstrip("/") + "/"], check=True)
-        print(f"pushed {args.media_dir} -> {args.push}")
 
 
 main()

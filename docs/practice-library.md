@@ -160,9 +160,11 @@ when the step starts.
 
 ### Multi-step recordings
 
-Guided audio is ingested by `scripts/ingest_guided.py` from `scripts/guided_manifest.json`,
-which cuts each entry with ffmpeg into `<media-dir>/<slug>.mp3` and posts a one-step `guided`
-component. A long recording with clean internal boundaries becomes a **jumpable** component
+Guided audio is ingested on nose by `scripts/ingest_guided.py` from a manifest such as
+`scripts/guided_manifest.json`: sources resolve against `/opt/sit-media/drive/Meditations`,
+an hourly rclone mirror of the Drive folder (`~/.claude/nose/drive-mirror.sh`), and each
+entry is cut with ffmpeg into `/opt/sit-media/guided/<slug>.mp3` and posted as a one-step
+`guided` component. A long recording with clean internal boundaries becomes a **jumpable** component
 instead: give the entry a `steps` list, each with a `title`, an optional one-line `text` cue,
 and its own `clip` range (`end` may be omitted to run to the end of the source). The script
 then cuts `<slug>-01.mp3`, `<slug>-02.mp3`, … so every phase is a standalone file, and posts
