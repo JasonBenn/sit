@@ -253,10 +253,16 @@ CITATION_RE = re.compile(r"\s?\[\d+(?:\s?[-–,]\s?\d+)*\]")
 
 
 def ask_notebooklm(question: str) -> str:
-    result = subprocess.run(
-        [NOTEBOOKLM_BIN, "ask", "--json", question],
-        capture_output=True, text=True, timeout=180,
-    )
+    try:
+        result = subprocess.run(
+            [NOTEBOOKLM_BIN, "ask", "--json", question],
+            capture_output=True, text=True, timeout=300,
+        )
+    except subprocess.TimeoutExpired:
+        # NotebookLM latency is wildly variable; a slow answer must degrade like a
+        # failed one, not kill the SSE turn (which loses the whole morning session).
+        logger.error("NotebookLM query timed out after 300s")
+        return "(NotebookLM didn't answer in time — go on without it.)"
     if result.returncode != 0:
         err = result.stderr.strip()[-500:]
         logger.error("NotebookLM query failed: %s", err)
