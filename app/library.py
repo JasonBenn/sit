@@ -5,6 +5,8 @@ A program is stored resolved — fills applied, media URLs final — so editing 
 deleting a component later never changes what a past morning recorded.
 """
 from typing import Optional
+import json
+import os
 import re
 
 from sqlmodel import Session, select
@@ -226,6 +228,16 @@ SEED_COMPONENTS = [
         "steps": [{"title": "Sit", "duration_s": None, "bell": "long"}],
     },
 ]
+
+
+# Seed files: app/seeds/*.json, each a list of components in the same shape as
+# SEED_COMPONENTS (kind, slug, name, summary, steps). Longer authored sequences
+# live there rather than as Python literals.
+SEED_DIR = os.path.join(os.path.dirname(__file__), "seeds")
+for _name in sorted(os.listdir(SEED_DIR)):
+    if _name.endswith(".json"):
+        with open(os.path.join(SEED_DIR, _name)) as _f:
+            SEED_COMPONENTS.extend(json.load(_f))
 
 
 def slugify(name: str) -> str:
