@@ -287,6 +287,49 @@
 
   .tool.proposal .chip { margin-top: 12px; }
 
+  /* notebook answer: full width, collapsed to a preview until expanded */
+  .tool.notebook { align-self: stretch; max-width: none; }
+
+  .tool.notebook .answer {
+    position: relative;
+    margin-top: 10px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  .tool.notebook.collapsed .answer {
+    max-height: 5.2em;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 55%, transparent);
+    mask-image: linear-gradient(#000 55%, transparent);
+  }
+
+  .tool.notebook .answer p, .tool.notebook .answer ul, .tool.notebook .answer ol { margin: 0 0 10px; }
+  .tool.notebook .answer ul, .tool.notebook .answer ol { padding-left: 22px; }
+  .tool.notebook .answer li { margin-bottom: 4px; }
+  .tool.notebook .answer strong { font-weight: 500; }
+  .tool.notebook .answer .md-h {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin: 14px 0 6px;
+  }
+
+  .tool.notebook .toggle {
+    background: none;
+    border: none;
+    padding: 4px 0 0;
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faded);
+    cursor: pointer;
+  }
+  .tool.notebook .toggle:hover { color: var(--ink); }
+
   .sit-row .add-sit {
     margin-left: auto;
     font-family: var(--sans);
@@ -1198,6 +1241,30 @@
       return el;
     }
 
+    if (msg.role === 'tool' && msg.data && msg.data.answer) {
+      const el = document.createElement('div');
+      el.className = 'tool notebook collapsed';
+      const label = document.createElement('div');
+      label.className = 'tool-label';
+      label.textContent = msg.tool_label;
+      const question = document.createElement('div');
+      question.className = 'tool-body';
+      appendLinkified(question, msg.content || '');
+      const answer = document.createElement('div');
+      answer.className = 'answer';
+      blockMarkdown(answer, msg.data.answer);
+      const toggle = document.createElement('button');
+      toggle.className = 'toggle';
+      toggle.textContent = 'Show full answer';
+      toggle.addEventListener('click', () => {
+        const collapsed = el.classList.toggle('collapsed');
+        toggle.textContent = collapsed ? 'Show full answer' : 'Show less';
+        toggle.scrollIntoView({ block: 'nearest' });
+      });
+      el.append(label, question, answer, toggle);
+      return el;
+    }
+
     if (msg.role === 'tool') {
       const el = document.createElement('div');
       el.className = 'tool';
@@ -1297,6 +1364,39 @@
       .replace(/_([^_]+)_/g, '<em>$1</em>')
       .replace(/^\s*#{1,6}\s+/, '')
       .replace(/\x00(\d+)\x00/g, (_, i) => anchors[i]);
+  }
+
+  /* Headers, bullet/numbered lists, paragraphs — enough for a NotebookLM answer. */
+  function blockMarkdown(parent, text) {
+    let list = null;
+    const closeList = () => { list = null; };
+    for (const raw of String(text || '').split('\n')) {
+      const line = raw.trim();
+      if (!line || /^([-*_])\1{2,}$/.test(line)) { closeList(); continue; }
+      const h = line.match(/^#{1,6}\s+(.*)$/);
+      const li = line.match(/^(?:[-*]|\d+[.)])\s+(.*)$/);
+      if (h) {
+        closeList();
+        const el = document.createElement('div');
+        el.className = 'md-h';
+        el.innerHTML = inlineMarkdown(h[1]);
+        parent.appendChild(el);
+      } else if (li) {
+        const tag = /^\d/.test(line) ? 'ol' : 'ul';
+        if (!list || list.tagName.toLowerCase() !== tag) {
+          list = document.createElement(tag);
+          parent.appendChild(list);
+        }
+        const el = document.createElement('li');
+        el.innerHTML = inlineMarkdown(li[1]);
+        list.appendChild(el);
+      } else {
+        closeList();
+        const p = document.createElement('p');
+        p.innerHTML = inlineMarkdown(line);
+        parent.appendChild(p);
+      }
+    }
   }
 
   function todayLabel() {

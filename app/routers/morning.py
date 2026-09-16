@@ -4,7 +4,9 @@ ask the Rigdzin NotebookLM notebook, and write/update a wake-up log journal entr
 No auth: this router is only reachable over Tailscale (the public vhost 404s it).
 """
 import json
+import logging
 import os
+import re
 import subprocess
 from datetime import date, datetime, timedelta, timezone as tz
 from typing import Optional
@@ -25,6 +27,7 @@ router = APIRouter(prefix="/api/morning", tags=["morning"])
 
 MODEL = "claude-fable-5"
 MORNING_USERNAME = os.getenv("MORNING_USERNAME", "jasoncbenn")
+logger = logging.getLogger(__name__)
 NOTEBOOKLM_BIN = os.getenv("NOTEBOOKLM_BIN", "notebooklm")
 
 SYSTEM_PROMPT = """You are the morning sit companion in the Sit app. Each session is a \
@@ -45,8 +48,8 @@ not a teacher; ground everything in what they actually said or what the notebook
 
 Tools:
 - ask_notebooklm queries "Rigdzin", a notebook of the user's dharma teachings. Use it when \
-the check-in raises a question the tradition speaks to. Ask one well-formed question; weave \
-the answer into your reply in your own words.
+the check-in raises a question the tradition speaks to. Ask one well-formed question. The \
+user sees the full answer, so don't quote or summarize it — apply it in a line or two.
 - propose_program offers a routine as a card with a start button: warm-ups (by slug), \
 the sit component (by slug), and minutes. Use it once the feeling and the focus are clear; \
 one proposal, adjusted if they push back, rather than a menu of options. Include the \
@@ -226,6 +229,8 @@ def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
     for m in db_messages:
         if m.role == "tool":
             content = f"[{m.tool_label}: {m.content}]"
+            if m.data and m.data.get("answer"):
+                content += f"\n[Rigdzin answered: {m.data['answer']}]"
             role = "assistant"
         elif m.role == "sit":
             summary = library.program_summary(m.data["program"]) if m.data else ""
@@ -244,14 +249,30 @@ def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
     return api
 
 
+CITATION_RE = re.compile(r"\s?\[\d+(?:\s?[-–,]\s?\d+)*\]")
+
+
 def ask_notebooklm(question: str) -> str:
     result = subprocess.run(
         [NOTEBOOKLM_BIN, "ask", "--json", question],
         capture_output=True, text=True, timeout=180,
     )
     if result.returncode != 0:
-        return f"(NotebookLM query failed: {result.stderr.strip()[-500:]})"
-    return json.loads(result.stdout)["answer"]
+        err = result.stderr.strip()[-500:]
+        logger.error("NotebookLM query failed: %s", err)
+        return f"(NotebookLM query failed: {err})"
+    answer = CITATION_RE.sub("", json.loads(result.stdout)["answer"])
+    # NotebookLM's chat persona signs off with a follow-up offer ("Would you like
+    # to…?") that reads as the notebook talking to the user. Drop it.
+    paragraphs = answer.strip().split("\n\n")
+    if len(paragraphs) > 1 and paragraphs[-1].rstrip().endswith("?"):
+        paragraphs.pop()
+    return "\n\n".join(paragraphs).strip()
+
+
+NOTEBOOK_RESULT_NOTE = ("[The full answer above is shown to the user. Don't quote or "
+                        "summarize it — apply it: name the one thing from it that matters "
+                        "this morning, in a line or two.]")
 
 
 def write_journal(
@@ -343,11 +364,13 @@ def agent_turn_events(
             if block.name == "ask_notebooklm":
                 question = block.input["question"]
                 yield {"type": "tool", "tool_label": "Asking Rigdzin notebook…", "content": question}
+                answer = ask_notebooklm(question)
                 tool_msg = MorningMessage(
                     session_id=morning.id, role="tool",
                     content=question, tool_label="Asked Rigdzin notebook",
+                    data={"answer": answer},
                 )
-                result_text = ask_notebooklm(question)
+                result_text = f"{answer}\n\n{NOTEBOOK_RESULT_NOTE}"
             elif block.name == "create_component":
                 name = block.input["name"]
                 yield {"type": "tool", "tool_label": "Adding to library…", "content": name}
