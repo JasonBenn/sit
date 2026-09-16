@@ -16,8 +16,9 @@ from app.models import Component
 KIND_ORDER = {"warmup": 0, "guided": 1, "unguided": 2}
 KIND_HEADINGS = [("warmup", "Warm-ups (before the sit):"), ("guided", "Guided sits:"), ("unguided", "Sits:")]
 
-GUIDANCE = """The bracketed handle after each name is the slug propose_program takes. \
-Any of these can be suggested from the check-in; the summaries say when each fits."""
+GUIDANCE = """The bracketed handle after each name is the slug propose_program takes; a handle \
+like x-full|short stands for two slugs, x-full (the whole recording) and x-short (just its core \
+instruction). Any of these can be suggested from the check-in; the summaries say when each fits."""
 
 
 def _img(slug: str, n: str) -> dict:
@@ -374,6 +375,29 @@ def _duration_text(steps: list[dict]) -> str:
     return f"{_length(fixed)} + the chosen length"
 
 
+def _pair_variants(group: list[dict]) -> list[dict]:
+    """Collapse `<base>-full` / `<base>-short` siblings into one index line —
+    `Name [base-full|short] (full 27 min · short 8 min): <full's summary>` — so a curriculum
+    of a hundred recordings costs one line each, not two. Unpaired components pass
+    through unchanged. Input is slug-sorted, so a pair's -full precedes its -short."""
+    by_slug = {c["slug"]: c for c in group}
+    out = []
+    for c in group:
+        slug = c["slug"]
+        if slug.endswith("-short") and slug[:-6] + "-full" in by_slug:
+            continue
+        if slug.endswith("-full") and slug[:-5] + "-short" in by_slug:
+            short = by_slug[slug[:-5] + "-short"]
+            out.append({
+                "name": c["name"].replace(" (full)", ""), "slug": slug[:-5] + "-full|short",
+                "length": f"full {_length(fixed_s(c['steps']))} · short {_length(fixed_s(short['steps']))}",
+                "summary": c["summary"],
+            })
+        else:
+            out.append(dict(c, length=_duration_text(c["steps"])))
+    return out
+
+
 def render_index(components: list[dict]) -> str:
     """The `## Practice library` block of the system prompt, grouped by kind."""
     lines = ["## Practice library"]
@@ -383,8 +407,8 @@ def render_index(components: list[dict]) -> str:
             continue
         lines.append("")
         lines.append(heading)
-        for c in group:
-            lines.append(f"- {c['name']} [{c['slug']}] ({_duration_text(c['steps'])}): {c['summary']}")
+        for c in _pair_variants(group):
+            lines.append(f"- {c['name']} [{c['slug']}] ({c['length']}): {c['summary']}")
     lines.append("")
     lines.append(GUIDANCE)
     return "\n".join(lines)

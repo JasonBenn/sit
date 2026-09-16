@@ -97,3 +97,12 @@ def test_index_duration_under_a_minute_stays_in_seconds():
         "steps": [{"title": "Breathe", "duration_s": 30}],
     }])
     assert "Three breaths [three-breaths] (30 s)" in text
+
+
+def test_index_pairs_full_and_short_variants_on_one_line():
+    text = render_index([
+        {"kind": "guided", "slug": "gy4-02-six-nails-full", "name": "Six nails (full)", "summary": "S.", "steps": [{"duration_s": 1620}]},
+        {"kind": "guided", "slug": "gy4-02-six-nails-short", "name": "Six nails (short)", "summary": "s.", "steps": [{"duration_s": 480}]},
+    ])
+    assert "- Six nails [gy4-02-six-nails-full|short] (full 27 min · short 8 min): S." in text
+    assert "(short)" not in text
