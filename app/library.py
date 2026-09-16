@@ -269,7 +269,8 @@ def serialize_component(c: Component) -> dict:
 
 def list_components(session: Session) -> list[Component]:
     components = session.exec(select(Component)).all()
-    return sorted(components, key=lambda c: (KIND_ORDER[c.kind], c.name))
+    # Slug order within a kind: curriculum-coded slugs (gy1-…, py2-…) sort into sequence.
+    return sorted(components, key=lambda c: (KIND_ORDER[c.kind], c.slug))
 
 
 def create_component(

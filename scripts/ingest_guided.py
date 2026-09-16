@@ -108,6 +108,7 @@ def post_component(api, entry, durations):
 
 def main():
     p = argparse.ArgumentParser(description="Ingest guided meditations into the Sit practice library.")
+    p.add_argument("--manifest", default=MANIFEST, help="manifest JSON to ingest")
     p.add_argument("--only", help="comma-separated slugs to process")
     p.add_argument("--api", default="http://localhost:8005")
     p.add_argument("--media-dir", default="/opt/sit-media/guided", help="staging dir for cut audio")
@@ -117,7 +118,7 @@ def main():
     args = p.parse_args()
     sys.stdout.reconfigure(line_buffering=True)  # keep our lines interleaved with ffmpeg/rsync output
 
-    entries = json.load(open(MANIFEST))
+    entries = json.load(open(args.manifest))
     if args.only:
         wanted = [s.strip() for s in args.only.split(",")]
         unknown = [s for s in wanted if s not in {e["slug"] for e in entries}]
