@@ -118,3 +118,12 @@ class ChatMessage(SQLModel, table=True):
     role: str
     content: str = Field(sa_column=Column(Text))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
+
+
+class Listen(SQLModel, table=True):
+    """A guided recording the user actually played, so search stops offering it."""
+    __tablename__ = "listens"
+    id: UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    session_id: Optional[UUID] = Field(default=None, foreign_key="morning_sessions.id", index=True)
+    recording_id: str = Field(index=True)
+    started_at: datetime = Field(sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))

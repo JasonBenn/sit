@@ -19,9 +19,9 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from app import journal, library
+from app import journal, library, recordings
 from app.db import engine, get_session
-from app.models import MorningMessage, MorningSession, Sit, User
+from app.models import Listen, MorningMessage, MorningSession, Sit, User
 
 router = APIRouter(prefix="/api/morning", tags=["morning"])
 
@@ -54,6 +54,12 @@ user sees the full answer, so don't quote or summarize it — apply it in a line
 the sit component (by slug), and minutes. Use it once the feeling and the focus are clear; \
 one proposal, adjusted if they push back, rather than a menu of options. Include the \
 intention in the note.
+- find_guided_meditations searches the user's own recordings — Rigdzin, Jhourney, Burbea — \
+for guided sits that fit what they brought this morning, and shows the matches as a card they \
+can play. Phrase the inquiry as the need rather than a title: "settling a scattered anxious \
+mind", "grief that wants holding". Recordings heard recently are excluded for you. Reach for \
+it in the third beat when a guided sit might serve better than silence, or when they ask for \
+one; at most once per turn.
 - create_component adds a practice to the library when the user describes one that isn't \
 there yet — a stretch sequence, a breathing exercise, a guided sit — with a summary that \
 says when to reach for it, so future mornings can suggest it.
@@ -172,6 +178,18 @@ TOOLS = [
             "required": ["sit_minutes"],
         },
     },
+    {
+        "name": "find_guided_meditations",
+        "description": "Search the user's own guided-meditation recordings (Rigdzin, Jhourney, Burbea) for ones that fit what they said this morning. Returns zero to four options, shown to the user as a card they can play. Recently heard recordings are excluded automatically.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "inquiry": {"type": "string", "description": "The need in their own terms, not a title, e.g. 'settling a scattered anxious mind' or 'grief that wants holding'."},
+                "max_minutes": {"type": "integer", "description": "Optional cap on how long a recording may be."},
+            },
+            "required": ["inquiry"],
+        },
+    },
 ]
 
 
@@ -228,7 +246,8 @@ def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
     api = []
     for m in db_messages:
         if m.role == "tool":
-            content = f"[{m.tool_label}: {m.content}]"
+            suffix = recordings.replay_suffix(m.data) if m.data and "choices" in m.data else ""
+            content = f"[{m.tool_label}: {m.content}{suffix}]"
             if m.data and m.data.get("answer"):
                 content += f"\n[Rigdzin answered: {m.data['answer']}]"
             role = "assistant"
@@ -328,6 +347,7 @@ def agent_turn_events(
     client = anthropic.Anthropic()
     new_messages: list[MorningMessage] = []
     journal_written = False
+    searched_guided = False
 
     for _ in range(6):
         # Fable: thinking is always on and counts toward max_tokens; fallbacks
@@ -416,6 +436,25 @@ def agent_turn_events(
                 )
                 result_text = ("Proposal shown to the user as a card with a start button. "
                                "Don't repeat it in prose — say at most one short line.")
+            elif block.name == "find_guided_meditations":
+                inquiry = block.input["inquiry"]
+                if searched_guided:
+                    # A second card in one turn buries the first and spends
+                    # another selector call to say much the same thing.
+                    tool_msg = None
+                    result_text = "Already searched this turn; work with the options shown."
+                else:
+                    searched_guided = True
+                    yield {"type": "tool", "tool_label": "Searching guided meditations…", "content": inquiry}
+                    choices = recordings.find(
+                        session, inquiry, max_minutes=block.input.get("max_minutes"),
+                    )
+                    tool_msg = MorningMessage(
+                        session_id=morning.id, role="tool",
+                        content=inquiry, tool_label="Guided meditation options",
+                        data={"choices": choices, "played": None},
+                    )
+                    result_text = recordings.tool_result_text(choices)
             else:
                 title = block.input["title"]
                 if closing:
@@ -437,9 +476,10 @@ def agent_turn_events(
                 # Entry now exists on disk; keep the system prompt consistent
                 # for any further loop iterations.
                 system_prompt = build_system_prompt(morning, user_tz, session)
-            session.add(tool_msg)
-            new_messages.append(tool_msg)
-            yield {"type": "tool_done", "message": serialize_message(tool_msg)}
+            if tool_msg is not None:   # a refused repeat persists nothing
+                session.add(tool_msg)
+                new_messages.append(tool_msg)
+                yield {"type": "tool_done", "message": serialize_message(tool_msg)}
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": block.id,
@@ -675,6 +715,40 @@ def add_sit(session_id: UUID, body: AddSitRequest, session: Session = Depends(ge
     session.commit()
     session.refresh(msg)
     return {"message": serialize_message(msg)}
+
+
+class ListenRequest(BaseModel):
+    recording_id: str
+    message_id: Optional[UUID] = None
+
+
+@router.post("/sessions/{session_id}/listens")
+def add_listen(session_id: UUID, body: ListenRequest, session: Session = Depends(get_session)):
+    """The user pressed play on a guided recording: log it so search stops offering
+    it for a month, and mark the card it came from so it reads as played."""
+    session.add(Listen(
+        session_id=session_id, recording_id=body.recording_id,
+        started_at=datetime.now(tz.utc),
+    ))
+    # Stamp the card they actually pressed play on; scrolling back and playing an
+    # older one shouldn't mark today's options. The player outlives its card, so
+    # without an id fall back to the latest — and there isn't always one.
+    if body.message_id:
+        options = session.get(MorningMessage, body.message_id)
+    else:
+        options = session.exec(
+            select(MorningMessage)
+            .where(
+                MorningMessage.session_id == session_id,
+                MorningMessage.tool_label == "Guided meditation options",
+            )
+            .order_by(MorningMessage.created_at.desc())
+        ).first()
+    if options:
+        options.data = dict(options.data, played=body.recording_id)
+        session.add(options)
+    session.commit()
+    return {"ok": True}
 
 
 STALE_AFTER = timedelta(hours=24)
