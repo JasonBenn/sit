@@ -484,6 +484,9 @@ def agent_turn_events(
                         "sit_slug": block.input.get("sit_slug", "unguided-sit"),
                         "sit_minutes": sit_minutes,
                         "note": block.input.get("note", ""),
+                        # Resolved here so the card can show every step and its
+                        # timing without the browser redoing the fill arithmetic.
+                        "program": program,
                     },
                 )
                 result_text = ("Proposal shown to the user as a card with a start button. "

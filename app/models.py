@@ -108,6 +108,9 @@ class Component(SQLModel, table=True):
     summary: str = Field(sa_column=Column(Text))
     steps_json: list = Field(sa_column=Column(JSONB))
     source: str = "seed"  # seed | llm | user
+    # Who this practice comes from, shown wherever it is offered — so a routine
+    # never reads as instruction from nowhere. None for anything unattributed.
+    citation: Optional[str] = Field(default=None, sa_column=Column(Text))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False))
 
 

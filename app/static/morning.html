@@ -923,7 +923,13 @@
     scrollbar-width: thin;
   }
 
-  .toc-comp {
+  /* One step list, two homes: the proposed-routine card and the runner TOC.
+     Same markup either way; `static` is the non-interactive card variant. */
+  .steplist-comp {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.14em;
@@ -931,10 +937,22 @@
     margin: 20px 0 8px;
   }
 
-  .toc-comp:first-child { margin-top: 0; }
+  .steplist-comp:first-child { margin-top: 0; }
 
-  .toc-step {
-    display: block;
+  .steplist-cite {
+    font-size: 11px;
+    font-style: italic;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-faded);
+    margin: -4px 0 8px;
+  }
+
+  .steplist-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
     width: 100%;
     text-align: left;
     font-family: var(--sans);
@@ -948,8 +966,15 @@
     cursor: pointer;
   }
 
-  .toc-step.current { color: var(--ink); font-weight: 500; }
-  .toc-step.done { color: var(--hairline-strong); }
+  .steplist-dur {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  .steplist.static .steplist-step { color: var(--ink); cursor: default; }
+  .steplist-step.current { color: var(--ink); font-weight: 500; }
+  .steplist-step.done { color: var(--hairline-strong); }
 
   /* under 900px the TOC collapses behind this counter */
   .toc-toggle {
@@ -1037,18 +1062,16 @@
   /* the seated step keeps the old full-bleed look */
   .runner-main.sit-step .countdown { font-size: 190px; }
 
-  .timer-overlay .intention {
+  /* A step's own guidance and the generated intention are the same slot: a step
+     that carries its own text never also gets a generated line. */
+  .runner-text.generated {
     font-family: var(--serif);
     font-style: italic;
     font-size: 24px;
-    color: var(--ink-soft);
     max-width: 560px;
-    text-align: center;
     text-wrap: balance;
     white-space: pre-line;  /* the model separates sit phases with newlines */
   }
-
-  .timer-overlay .intention:empty { display: none; }
 
   .timer-overlay .hint {
     text-align: center;
@@ -1199,7 +1222,7 @@
     .runner-title { font-size: 25px; }
     .timer-overlay .countdown { font-size: min(96px, 22vw); }
     .runner-main.sit-step .countdown { font-size: min(150px, 26vw); }
-    .timer-overlay .intention { font-size: 20px; padding: 0 24px; }
+    .runner-text.generated { font-size: 20px; padding: 0 24px; }
   }
 
   /* narrow: the clock goes, the scrubber takes the row */
@@ -1314,7 +1337,6 @@
       <div class="runner-title" id="runner-title"></div>
       <div class="runner-text" id="runner-text"></div>
       <div class="countdown" id="countdown">30:00</div>
-      <div class="intention" id="intention"></div>
     </div>
     <div class="hint" id="runner-hint">tap the center to pause</div>
     <div class="runner-controls">
@@ -1339,7 +1361,6 @@
   const addSitBtn = document.getElementById('add-sit');
   const overlay = document.getElementById('overlay');
   const countdown = document.getElementById('countdown');
-  const intention = document.getElementById('intention');
   const runnerMain = document.getElementById('runner-main');
   const runnerStage = document.getElementById('runner-stage');
   const runnerToc = document.getElementById('runner-toc');
@@ -1437,6 +1458,66 @@
     return parts.join(' · ');
   }
 
+  /* "1:30" — an open-ended step has no number to show. */
+  function clockLabel(seconds) {
+    if (!seconds) return '—';
+    const m = Math.floor(seconds / 60);
+    return m + ':' + String(Math.round(seconds % 60)).padStart(2, '0');
+  }
+
+  function componentSeconds(playlist, componentIdx) {
+    return playlist.reduce(
+      (sum, it) => it.componentIdx === componentIdx ? sum + (it.duration || 0) : sum, 0);
+  }
+
+  /* The step list, used by both the proposed-routine card and the runner TOC, so
+     what you agree to and what you then sit through read the same. Takes a
+     playlist (buildPlaylist output); opts.onPick makes the rows clickable. */
+  function stepListNode(playlist, opts) {
+    opts = opts || {};
+    const el = document.createElement('div');
+    el.className = 'steplist' + (opts.onPick ? '' : ' static');
+    const rows = [];
+    let lastComponent = -1;
+    playlist.forEach((item, i) => {
+      // In the conversation the warm-up is one line — its total is all you agree
+      // to. The sit itself always shows its steps, there and in the runner.
+      const collapsed = opts.collapseWarmups && item.component.kind === 'warmup';
+      if (item.componentIdx !== lastComponent) {
+        lastComponent = item.componentIdx;
+        const head = document.createElement('div');
+        head.className = 'steplist-comp';
+        const name = document.createElement('span');
+        name.textContent = item.component.name || item.component.slug;
+        const total = document.createElement('span');
+        total.className = 'steplist-dur';
+        total.textContent = clockLabel(componentSeconds(playlist, item.componentIdx));
+        head.append(name, total);
+        el.appendChild(head);
+        if (item.component.citation) {
+          const cite = document.createElement('div');
+          cite.className = 'steplist-cite';
+          cite.textContent = item.component.citation;
+          el.appendChild(cite);
+        }
+      }
+      if (collapsed) return;
+      const row = document.createElement('button');
+      row.className = 'steplist-step';
+      const name = document.createElement('span');
+      name.textContent = item.step.title || 'Step ' + (item.stepIdx + 1);
+      const dur = document.createElement('span');
+      dur.className = 'steplist-dur';
+      dur.textContent = clockLabel(item.duration);
+      row.append(name, dur);
+      if (opts.onPick) row.addEventListener('click', () => opts.onPick(i));
+      else row.tabIndex = -1;
+      rows.push(row);
+      el.appendChild(row);
+    });
+    return { node: el, rows };
+  }
+
   /* "18 min" — the options card's only number */
   function minutesLabel(seconds) {
     if (!seconds) return '';
@@ -1467,12 +1548,18 @@
       label.textContent = msg.tool_label;
       const body = document.createElement('div');
       body.className = 'tool-body';
-      appendLinkified(body, msg.content || '');
+      // The note is why this routine; the step list below is what it is.
+      appendLinkified(body, msg.data.note || msg.content || '');
       const btn = document.createElement('button');
       btn.className = 'chip';
       btn.textContent = '▶ Start';
       btn.addEventListener('click', () => startProposal(msg, btn));
-      el.append(label, body, btn);
+      el.append(label, body);
+      if (msg.data.program) {
+        el.appendChild(stepListNode(
+          buildPlaylist(msg.data.program), { collapseWarmups: true }).node);
+      }
+      el.appendChild(btn);
       return el;
     }
 
@@ -2721,7 +2808,14 @@
   let intentionText = '';
 
   function paintIntention() {
-    intention.textContent = runnerMain.classList.contains('sit-step') ? intentionText : '';
+    const item = runner.playlist[runner.i];
+    if (!item) return;
+    const own = (item.step.text || '').trim();
+    // A step's own guidance *is* that step's intention — they are the same slot.
+    // Only a step without its own text gets the generated line, and never a warm-up.
+    const generated = (!own && item.component.kind !== 'warmup') ? intentionText : '';
+    runnerText.textContent = own || generated;
+    runnerText.classList.toggle('generated', !own && !!generated);
   }
 
   async function streamIntention(sitMsg) {
@@ -2754,6 +2848,12 @@
             if (ev.type === 'text') { intentionText += ev.delta; paintIntention(); }
           }
         }
+      }
+      // A stream that opens and then yields nothing leaves an unguided sit with an
+      // empty guidance slot; the last thing said in the check-in is better than blank.
+      if (!intentionText.trim()) {
+        intentionText = lastAssistantLineBefore(sitMsg);
+        paintIntention();
       }
     } catch (err) {
       if (!ctrl.signal.aborted) {
@@ -2859,24 +2959,9 @@
   let tocSteps = [];
 
   function buildToc() {
-    runnerToc.replaceChildren();
-    tocSteps = [];
-    let lastComponent = -1;
-    runner.playlist.forEach((item, i) => {
-      if (item.componentIdx !== lastComponent) {
-        lastComponent = item.componentIdx;
-        const head = document.createElement('div');
-        head.className = 'toc-comp';
-        head.textContent = item.component.name || item.component.slug;
-        runnerToc.appendChild(head);
-      }
-      const btn = document.createElement('button');
-      btn.className = 'toc-step';
-      btn.textContent = item.step.title || 'Step ' + (item.stepIdx + 1);
-      btn.addEventListener('click', () => goTo(i));   // jumping never bells
-      tocSteps.push(btn);
-      runnerToc.appendChild(btn);
-    });
+    const built = stepListNode(runner.playlist, { onPick: goTo });  // jumping never bells
+    runnerToc.replaceChildren(built.node);
+    tocSteps = built.rows;
   }
 
   function syncToc() {
@@ -2943,7 +3028,6 @@
     // A one-step sit keeps the bare countdown; anything with parts names them.
     const named = item.component.kind === 'warmup' || (item.component.steps || []).length > 1;
     runnerTitle.textContent = named ? (item.step.title || '') : '';
-    runnerText.textContent = item.step.text || '';
     setNowPlaying(item.step.title || item.component.name || 'Sit');
     paintIntention();
     renderHint();

@@ -195,6 +195,7 @@ BIOENERGETICS_NO_BOLSTER_STEPS = _bio_steps({
 SEED_COMPONENTS = [
     {
         "slug": "spinal-series-short",
+        "citation": "Sadhana Guidelines",
         "kind": "warmup",
         "name": "Spinal Energy Series, abbreviated",
         "summary": "Nine one-minute kundalini spinal exercises — flexes, twists, shrugs, neck rolls, Sat Kriya — with no rests, 9 minutes, straight into the sit. The default warm-up: reach for it when the body is stiff or groggy, or the mind is dull and needs to arrive before sitting.",
@@ -202,6 +203,7 @@ SEED_COMPONENTS = [
     },
     {
         "slug": "spinal-series",
+        "citation": "Sadhana Guidelines",
         "kind": "warmup",
         "name": "Basic Spinal Energy Series",
         "summary": "The Basic Spinal Energy Series from Sadhana Guidelines at full repetition counts, with rests between exercises — 26 minutes. Reach for it on a long morning, or when the user wants the thorough version rather than the quick one.",
@@ -248,13 +250,20 @@ def slugify(name: str) -> str:
 def ensure_seeds(session: Session) -> None:
     """Insert any seed the library is missing. Never overwrites: the seeds are a
     starting point, and the user's edits win."""
-    existing = set(session.exec(select(Component.slug)).all())
+    existing = {c.slug: c for c in session.exec(select(Component)).all()}
     for seed in SEED_COMPONENTS:
-        if seed["slug"] in existing:
+        current = existing.get(seed["slug"])
+        if current is not None:
+            # Attribution is the one thing a later seed may still fill in: the
+            # library predates it, and a practice with no source is the bug.
+            if seed.get("citation") and current.citation != seed["citation"]:
+                current.citation = seed["citation"]
+                session.add(current)
             continue
         session.add(Component(
             slug=seed["slug"], kind=seed["kind"], name=seed["name"],
             summary=seed["summary"], steps_json=seed["steps"], source="seed",
+            citation=seed.get("citation"),
         ))
     session.commit()
 
@@ -275,6 +284,7 @@ def serialize_component(c: Component) -> dict:
         "name": c.name,
         "summary": c.summary,
         "steps": c.steps_json,
+        "citation": c.citation,
         "fixed_s": fixed_s(c.steps_json),
         "has_fill": has_fill(c.steps_json),
     }
@@ -328,6 +338,7 @@ def resolve_program(
                     step["duration_s"] += remaining - (remaining // len(fills)) * len(fills)
         components.append({
             "slug": c["slug"], "kind": c["kind"], "name": c["name"], "steps": steps,
+            "citation": c.get("citation"),
         })
     return {"sit_minutes": sit_minutes, "components": components}
 
@@ -336,7 +347,8 @@ def build_program(
     session: Session, warmup_slugs: list[str], sit_slug: str, sit_minutes: int,
 ) -> dict:
     by_slug = {
-        c.slug: {"slug": c.slug, "kind": c.kind, "name": c.name, "steps": c.steps_json}
+        c.slug: {"slug": c.slug, "kind": c.kind, "name": c.name,
+                 "steps": c.steps_json, "citation": c.citation}
         for c in list_components(session)
     }
     return resolve_program(by_slug, warmup_slugs, sit_slug, sit_minutes)
