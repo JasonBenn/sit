@@ -259,3 +259,12 @@ def test_a_second_guided_search_in_one_turn_is_refused():
     assert len(events[-1]["messages"]) == 1
     second_result = sent[-1][-1]["content"][0]["content"]
     assert second_result == "Already searched this turn; work with the options shown."
+
+
+def test_audio_path_resolves_through_the_mirror(monkeypatch):
+    monkeypatch.setattr(recordings, "MEDIA_DIR", "/m")
+    monkeypatch.setattr(recordings, "BY_ID", {"adv-102m-dorje": {
+        "id": "adv-102m-dorje", "folder": "Rigdzin - Advanced", "title": "102m dorje",
+    }})
+    assert recordings.audio_path("adv-102m-dorje") == \
+        "/m/drive/Meditations/Rigdzin - Advanced/102m dorje.mp3"

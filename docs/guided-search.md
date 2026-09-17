@@ -13,56 +13,55 @@ that component with `propose_program` instead.
 
 ## Recordings
 
-Source of truth is the transcript corpus in `~/code/meditation-clipper/transcriptions/` (ten
-files concatenating 261 recordings; a recording begins with `# <title>` then
-`## Source: <folder>/<title>_transcription.json` — the Jhourney file omits the folder). Audio
-lives beside the transcripts in Google Drive at
-`~/code/meditation-clipper/Meditations/<folder>/<title>.mp3` (Jhourney's folder is
-`Jhourney - in-person retreat 12 Nov`; the Charity folder is `Rigdzin Charity 2025-01-03`).
-Reading either from a Claude session needs the FDA tmux server (`tmux -L fda run-shell`).
+Source of truth is the Meditations tree: `<root>/<drive folder>/<title>.mp3` with a Whisper
+`<title>_transcription.json` beside every recording. On nose the root is the rclone mirror of
+Google Drive at `/opt/sit-media/drive/Meditations` (hourly, `~/.claude/nose/drive-mirror.sh`);
+on the Mac it is `~/code/meditation-clipper/Meditations`, readable only through the FDA tmux
+server (`tmux -L fda run-shell`). The 13 GiB `Jhourney Recordings` folder is never a source.
 
-`scripts/build_recordings.py` builds the index and ships the media. It:
+`scripts/build_recordings.py` builds the index and the transcripts. It:
 
-1. Parses every transcript file into recordings and keeps only the guided ones:
-   - Rigdzin course files (`Rigdzin - Advanced`, `Rigdzin - Intermeditate`): title matches
+1. Reads every `*_transcription.json` in the eight collection folders and keeps the guided
+   ones:
+   - Rigdzin course folders (`Rigdzin - Advanced`, `Rigdzin - Intermeditate`): title matches
      `^\d{3}m` (m = meditation; q/t are Q&A and talks).
    - `Rigdzin-Intro`: title starts with `Med：`.
-   - `Ridgzin - Recordings`, `Charity 2025-01-03`, `clips`: every recording.
-   - `Jhourney`: everything except the numbered talks — a recording is guided when its
-     transcript is mostly instruction. The catalog in this design lists 21; use the
-     `duration`/wording heuristic and check the count lands near that.
-   - Burbea: only the two titled `(Guided Meditation)`.
-   - Everything else (Q&A, talks, music, the Loom Q&A) is out.
+   - `Ridgzin - Recordings`, `Rigdzin Charity 2025-01-03`, `My clips`: every recording.
+   - `Jhourney - in-person retreat 12 Nov`: everything except the `EXTRA` tracks, the
+     exercise/instruction tracks, and transcripts that degenerated into fragments over silence.
+   - `Burbea - Jhanas`: only the two titled `(Guided Meditation)`.
 2. Assigns each a stable `id`: slugified title, prefixed by a short folder tag
    (`rec-`, `charity-`, `adv-`, `int-`, `intro-`, `jhourney-`, `burbea-`, `clips-`).
-3. Reads the mp3's duration with `ffprobe`, marks `hosted: false` when the file is unreadable
-   or a cloud-only placeholder (a read of the first bytes fails or takes over a few seconds).
-4. Writes a plain-text transcript per recording (the `[mm:ss] line` body, no headers) to
-   `<out>/transcripts/<id>.txt` and copies the mp3 to `<out>/recordings/<id>.mp3`, then
-   rsyncs `<out>` to `nose:/opt/sit-media/` (the app's `MEDIA_DIR`).
+3. Turns the JSON into `[mm:ss] line` text the same way meditation-clipper's
+   `export_notebooklm.py` does (one line per sentence timed by its first word, else per
+   segment) and writes it to `MEDIA_DIR/transcripts/<id>.txt` — in place on nose, staged and
+   rsynced from the Mac.
+4. Reads the mp3's duration with `ffprobe`; `hosted: false` when the file is missing or empty.
+   Durations already in the index are reused (`--reprobe` re-reads them).
 5. Summarizes each recording once with `claude-sonnet-5` from its transcript: two sentences,
    what the practice is and when to reach for it, in the voice of the library summaries.
    Summaries are cached in the index so reruns only summarize new recordings.
-6. Maps recordings to library components: an entry of `scripts/guided_manifest.json` (and
-   any other `scripts/*_manifest.json`) whose `source` is `<folder>/<title>.mp3` gives the
-   recording a `component_slugs` list.
+6. Maps recordings to library components: an entry of any `scripts/*_manifest.json` whose
+   `source` is `<folder>/<title>.mp3` gives the recording a `component_slugs` list.
 7. Gives each a `name`, the title a human would recognize — most raw titles are course codes
    or export filenames (`102m dorje`, `Med： emptiness - body (Wed 5) [7c37…]`). A recording
    with components takes the manifest name of its `-full` variant, minus the ` (full)` /
    ` (short)` suffix; otherwise the title with the course code, the `Med：` prefix, bracketed
    hashes, parentheticals, `⭐️` and `_modified` stripped, and the first letter capitalized.
-8. Writes `app/recordings.json` — committed, ~132 entries, no transcript text:
+8. Writes `app/recordings.json` — committed, ~136 entries, no transcript text:
 
 ```json
 {"id": "rec-emptiness-of-thought-20min-stages23", "title": "Emptiness of Thought - 20min(Stages23)",
- "name": "Emptiness of thought", "collection": "Rigdzin recordings", "duration_s": 1095,
- "hosted": true,
+ "folder": "Ridgzin - Recordings", "name": "Emptiness of thought", "collection": "Rigdzin recordings",
+ "duration_s": 1095, "hosted": true,
  "summary": "Three investigations of thought itself … Reach for it when the mind is busy and looping.",
  "component_slugs": ["emptiness-of-thought"]}
 ```
 
-Durations and `hosted` already in the index are reused, so a rerun that only rebuilds the
-index never touches Drive; `--restage` re-probes and re-stages the media.
+Audio is never copied. `GET /media/recordings/<id>.mp3` (declared in `app/server.py` ahead of
+the `/media` static mount) resolves the id through the index to
+`MEDIA_DIR/drive/Meditations/<folder>/<title>.mp3` and serves it with `FileResponse`, which
+answers Range requests for the scrubber. Ids stay in URLs so the Drive names never do.
 
 `collection` is a human label per folder: Rigdzin recordings, Rigdzin charity retreat, Rigdzin
 advanced course, Rigdzin intermediate course, Rigdzin intro retreat, Jhourney retreat, Burbea,

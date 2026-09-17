@@ -55,7 +55,15 @@ def _load_transcripts(index: list[dict]) -> dict[str, list[str]]:
 
 
 RECORDINGS = _load_index()
+BY_ID = {r["id"]: r for r in RECORDINGS}
 TRANSCRIPTS = _load_transcripts(RECORDINGS)
+
+
+def audio_path(rec_id: str) -> str:
+    """The original mp3 in the Drive mirror. Ids stay in URLs so the Drive names
+    — spaces, fullwidth colons, emoji, hashes — never do."""
+    r = BY_ID[rec_id]  # unknown id: let it crash
+    return os.path.join(MEDIA_DIR, "drive", "Meditations", r["folder"], f"{r['title']}.mp3")
 
 
 # Long enough to pass the four-letter filter, but present in every transcript,

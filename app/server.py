@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.db import engine, init_db
-from app import library
+from app import library, recordings
 from app.routers import prompt_responses, auth, users, explore, chat, triggers, morning
 
 app = FastAPI(title="Sit API", description="Meditation tracking backend")
@@ -52,6 +52,16 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 
 # Large media (guided-meditation audio) lives outside the repo; scripts/ingest_guided.py fills it.
 MEDIA_DIR = os.getenv("MEDIA_DIR", "/opt/sit-media")
+
+
+# Whole guided recordings play straight from the Drive mirror. Declared before the
+# /media mount so this path wins; FileResponse answers Range requests, which is what
+# the player's scrubber needs.
+@app.get("/media/recordings/{rec_id}.mp3")
+def recording_audio(rec_id: str):
+    return FileResponse(recordings.audio_path(rec_id), media_type="audio/mpeg")
+
+
 if os.path.isdir(MEDIA_DIR):
     app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 

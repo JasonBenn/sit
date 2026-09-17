@@ -1,18 +1,19 @@
 #!/usr/bin/env python3 -u
-"""Build app/recordings.json and ship the guided-recording media to nose.
+"""Build app/recordings.json and the per-recording transcripts the search greps.
 
-Source of truth is the transcript corpus in ~/code/meditation-clipper/transcriptions/
-(ten files concatenating 261 recordings). Audio sits beside it in Google Drive at
-~/code/meditation-clipper/Meditations/<drive folder>/<title>.mp3.
-
-The Drive tree is only readable from a process with Full Disk Access, so run this
-through the FDA tmux server:
+Source of truth is the Meditations tree: <root>/<drive folder>/<title>.mp3 with a
+Whisper <title>_transcription.json beside each recording. On nose that root is the
+rclone mirror of Google Drive (/opt/sit-media/drive/Meditations), so the script runs
+there and writes transcripts straight into MEDIA_DIR; on the Mac it is the Drive
+folder behind ~/code/meditation-clipper/Meditations, which only a process with Full
+Disk Access can read:
 
     tmux -L fda run-shell -b "sh -c 'cd ~/code/sit && \
         ANTHROPIC_API_KEY=... python3 scripts/build_recordings.py' > /tmp/build.log 2>&1"
 
-Idempotent: summaries already in app/recordings.json are reused, and an mp3 already
-staged at the same size is not copied again.
+Audio is never copied: the app serves /media/recordings/<id>.mp3 from the mirror,
+resolved through the index's folder + title. Idempotent: durations and summaries
+already in app/recordings.json are reused.
 """
 
 import argparse
@@ -28,30 +29,29 @@ import time
 import unicodedata
 from pathlib import Path
 
-CLIPPER = Path.home() / "code" / "meditation-clipper"
-TRANSCRIPTS = CLIPPER / "transcriptions"
-MEDITATIONS = CLIPPER / "Meditations"
+MIRROR = Path("/opt/sit-media/drive/Meditations")
+MAC_DRIVE = Path.home() / "code" / "meditation-clipper" / "Meditations"
 REPO = Path(__file__).resolve().parent.parent
 INDEX = REPO / "app" / "recordings.json"
-DEFAULT_OUT = Path(
+MEDIA_DIR = Path(os.getenv("MEDIA_DIR", "/opt/sit-media"))
+STAGING = Path(
     "/private/tmp/claude-501/-Users-jasonbenn-code-sit/"
     "20f9548e-4c56-444a-bef2-1ed30f23c184/scratchpad/media"
 )
 NOSE_MEDIA = "nose:/opt/sit-media/"
 
-# transcript stem -> (drive folder, collection label, id prefix)
+# drive folder -> (collection label, id prefix). Only these folders are read;
+# "Jhourney Recordings" (13 GiB, duplicates of the retreat tracks) never is.
 COLLECTIONS = {
-    "Ridgzin - Recordings": ("Ridgzin - Recordings", "Rigdzin recordings", "rec"),
-    "Charity 2025-01-03": ("Rigdzin Charity 2025-01-03", "Rigdzin charity retreat", "charity"),
-    "Rigdzin - Advanced": ("Rigdzin - Advanced", "Rigdzin advanced course", "adv"),
-    "Rigdzin - Intermeditate": ("Rigdzin - Intermeditate", "Rigdzin intermediate course", "int"),
-    "Rigdzin-Intro": ("Rigdzin-Intro", "Rigdzin intro retreat", "intro"),
-    "Jhourney": ("Jhourney - in-person retreat 12 Nov", "Jhourney retreat", "jhourney"),
-    "Burbea - Jhanas": ("Burbea - Jhanas", "Burbea", "burbea"),
-    "clips": ("My clips", "Jason's clips", "clips"),
+    "Ridgzin - Recordings": ("Rigdzin recordings", "rec"),
+    "Rigdzin Charity 2025-01-03": ("Rigdzin charity retreat", "charity"),
+    "Rigdzin - Advanced": ("Rigdzin advanced course", "adv"),
+    "Rigdzin - Intermeditate": ("Rigdzin intermediate course", "int"),
+    "Rigdzin-Intro": ("Rigdzin intro retreat", "intro"),
+    "Jhourney - in-person retreat 12 Nov": ("Jhourney retreat", "jhourney"),
+    "Burbea - Jhanas": ("Burbea", "burbea"),
+    "My clips": ("Jason's clips", "clips"),
 }
-
-TS_LINE = re.compile(r"^\[(\d+):(\d+)\]\s*(.*)$")
 
 SUMMARY_PROMPT = """Here is the transcript of a guided meditation recording titled "{title}".
 
@@ -89,38 +89,51 @@ def slugify(title):
     return title.strip("-")
 
 
-def parse_transcript(path):
-    """Split one transcript file into [(title, [(seconds, text)])]."""
-    text = path.read_text(encoding="utf-8")
-    parts = re.split(r"^# (.+)$", text, flags=re.M)[1:]
-    out = []
-    for i in range(0, len(parts), 2):
-        title = parts[i].strip()
-        lines = []
-        for raw in parts[i + 1].split("\n"):
-            m = TS_LINE.match(raw.strip())
-            if m:
-                lines.append((int(m.group(1)) * 60 + int(m.group(2)), m.group(3).strip()))
-        out.append((title, lines))
-    return out
+def transcript_lines(data):
+    """[(seconds, text)] from a Whisper JSON, built the way meditation-clipper's
+    export_notebooklm.py builds its .txt files: one line per sentence timed by its
+    first word when word timings exist, else one per segment, else the whole text."""
+    words, text = data.get("words") or [], (data.get("text") or "").strip()
+    if words and text:
+        sentences = [m.group(0).strip() for m in re.finditer(r"[^.!?]*[.!?]|[^.!?]+$", text)]
+        starts = []  # character offset at which each word begins, in the text
+        pos = 0
+        for w in words:
+            starts.append((pos, w.get("start", 0)))
+            pos += len(w.get("word", "")) + 1
+        out, cursor = [], 0
+        for sentence in sentences:
+            if not sentence:
+                continue
+            at = text.find(sentence, cursor)
+            if at == -1:
+                continue
+            stamp = next((t for off, t in starts if off >= at), 0)
+            out.append((int(stamp), sentence))
+            cursor = at + len(sentence)
+        return out
+    if data.get("segments"):
+        return [(int(seg.get("start", 0)), seg["text"].strip())
+                for seg in data["segments"] if seg.get("text", "").strip()]
+    return [(0, text)] if text else []
 
 
-def is_guided(stem, title, lines):
-    """Per-collection filter: which of a file's recordings are guided sits."""
-    if stem in ("Rigdzin - Advanced", "Rigdzin - Intermeditate"):
+def is_guided(folder, title, lines):
+    """Per-collection filter: which of a folder's recordings are guided sits."""
+    if folder in ("Rigdzin - Advanced", "Rigdzin - Intermeditate"):
         # NNNm = meditation; NNNq = Q&A, NNNt = talk.
         return bool(re.match(r"^\d{3}m", title))
-    if stem == "Rigdzin-Intro":
+    if folder == "Rigdzin-Intro":
         # 'Med:' = meditation; 'Q&A:' and 'Overview of' are not. The colon is
         # fullwidth (：) in the export, so match the prefix only.
         return title.startswith("Med")
-    if stem in ("Ridgzin - Recordings", "Charity 2025-01-03", "clips"):
+    if folder in ("Ridgzin - Recordings", "Rigdzin Charity 2025-01-03", "My clips"):
         return True
-    if stem == "Burbea - Jhanas":
+    if folder == "Burbea - Jhanas":
         # Two real guided sits; '14 True to Your Deepest Desires' is a talk with a
         # four-minute guided tail, so the 'Talk and' variant is out.
         return "Guided Meditation)" in title and "Talk and" not in title
-    if stem == "Jhourney":
+    if folder == "Jhourney - in-person retreat 12 Nov":
         # The retreat's numbered tracks are nearly all sits. Out: the EXTRA
         # tracks (third-party teachers and music), the journaling/expectation
         # exercises and the opening instructions talk, and any track whose
@@ -137,27 +150,27 @@ def is_guided(stem, title, lines):
     return False
 
 
-def collect_recordings():
+def collect_recordings(root):
     recs = []
     stats = {}
-    for stem, (folder, collection, prefix) in COLLECTIONS.items():
-        path = TRANSCRIPTS / f"{stem}.txt"
-        parsed = parse_transcript(path)
+    for folder, (collection, prefix) in COLLECTIONS.items():
+        paths = sorted((root / folder).glob("*_transcription.json"))
         kept = []
-        for title, lines in parsed:
-            if not is_guided(stem, title, lines):
+        for path in paths:
+            title = path.name[: -len("_transcription.json")]
+            lines = transcript_lines(json.loads(path.read_text(encoding="utf-8")))
+            if not is_guided(folder, title, lines):
                 continue
             kept.append(
                 {
                     "id": f"{prefix}-{slugify(title)}",
                     "title": title,
+                    "folder": folder,
                     "collection": collection,
-                    "_stem": stem,
-                    "_folder": folder,
                     "_lines": lines,
                 }
             )
-        stats[stem] = (len(parsed), len(kept))
+        stats[folder] = (len(paths), len(kept))
         recs.extend(kept)
     return recs, stats
 
@@ -236,21 +249,11 @@ def run(cmd, timeout):
 
 
 def probe(mp3):
-    """(duration_s, reason). duration 0 means the file is not usable."""
+    """(duration_s, reason). duration 0 means the file is not playable."""
     if not mp3.exists():
-        return 0, "no mp3 in Drive"
+        return 0, "no mp3"
     if mp3.stat().st_size < 1024:
         return 0, "empty file (cloud-only placeholder)"
-    try:
-        # Bounded read: a cloud-only placeholder stalls here rather than failing.
-        head = subprocess.run(
-            ["head", "-c", "65536", str(mp3)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15,
-        )
-        if head.returncode != 0:
-            return 0, "unreadable"
-    except subprocess.TimeoutExpired:
-        return 0, "read timed out (cloud-only placeholder)"
     try:
         out = run(
             [FFPROBE, "-v", "error", "-show_entries", "format=duration",
@@ -302,15 +305,18 @@ def _one_summary(client, title, body):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=Path, default=DEFAULT_OUT, help="staging dir")
-    ap.add_argument("--no-rsync", action="store_true")
+    ap.add_argument("--meditations", type=Path, default=MIRROR if MIRROR.is_dir() else MAC_DRIVE,
+                    help="Meditations root: the nose mirror, or the Mac's Drive folder")
+    ap.add_argument("--out", type=Path,
+                    default=MEDIA_DIR / "transcripts" if MIRROR.is_dir() else STAGING / "transcripts",
+                    help="where the per-recording transcripts go")
+    ap.add_argument("--no-rsync", action="store_true", help="(Mac) don't ship transcripts to nose")
     ap.add_argument("--no-summaries", action="store_true")
-    ap.add_argument("--restage", action="store_true",
-                    help="re-probe Drive and re-stage media even for known recordings")
+    ap.add_argument("--reprobe", action="store_true", help="re-read every mp3's duration")
     ap.add_argument("--limit", type=int, help="only process the first N recordings")
     args = ap.parse_args()
 
-    recs, stats = collect_recordings()
+    recs, stats = collect_recordings(args.meditations)
     if args.limit:
         recs = recs[: args.limit]
 
@@ -319,56 +325,43 @@ def main():
         sys.exit(f"duplicate ids: {sorted(dupes)}")
 
     by_pair, by_base, names = load_component_map()
-    # Durations and staged media from an earlier run: probing them again means
-    # reading every mp3 out of Drive, so a rerun that only rebuilds the index
-    # reuses what the committed index already knows.
     prior = {}
-    if INDEX.exists() and not args.restage:
+    if INDEX.exists() and not args.reprobe:
         prior = {
             r["id"]: r for r in json.loads(INDEX.read_text())
             if r.get("duration_s") is not None and "hosted" in r
         }
 
-    print(f"parsed {len(recs)} guided recordings")
-    for stem, (total, kept) in stats.items():
-        print(f"  {stem:28s} {kept:3d} guided of {total:3d}")
+    print(f"parsed {len(recs)} guided recordings from {args.meditations}")
+    for folder, (total, kept) in stats.items():
+        print(f"  {folder:36s} {kept:3d} guided of {total:3d}")
 
-    # ---- durations, transcripts, staged media
-    out_tx = args.out / "transcripts"
-    out_mp3 = args.out / "recordings"
-    out_tx.mkdir(parents=True, exist_ok=True)
-    out_mp3.mkdir(parents=True, exist_ok=True)
-
-    not_hosted, copied, reused = [], 0, 0
+    # ---- durations and transcripts
+    args.out.mkdir(parents=True, exist_ok=True)
+    not_hosted, reused = [], 0
     for i, rec in enumerate(recs, 1):
         if rec["id"] in prior:
             rec["duration_s"] = prior[rec["id"]]["duration_s"]
             rec["hosted"] = prior[rec["id"]]["hosted"]
             reused += 1
-            continue
-        mp3 = MEDITATIONS / rec["_folder"] / f"{rec['title']}.mp3"
-        duration, reason = probe(mp3)
-        rec["duration_s"] = duration
-        rec["hosted"] = duration > 0
-        if not rec["hosted"]:
-            not_hosted.append((rec["id"], rec["title"], reason))
-            print(f"[{i}/{len(recs)}] SKIP {rec['id']}: {reason}")
-            continue
-
-        (out_tx / f"{rec['id']}.txt").write_text(
-            "\n".join(f"[{s // 60:02d}:{s % 60:02d}] {t}" for s, t in rec["_lines"] if t),
-            encoding="utf-8",
-        )
-        dest = out_mp3 / f"{rec['id']}.mp3"
-        src_size = mp3.stat().st_size
-        if not dest.exists() or dest.stat().st_size != src_size:
-            shutil.copyfile(mp3, dest)
-            copied += 1
-        print(f"[{i}/{len(recs)}] {rec['id']} {duration}s")
+        else:
+            duration, reason = probe(args.meditations / rec["folder"] / f"{rec['title']}.mp3")
+            rec["duration_s"] = duration
+            rec["hosted"] = duration > 0
+            if not rec["hosted"]:
+                not_hosted.append((rec["id"], rec["title"], reason))
+                print(f"[{i}/{len(recs)}] SKIP {rec['id']}: {reason}")
+            else:
+                print(f"[{i}/{len(recs)}] {rec['id']} {duration}s")
+        if rec["hosted"]:
+            (args.out / f"{rec['id']}.txt").write_text(
+                "\n".join(f"[{s // 60:02d}:{s % 60:02d}] {t}" for s, t in rec["_lines"] if t),
+                encoding="utf-8",
+            )
 
     # ---- component slugs
     for rec in recs:
-        key = (norm_folder(rec["_folder"]), norm_name(f"{rec['title']}.mp3"))
+        key = (norm_folder(rec["folder"]), norm_name(f"{rec['title']}.mp3"))
         slugs = by_pair.get(key) or by_base.get(key[1]) or []
         rec["component_slugs"] = sorted(set(slugs))
         rec["name"] = display_name(rec, names)
@@ -377,7 +370,7 @@ def main():
     cache = {}
     if INDEX.exists():
         cache = {r["id"]: r.get("summary", "") for r in json.loads(INDEX.read_text())}
-    side = args.out / "summaries.json"          # survives a killed run
+    side = args.out.parent / "summaries.json"   # survives a killed run
     if side.exists():
         cache.update({k: v for k, v in json.loads(side.read_text()).items() if v})
     for rec in recs:
@@ -410,6 +403,7 @@ def main():
         {
             "id": r["id"],
             "title": r["title"],
+            "folder": r["folder"],
             "name": r["name"],
             "collection": r["collection"],
             "duration_s": r["duration_s"],
@@ -424,19 +418,17 @@ def main():
     else:
         INDEX.write_text(json.dumps(index, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    # ---- ship
-    if not args.no_rsync:
-        print("rsyncing to nose")
+    # ---- ship (Mac only: on nose the transcripts were written in place)
+    if not args.no_rsync and not MIRROR.is_dir():
+        print("rsyncing transcripts to nose")
         subprocess.run(
-            ["rsync", "-a", "--partial", "--exclude", "summaries.json",
-             f"{args.out}/", NOSE_MEDIA],
+            ["rsync", "-a", "--partial", f"{args.out}/", NOSE_MEDIA + "transcripts/"],
             check=True,
         )
 
     hosted = sum(r["hosted"] for r in recs)
     total_s = sum(r["duration_s"] for r in recs)
-    print(f"\n{len(recs)} recordings, {hosted} hosted, {copied} mp3s copied, "
-          f"{reused} durations reused from the index")
+    print(f"\n{len(recs)} recordings, {hosted} hosted, {reused} durations reused from the index")
     print(f"total duration {total_s // 3600}h{total_s % 3600 // 60:02d}m")
     if failed:
         print(f"summaries failed ({len(failed)}):")
