@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone as tz
 from typing import Optional
 from uuid import UUID
@@ -29,6 +30,9 @@ MODEL = "claude-fable-5"
 MORNING_USERNAME = os.getenv("MORNING_USERNAME", "jasoncbenn")
 logger = logging.getLogger(__name__)
 NOTEBOOKLM_BIN = os.getenv("NOTEBOOKLM_BIN", "notebooklm")
+# Rigdzin queries run here, off the request thread, so a slow notebook never
+# blocks or kills a conversation turn.
+NOTEBOOK_POOL = ThreadPoolExecutor(max_workers=2)
 
 SYSTEM_PROMPT = """You are the morning sit companion in the Sit app. Each session is a \
 brief check-in around one morning practice, and it has an arc: first, how the user is \
@@ -48,8 +52,11 @@ not a teacher; ground everything in what they actually said or what the notebook
 
 Tools:
 - ask_notebooklm queries "Rigdzin", a notebook of the user's dharma teachings. Use it when \
-the check-in raises a question the tradition speaks to. Ask one well-formed question. The \
-user sees the full answer, so don't quote or summarize it — apply it in a line or two.
+the check-in raises a question the tradition speaks to. Ask one well-formed question. It \
+answers asynchronously — the reply appears in the thread a minute or two later and you get a \
+fresh turn to apply it, so when you ask, give one brief holding line and end the turn without \
+proposing a routine or writing the journal yet. The user sees the full answer, so don't quote \
+or summarize it — apply it in a line or two.
 - propose_program offers a routine as a card with a start button: warm-ups (by slug), \
 the sit component (by slug), and minutes. Use it once the feeling and the focus are clear; \
 one proposal, adjusted if they push back, rather than a menu of options. Include the \
@@ -97,6 +104,13 @@ question or observation is worth keeping. Capture what was alive and where the t
 off; don't claim a sit or an outcome that isn't in the conversation, and skip the \
 "N-min sit:" title format. Then reply with one short closing line.)"""
 
+RESUMED_INSTRUCTION = """(Rigdzin's answer to the question you asked earlier just came in — \
+it's the notebook entry above, with its answer now filled in. Pick the thread back up and \
+apply it: give your guidance in a line or two and, if the check-in is ready, propose the \
+routine. Don't quote the answer — the user can already see it. If the lookup failed, carry on \
+with your own sense of what would serve. The user may have said more since you asked; fold it \
+into where the conversation is now.)"""
+
 INTENTION_INSTRUCTION = """(The user just opened the sit timer. Distill this session's \
 intention for the sit — plain text, no preamble, no quotes. If the sit has distinct phases, \
 give each phase its own line, separated by a newline — at most 15 words per line, at most \
@@ -110,7 +124,7 @@ INTENTION_MODEL = "claude-sonnet-5"
 TOOLS = [
     {
         "name": "ask_notebooklm",
-        "description": "Ask the Rigdzin notebook (the user's dharma teachings in NotebookLM) a question. Takes ~1-2 minutes.",
+        "description": "Ask the Rigdzin notebook (the user's dharma teachings in NotebookLM) a question. It answers asynchronously: the reply lands in the thread a minute or two later and you get a fresh turn to apply it. When you call this, give one brief holding line and end your turn — don't propose a routine or write the journal in the same turn.",
         "input_schema": {
             "type": "object",
             "properties": {"question": {"type": "string"}},
@@ -295,9 +309,30 @@ def ask_notebooklm(question: str) -> str:
     return "\n\n".join(paragraphs).strip()
 
 
-NOTEBOOK_RESULT_NOTE = ("[The full answer above is shown to the user. Don't quote or "
-                        "summarize it — apply it: name the one thing from it that matters "
-                        "this morning, in a line or two.]")
+def submit_notebook_job(session_id: UUID, message_id: UUID, question: str, tz_name: str) -> None:
+    """Run the slow Rigdzin query off the request thread; when it returns, fill in the
+    pending card and run a resumed turn that applies the answer."""
+    NOTEBOOK_POOL.submit(_run_notebook_job, session_id, message_id, question, tz_name)
+
+
+def _run_notebook_job(session_id: UUID, message_id: UUID, question: str, tz_name: str) -> None:
+    answer = ask_notebooklm(question)  # blocks in this worker, never the request
+    with Session(engine) as session:
+        msg = session.get(MorningMessage, message_id)
+        if msg is None:
+            return  # session/message deleted while the query was in flight
+        failed = answer.startswith("(NotebookLM")
+        msg.tool_label = "Asked Rigdzin notebook"
+        msg.data = {"question": question, "answer": answer,
+                    "status": "error" if failed else "done"}
+        session.add(msg)
+        session.commit()
+        # Apply it: a fresh turn that folds the answer into the thread.
+        morning = session.get(MorningSession, session_id)
+        run_agent_turn(
+            morning, get_user(session),
+            user_tz=ZoneInfo(tz_name), session=session, resumed=True,
+        )
 
 
 def write_journal(
@@ -323,6 +358,7 @@ def write_journal(
 def agent_turn_events(
     morning: MorningSession, user: User,
     user_tz: ZoneInfo, session: Session, greeting: bool = False, closing: bool = False,
+    resumed: bool = False,
 ):
     """Run the model (with tool loop) over the session's stored messages, persist
     everything new, and yield progress events as they happen:
@@ -342,6 +378,8 @@ def agent_turn_events(
         api_messages.append({"role": "user", "content": GREETING_INSTRUCTION})
     if closing:
         api_messages.append({"role": "user", "content": CLOSING_INSTRUCTION})
+    if resumed:
+        api_messages.append({"role": "user", "content": RESUMED_INSTRUCTION})
 
     system_prompt = build_system_prompt(morning, user_tz, session)
     client = anthropic.Anthropic()
@@ -390,13 +428,27 @@ def agent_turn_events(
             if block.name == "ask_notebooklm":
                 question = block.input["question"]
                 yield {"type": "tool", "tool_label": "Asking Rigdzin notebook…", "content": question}
-                answer = ask_notebooklm(question)
-                tool_msg = MorningMessage(
+                # Don't block the turn on the slow notebook. Persist a pending card,
+                # hand the query to a background worker, and let the model wrap up.
+                # When the answer lands the worker runs a resumed turn that applies it.
+                pending = MorningMessage(
                     session_id=morning.id, role="tool",
-                    content=question, tool_label="Asked Rigdzin notebook",
-                    data={"answer": answer},
+                    content=question, tool_label="Asking Rigdzin notebook…",
+                    data={"question": question, "answer": None, "status": "pending"},
                 )
-                result_text = f"{answer}\n\n{NOTEBOOK_RESULT_NOTE}"
+                session.add(pending)
+                session.commit()
+                session.refresh(pending)
+                submit_notebook_job(morning.id, pending.id, question, user_tz.key)
+                new_messages.append(pending)
+                yield {"type": "tool_done", "message": serialize_message(pending)}
+                tool_msg = None  # already persisted and streamed above
+                result_text = (
+                    "Question sent to Rigdzin. The answer will appear in the thread in a "
+                    "minute or two, and you'll get a fresh turn to apply it then. For now, "
+                    "don't propose a routine or write the journal — give one short line "
+                    "saying you're checking with Rigdzin, and end your turn."
+                )
             elif block.name == "create_component":
                 name = block.input["name"]
                 yield {"type": "tool", "tool_label": "Adding to library…", "content": name}

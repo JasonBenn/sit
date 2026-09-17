@@ -391,6 +391,13 @@
   .tool.notebook .answer ul, .tool.notebook .answer ol { padding-left: 22px; }
   .tool.notebook .answer li { margin-bottom: 4px; }
   .tool.notebook .answer strong { font-weight: 500; }
+  .tool.notebook.pending .waiting {
+    margin-top: 6px; font-size: 13px; font-style: italic; opacity: 0.7;
+  }
+  .tool.notebook.pending .waiting::before {
+    content: '⋯'; margin-right: 6px; animation: nb-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes nb-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
   .tool.notebook .answer .md-h {
     font-size: 12px;
     text-transform: uppercase;
@@ -1469,6 +1476,22 @@
       return el;
     }
 
+    if (msg.role === 'tool' && msg.data && msg.data.status === 'pending') {
+      const el = document.createElement('div');
+      el.className = 'tool notebook pending';
+      const label = document.createElement('div');
+      label.className = 'tool-label';
+      label.textContent = msg.tool_label || 'Asking Rigdzin notebook…';
+      const question = document.createElement('div');
+      question.className = 'tool-body';
+      appendLinkified(question, msg.content || '');
+      const wait = document.createElement('div');
+      wait.className = 'waiting';
+      wait.textContent = 'Rigdzin is reflecting — this can take a minute or two. The answer will appear here, and Sit will pick up the thread.';
+      el.append(label, question, wait);
+      return el;
+    }
+
     if (msg.role === 'tool' && msg.data && msg.data.answer) {
       const el = document.createElement('div');
       el.className = 'tool notebook collapsed';
@@ -2004,7 +2027,59 @@
 
   /* ————— sessions ————— */
 
+  /* ————— async Rigdzin answers —————
+     A notebook query runs in the background; its card starts `pending` and the
+     agent's applying reply lands in a later turn. While a pending card is in the
+     thread, poll the message list and re-render as the answer + follow-up arrive. */
+  let notebookPoller = null;
+
+  function hasPending(list) {
+    return (list || []).some(m => m.role === 'tool' && m.data && m.data.status === 'pending');
+  }
+
+  function messagesSig(list) {
+    return (list || []).map(m => m.id + ':' + ((m.data && m.data.status) || m.role)).join('|');
+  }
+
+  function stopNotebookPoll() {
+    if (notebookPoller) { clearInterval(notebookPoller); notebookPoller = null; }
+  }
+
+  /* Poll iff a pending card is showing; stop once the answer and its follow-up settle. */
+  function syncNotebookPoll() {
+    if (!hasPending(messages)) { stopNotebookPoll(); return; }
+    if (notebookPoller || index < 0) return;
+    const sid = sessions[index].id;
+    let quiet = 0, ticks = 0, lastSig = messagesSig(messages);
+    notebookPoller = setInterval(async () => {
+      ticks++;
+      if (index < 0 || !sessions[index] || sessions[index].id !== sid || ticks > 130) {
+        stopNotebookPoll();
+        return;
+      }
+      let data;
+      try {
+        data = await api('/api/morning/sessions/' + encodeURIComponent(sid) + '/messages');
+      } catch (err) {
+        return;  // transient — try again next tick
+      }
+      const fresh = data.messages || [];
+      const sig = messagesSig(fresh);
+      if (sig !== lastSig) {
+        messages = fresh;
+        renderChat();
+        loadJournal();
+        lastSig = sig;
+        quiet = 0;
+      } else {
+        quiet++;
+      }
+      if (!hasPending(fresh) && quiet >= 3) stopNotebookPoll();
+    }, 3000);
+  }
+
   async function openSession(i) {
+    stopNotebookPoll();
     index = i;
     renderPager();
     renderChat(pendingNode());
@@ -2012,6 +2087,7 @@
       const data = await api('/api/morning/sessions/' + encodeURIComponent(sessions[i].id) + '/messages');
       messages = data.messages || [];
       renderChat();
+      syncNotebookPoll();
     } catch (err) {
       messages = [];
       renderChat(noticeNode('Could not load this session — ' + err.message));
@@ -2039,6 +2115,7 @@
       if (!done) throw new Error('the reply was cut off');
       messages = done.messages || [];
       renderChat();
+      syncNotebookPoll();
     } catch (err) {
       messages = [];
       renderChat(noticeNode('Could not start a session — ' + err.message));
@@ -2164,6 +2241,7 @@
 
       messages = messages.concat(done.messages || []);
       renderChat();
+      syncNotebookPoll();
       if (done.journal_written) {
         sessions[index].journal_written_at = new Date().toISOString();
         loadJournal();
