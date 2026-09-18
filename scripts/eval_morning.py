@@ -5,6 +5,11 @@
              start the app against the same scratch DB and look at it.
   --live     drive the real endpoints with the notebook stubbed. For flow work:
              greeting -> check-in -> async Rigdzin -> resumed turn -> routine.
+  --second-round
+             seed a morning that already sat once, then ask for another round.
+             The model must call propose_program again, not write the card as
+             text (the 2026-09-18 regression: replayed tool markers read as its
+             own prose, so it imitated them). --runs N repeats it.
 
 Both run against a scratch database and a throwaway wake-up log, so neither can
 touch the real morning sessions or ~/notes. The DB name must contain "eval".
@@ -271,6 +276,137 @@ def run_live(args):
     return 0
 
 
+# ---------------------------------------------------------- second round
+
+def seed_after_sit(user_id):
+    """Today's session up to the first sit: check-in, a practice the model added,
+    the routine it proposed, and the sit marker. Verbatim from 2026-09-18."""
+    from sqlmodel import Session
+    from app.db import engine
+    from app import library
+    from app.models import MorningMessage, MorningSession
+
+    with Session(engine) as session:
+        morning = MorningSession(user_id=user_id)
+        session.add(morning)
+        session.commit()
+        session.refresh(morning)
+        t0 = datetime.now(tz.utc) - timedelta(minutes=50)
+
+        def add(role, content, *, tool_label=None, data=None, offset=0):
+            session.add(MorningMessage(
+                session_id=morning.id, role=role, content=content,
+                tool_label=tool_label, data=data,
+                created_at=t0 + timedelta(seconds=offset),
+            ))
+
+        add("assistant",
+            "Morning. Last time you named the fear sitting in your gut and the pull to go "
+            "panoramic to avoid it — but you never came back to say whether you sat with "
+            "it. How are things this morning — body, energy, mood?", offset=0)
+        add("user",
+            "I think today I want to do:\n1. a 10-minute bioenergetic warm-up\n2. 10 minutes "
+            "of concentration\n3. 15 minutes of sitting with my feelings, letting myself "
+            "think wherever my brain goes, that kind of thing\nCan you put that together "
+            "for me?", offset=40)
+        add("assistant",
+            "Happy to — that's basically the two-phase structure you liked on the 9th, "
+            "gather then release, just with feelings as the second phase instead of "
+            "effortlessness.\n\nOne thing before I pick the warm-up, since the bioenergetic "
+            "ones each fit a different state: how's the body this morning — flat and "
+            "blocked, wired and buzzing, or tight and controlled?", offset=50)
+        add("user",
+            "Residual anxiety and pain in the heart. I think there's repressed anger and "
+            "grief, and maybe some despair about my relationship, and also residual stress "
+            "and overwhelm from the week. That said, I just got a bunch of stuff done "
+            "today. I've been treating myself really well, taking care of myself, so I do "
+            "feel well-resourced and smooth today.", offset=120)
+        add("assistant",
+            "Well-resourced and smooth, with heart pain and repressed anger and grief "
+            "underneath — that's actually the right configuration for going toward it.\n\n"
+            "For the warm-up, given the heart pain and what sounds like an armored chest, "
+            "I'd go with the shake-fold-diaphragm sequence. Let me build your two-phase sit "
+            "as its own practice so the phases are marked.", offset=140)
+
+        sit = library.create_component(
+            session, kind="unguided", name="Gather, then feel",
+            summary=("Two-phase silent sit: first a stretch of concentration to gather the "
+                     "mind (\"not now, return\"), then a longer stretch of open sitting with "
+                     "feelings, letting the mind and heart go where they go. Reach for it on "
+                     "a well-resourced morning when there's emotional material waiting and "
+                     "concentration is worth building first."),
+            steps=[
+                {"title": "Gather", "duration_s": 600, "bell": "soft",
+                 "text": "Concentration on the breath or whole body. Thoughts get 'not now, "
+                         "return.' Build continuity of attention."},
+                {"title": "Feel", "duration_s": 900, "bell": "long",
+                 "text": "Release the technique. Sit with whatever is here — anger, grief, "
+                         "despair, stress. Let the mind and heart go where they go; stay in "
+                         "the body as much as the story."},
+            ],
+            source="llm",
+        )
+        add("tool", sit.summary, tool_label=f"Added to library: {sit.name}", offset=141)
+
+        program = library.build_program(session, ["bioenergetics-cue-card"], sit.slug, 25)
+        note = ("Well-resourced day, heart material waiting: open the chest, gather for "
+                "10, then let it all come for 15.")
+        add("tool", library.program_line(program, note), tool_label="Proposed routine",
+            data={"warmup_slugs": ["bioenergetics-cue-card"], "sit_slug": sit.slug,
+                  "sit_minutes": 25, "note": note, "program": program}, offset=144)
+        add("assistant",
+            "There it is — a soft bell marks the switch from gathering to feeling. Go "
+            "gently with the heart.", offset=147)
+        add("sit", "25", data={"program": program}, offset=600)
+        session.commit()
+        return morning.id
+
+
+SECOND_ROUND_MESSAGE = (
+    "Really nice, thank you. Smooth and fairly concentrated. The warmup adds a lot. I was "
+    "exploring surrendering to the feelings after intellectually briefly checking that I "
+    "was in the View, and it feels much more fruitful and rich and warm that way. It also "
+    "feels more opened to emotions. I'd like to try another 15m of surrendering to the "
+    "feeling of the View."
+)
+
+
+def run_second_round(args, user_id):
+    """Pass iff every run answers the request for another round with a real
+    propose_program call and no bracketed pseudo-card in the prose."""
+    from fastapi.testclient import TestClient
+    from app.server import app
+
+    failures = []
+    with TestClient(app) as client:
+        for i in range(args.runs):
+            session_id = seed_after_sit(user_id)
+            r = client.post(f"/api/morning/sessions/{session_id}/chat",
+                            json={"message": SECOND_ROUND_MESSAGE, "timezone": args.timezone})
+            if r.status_code != 200:
+                sys.exit(f"run {i + 1}: HTTP {r.status_code} {r.text[:400]}")
+            events = list(sse_events(r.text))
+            text = "".join(e["delta"] for e in events if e.get("type") == "text")
+            tools = [e["message"]["tool_label"] for e in events if e.get("type") == "tool_done"]
+            print(f"\n── run {i + 1}")
+            print(f"   tools: {tools or 'none'}")
+            print(f"   Sit: {text.strip()[:300]}")
+            if "Proposed routine" not in tools:
+                failures.append(f"run {i + 1}: no propose_program call ({tools or 'no tools'})")
+            if "[" in text:
+                failures.append(f"run {i + 1}: bracketed text in the reply: "
+                                f"{text[text.index('['):][:80]!r}")
+
+    print("\n" + "=" * 60)
+    if failures:
+        print("FAIL")
+        for f in failures:
+            print("  ✗ " + f)
+        return 1
+    print(f"PASS — {args.runs} run(s): another round was proposed as a card, not as text")
+    return 0
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -279,6 +415,10 @@ def main():
                       help="seed a fixture session, no model calls (default)")
     mode.add_argument("--live", action="store_true",
                       help="drive the real endpoints with the notebook stubbed")
+    mode.add_argument("--second-round", action="store_true",
+                      help="after a logged sit, ask for another round; expect a tool call")
+    p.add_argument("--runs", type=int, default=1,
+                   help="second-round: how many times to run it (the model is stochastic)")
     p.add_argument("--pending", action="store_true",
                    help="canned: leave a pending Rigdzin card in the thread")
     p.add_argument("--keep", action="store_true",
@@ -309,6 +449,8 @@ def main():
 
     if args.live:
         return run_live(args)
+    if args.second_round:
+        return run_second_round(args, user_id)
 
     session_id = seed_canned(user_id, args.pending)
     print(f"\nseeded canned session {session_id}")
