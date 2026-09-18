@@ -373,7 +373,8 @@ SECOND_ROUND_MESSAGE = (
 
 def run_second_round(args, user_id):
     """Pass iff every run answers the request for another round with a real
-    propose_program call and no bracketed pseudo-card in the prose."""
+    propose_program call and no bracketed pseudo-card in the prose. Asking
+    Rigdzin first is fine: then the proposal comes in the resumed turn."""
     from fastapi.testclient import TestClient
     from app.server import app
 
@@ -386,16 +387,27 @@ def run_second_round(args, user_id):
             if r.status_code != 200:
                 sys.exit(f"run {i + 1}: HTTP {r.status_code} {r.text[:400]}")
             events = list(sse_events(r.text))
-            text = "".join(e["delta"] for e in events if e.get("type") == "text")
-            tools = [e["message"]["tool_label"] for e in events if e.get("type") == "tool_done"]
+            asked = any(e.get("type") == "tool_done"
+                        and "Rigdzin" in e["message"]["tool_label"] for e in events)
+            if asked:
+                msgs, ok = wait_for_async_answer(client, session_id)
+                if not ok:
+                    failures.append(f"run {i + 1}: asked Rigdzin but the resumed turn never came")
+            else:
+                msgs = client.get(f"/api/morning/sessions/{session_id}/messages").json()["messages"]
+
+            last_sit = max(k for k, m in enumerate(msgs) if m["role"] == "sit")
+            after = msgs[last_sit + 1:]
+            tools = [m["tool_label"] for m in after if m["role"] == "tool"]
+            prose = "\n".join(m["content"] for m in after if m["role"] == "assistant")
             print(f"\n── run {i + 1}")
             print(f"   tools: {tools or 'none'}")
-            print(f"   Sit: {text.strip()[:300]}")
+            print(f"   Sit: {prose.strip()[:300]}")
             if "Proposed routine" not in tools:
                 failures.append(f"run {i + 1}: no propose_program call ({tools or 'no tools'})")
-            if "[" in text:
+            if "[" in prose:
                 failures.append(f"run {i + 1}: bracketed text in the reply: "
-                                f"{text[text.index('['):][:80]!r}")
+                                f"{prose[prose.index('['):][:80]!r}")
 
     print("\n" + "=" * 60)
     if failures:
