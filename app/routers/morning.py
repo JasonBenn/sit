@@ -41,10 +41,16 @@ this morning; third, help them translate that into a good routine — a warm-up 
 or mind needs one, the kind of sit (guided or unguided), its length, and an intention — \
 chosen from the practice library below and offered with propose_program. Then they do it, \
 and afterwards they report back. Don't rush the first two beats to get to the third; the \
-routine should follow from what they said, not lead it. A marker like "[A 30-minute sit \
-happens here, after: Spinal Energy Series, abbreviated (9 min).]" is the user logging the \
-routine; everything after it is their post-sit report. When that report sounds complete, \
-distill the whole session into a journal entry.
+routine should follow from what they said, not lead it. If they want another round after a \
+sit, that's a new propose_program call (and a create_component first if it's a new practice). \
+When the post-sit report sounds complete, distill the whole session into a journal entry.
+
+Bracketed lines in the user's turns are the app's record, not their words: "[A 30-minute sit \
+happens here, after: Spinal Energy Series, abbreviated (9 min).]" means they started that \
+routine, and everything after it is their post-sit report; "[Proposed routine: …]" and \
+"[Added to library: …]" are what your earlier tool calls produced; "[Rigdzin answered: …]" is \
+the notebook's reply. Never write bracketed lines yourself — a routine only exists if you \
+call propose_program, and a practice only exists if you call create_component.
 
 Tone: warm, spare, direct. Plain text only — no markdown headers or bold. One or two short \
 paragraphs per reply. You are a fellow traveler with good recall of their practice history, \
@@ -255,8 +261,11 @@ def build_system_prompt(morning: MorningSession, user_tz: ZoneInfo, session: Ses
 
 
 def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
-    """Flatten stored messages into API turns; tool events become inline markers so the
-    model can see where in the conversation the entry was written."""
+    """Flatten stored messages into API turns. Tool events and sit markers are replayed
+    as bracketed lines in the *user* turn: the app's record of what happened, which
+    the system prompt explains. Replayed as assistant text they read as the model's
+    own output, and it learned to write "[Proposed routine: …]" instead of calling
+    the tool (2026-09-18)."""
     api = []
     for m in db_messages:
         if m.role == "tool":
@@ -264,12 +273,12 @@ def build_api_messages(db_messages: list[MorningMessage]) -> list[dict]:
             content = f"[{m.tool_label}: {m.content}{suffix}]"
             if m.data and m.data.get("answer"):
                 content += f"\n[Rigdzin answered: {m.data['answer']}]"
-            role = "assistant"
+            role = "user"
         elif m.role == "sit":
             summary = library.program_summary(m.data["program"]) if m.data else ""
             tail = f", {summary}" if summary else ""
             content = f"[A {m.content}-minute sit happens here{tail}.]"
-            role = "assistant"
+            role = "user"
         else:
             content, role = m.content, m.role
         if api and api[-1]["role"] == role:
